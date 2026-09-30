@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { formatINR } from '@/lib/currency';
+import { useAppStore } from '@/store/appStore';
 
 /* ── status pill ─────────────────────────────────────────────────────── */
 const statusPill = (status: string) => {
@@ -24,6 +25,9 @@ const statusPill = (status: string) => {
 
 /* ── dashboard ───────────────────────────────────────────────────────── */
 const OrganizerDashboard = () => {
+  const user = useAppStore((s) => s.user);
+  const rawName = user?.name || user?.username || user?.email?.split('@')[0] || 'there';
+  const username = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const { data: stats, isLoading, isError } = useOrgDashboard();
   const { data: eventsData } = useMyOrgEvents(1, 5);
 
@@ -43,7 +47,7 @@ const OrganizerDashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground">Dashboard</h1>
+            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Welcome, <span className="font-bold text-[#1981FE]">{username}</span></h1>
             <p className="text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
           </div>
           <Button asChild>
