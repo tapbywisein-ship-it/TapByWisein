@@ -218,7 +218,7 @@ const AttendeeDashboard = () => {
             <p className="text-sm text-muted-foreground mb-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="text-4xl font-semibold text-foreground tracking-tight">Welcome, <span style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontWeight: 400, fontSize: '1.15em', background: 'linear-gradient(90deg, #1a7cff, #8ec5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent', display: 'inline-block', maxWidth: '100%' }}>{user?.name || user?.username || user?.email?.split('@')[0] || 'there'}</span></h1>
+            <h1 className="text-4xl font-semibold text-foreground tracking-tight">Welcome, <span className="font-bold text-[#1981FE]">{user?.name || user?.username || user?.email?.split('@')[0] || 'there'}</span></h1>
           </div>
           <Button
             size="sm"
