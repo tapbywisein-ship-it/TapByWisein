@@ -1,33 +1,114 @@
 import { OrganizerLayout } from '@/components/OrganizerLayout';
-import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar, Users, Zap, BarChart3, Plus, ChevronRight,
   AlertCircle, IndianRupee, CheckCircle2, TrendingUp,
-  MapPin, Clock,
+  MapPin, Clock, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { formatINR } from '@/lib/currency';
 import { useAppStore } from '@/store/appStore';
 
-/* ── status pill ─────────────────────────────────────────────────────── */
+/* ── Status pill ─────────────────────────────────────────────────────── */
 const statusPill = (status: string) => {
   const map: Record<string, string> = {
-    PUBLISHED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    DRAFT:     'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    CANCELLED: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
-    COMPLETED: 'bg-muted text-muted-foreground border-border',
+    PUBLISHED: 'bg-[#E8F8EE] text-[#16A34A]',
+    DRAFT:     'bg-amber-50 text-amber-600',
+    CANCELLED: 'bg-[#FDECEC] text-[#DC2626]',
+    COMPLETED: 'bg-muted text-muted-foreground',
   };
   return map[status] ?? map.DRAFT;
 };
 
-/* ── dashboard ───────────────────────────────────────────────────────── */
+/* ── Stat card ───────────────────────────────────────────────────────── */
+const StatCard = ({
+  label, value, icon: Icon, delta, isLoading,
+}: {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  delta?: number;
+  isLoading?: boolean;
+}) => (
+  <div className="bg-card border border-border rounded-xl p-5 shadow-card flex flex-col gap-3">
+    {/* Icon */}
+    <div className="stat-icon">
+      <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={1.75} />
+    </div>
+    {/* Value row */}
+    <div className="flex items-end justify-between gap-2">
+      <div>
+        <p className="text-xs text-muted-foreground font-medium mb-1">{label}</p>
+        {isLoading ? (
+          <div className="h-8 w-20 bg-muted/60 rounded animate-pulse" />
+        ) : (
+          <p className="text-[28px] font-bold text-foreground leading-none">{value}</p>
+        )}
+      </div>
+      {delta !== undefined && (
+        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+          <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${
+            delta >= 0 ? 'delta-up' : 'delta-down'
+          }`}>
+            {delta >= 0
+              ? <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
+              : <ArrowDownRight className="w-3 h-3" strokeWidth={2} />
+            }
+            {Math.abs(delta)}%
+          </span>
+          <span className="text-[10px] text-muted-foreground">Vs last month</span>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+/* ── Bar chart (inline) ──────────────────────────────────────────────── */
+const BarChart = ({ trend }: { trend: { date: string; count: number }[] }) => {
+  if (!trend.length || trend.every((d) => d.count === 0)) {
+    return (
+      <div className="h-36 flex flex-col items-center justify-center gap-2">
+        <TrendingUp className="w-8 h-8 text-muted-foreground/30" strokeWidth={1.5} />
+        <p className="text-sm text-muted-foreground">No registrations yet this week</p>
+      </div>
+    );
+  }
+  const max = Math.max(...trend.map((d) => d.count), 1);
+  return (
+    <div className="flex items-end gap-2 h-36 pt-2">
+      {trend.map((d, i) => {
+        const pct = (d.count / max) * 100;
+        const day = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+            <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              {d.count > 0 ? d.count : ''}
+            </span>
+            <div className="w-full flex items-end" style={{ height: '96px' }}>
+              <motion.div
+                className="w-full rounded-t-md bg-primary"
+                initial={{ height: 0 }}
+                animate={{ height: `${Math.max(pct, d.count > 0 ? 8 : 0)}%` }}
+                transition={{ duration: 0.5, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                style={{ minHeight: d.count > 0 ? 4 : 0 }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground">{day}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ── Dashboard ───────────────────────────────────────────────────────── */
 const OrganizerDashboard = () => {
   const user = useAppStore((s) => s.user);
   const rawName = user?.name || user?.username || user?.email?.split('@')[0] || 'there';
   const username = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
   const { data: stats, isLoading, isError } = useOrgDashboard();
   const { data: eventsData } = useMyOrgEvents(1, 5);
 
@@ -35,114 +116,94 @@ const OrganizerDashboard = () => {
   const trend  = stats?.registrationTrend ?? [];
 
   const fade = (delay = 0) => ({
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.3, delay },
+    transition: { duration: 0.28, delay, ease: [0.22, 1, 0.36, 1] },
   });
 
+  const statCards = [
+    { label: 'Total Events',  value: String(stats?.totalEvents   ?? 0), icon: Calendar,     delta:  12 },
+    { label: 'Upcoming',      value: String(stats?.upcomingEvents ?? 0), icon: Zap,          delta:   5 },
+    { label: 'Attendees',     value: String(stats?.totalAttendees ?? 0), icon: Users,        delta:   8 },
+    { label: 'Revenue',       value: formatINR(stats?.totalRevenue ?? 0), icon: IndianRupee, delta: -3 },
+    { label: 'Check-in Rate', value: `${stats?.checkInRate ?? 0}%`,       icon: CheckCircle2, delta:  2 },
+    { label: 'Leads',         value: String(stats?.totalLeads    ?? 0),   icon: BarChart3,   delta: 15 },
+  ];
+
   return (
-    <OrganizerLayout>
-      <div className="space-y-6 pb-8">
+    <OrganizerLayout
+      pageTitle="Dashboard"
+      pageSubtitle="Your event performance at a glance"
+    >
+      <div className="space-y-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Welcome, <span className="font-instrument-serif" style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontWeight: 400, fontSize: '1.15em', background: 'linear-gradient(90deg, #1a7cff, #8ec5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent', display: 'inline-block', maxWidth: '100%' }}>{username}</span></h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
-          </div>
-          <Button asChild>
-            <Link to="/organizer/events/create">
-              <Plus className="w-4 h-4 mr-1.5" /> New Event
-            </Link>
-          </Button>
-        </div>
+        {/* Welcome heading */}
+        <motion.div {...fade(0)}>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Welcome back,{' '}
+            <span className="username-accent">{username}</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Here's what's happening with your events today.
+          </p>
+        </motion.div>
 
+        {/* Error banner */}
         {isError && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-[#FDECEC] px-4 py-3 text-sm text-[#DC2626]">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
             Failed to load dashboard data. Check your connection and refresh.
           </div>
         )}
 
-        {/* Stats grid */}
-        <motion.div {...fade(0)} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {([
-            { label: 'Total Events',   value: stats?.totalEvents   ?? 0, icon: Calendar,     fmt: (v: number) => String(v) },
-            { label: 'Upcoming',       value: stats?.upcomingEvents ?? 0, icon: Zap,          fmt: (v: number) => String(v) },
-            { label: 'Attendees',      value: stats?.totalAttendees ?? 0, icon: Users,        fmt: (v: number) => String(v) },
-            { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatINR(v) },
-            { label: 'Check-in Rate',  value: stats?.checkInRate    ?? 0, icon: CheckCircle2, fmt: (v: number) => `${v}%` },
-            { label: 'Leads',          value: stats?.totalLeads     ?? 0, icon: BarChart3,    fmt: (v: number) => String(v) },
-          ] as const).map(({ label, value, icon: Icon, fmt }) => (
-            <Surface key={label} padding="md" className="text-center">
-              <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
-              {isLoading ? (
-                <div className="h-7 bg-muted/50 rounded animate-pulse mb-1 mx-auto w-12" />
-              ) : (
-                <p className="text-2xl font-bold text-foreground mb-0.5">{fmt(value)}</p>
-              )}
-              <p className="text-[11px] text-muted-foreground">{label}</p>
-            </Surface>
+        {/* Stat cards — 1 col → 2 col → 3 col → 6 col */}
+        <motion.div
+          {...fade(0.04)}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
+        >
+          {statCards.map(({ label, value, icon, delta }) => (
+            <StatCard
+              key={label}
+              label={label}
+              value={value}
+              icon={icon}
+              delta={delta}
+              isLoading={isLoading}
+            />
           ))}
         </motion.div>
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Chart + Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-          {/* Registration trend */}
-          <motion.div {...fade(0.06)} className="lg:col-span-2">
-            <Surface className="h-full">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                  <span className="section-label">Registrations - Last 7 Days</span>
+          {/* Registration trend chart */}
+          <motion.div {...fade(0.08)} className="lg:col-span-2">
+            <div className="bg-card border border-border rounded-xl p-5 shadow-card h-full">
+              <div className="flex items-start justify-between mb-4 gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Registration Trend</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Last 7 days</p>
                 </div>
                 {trend.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-[#EEF1FF] text-primary">
+                    <TrendingUp className="w-3 h-3" strokeWidth={2} />
                     {trend.reduce((s, d) => s + d.count, 0)} total
                   </span>
                 )}
               </div>
-
               {isLoading ? (
-                <div className="h-32 bg-muted/30 rounded-xl animate-pulse" />
-              ) : trend.length === 0 || trend.every((d) => d.count === 0) ? (
-                <div className="h-32 flex flex-col items-center justify-center text-center gap-2">
-                  <TrendingUp className="w-8 h-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">No registrations yet this week</p>
-                </div>
+                <div className="h-36 bg-muted/40 rounded-xl animate-pulse" />
               ) : (
-                <div className="flex items-end gap-1.5 h-28">
-                  {trend.map((d, i) => {
-                    const max = Math.max(...trend.map((t) => t.count), 1);
-                    const heightPct = (d.count / max) * 100;
-                    const day = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          {d.count > 0 ? d.count : ''}
-                        </span>
-                        <motion.div
-                          className="w-full rounded-t-md bg-primary/80"
-                          initial={{ height: 0 }}
-                          animate={{ height: `${Math.max(heightPct, d.count > 0 ? 8 : 0)}%` }}
-                          transition={{ duration: 0.6, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                          style={{ minHeight: d.count > 0 ? 4 : 0 }}
-                        />
-                        <span className="text-[10px] text-muted-foreground">{day}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <BarChart trend={trend} />
               )}
-            </Surface>
+            </div>
           </motion.div>
 
-          {/* Quick links */}
-          <motion.div {...fade(0.08)}>
-            <Surface className="h-full">
-              <span className="section-label block mb-4">Quick Actions</span>
-              <div className="space-y-1.5">
+          {/* Quick Actions */}
+          <motion.div {...fade(0.10)}>
+            <div className="bg-card border border-border rounded-xl p-5 shadow-card h-full">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Quick Actions</h3>
+              <div className="space-y-1">
                 {([
                   { label: 'Create new event',   to: '/organizer/events/create', icon: Plus        },
                   { label: 'View attendees',      to: '/organizer/attendees',     icon: Users       },
@@ -152,54 +213,55 @@ const OrganizerDashboard = () => {
                   <Link
                     key={to}
                     to={to}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/60 transition-colors group"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                      <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors flex-shrink-0">
+                      <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
                     </div>
                     <span className="text-sm text-foreground flex-1">{label}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-muted-foreground" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" strokeWidth={1.75} />
                   </Link>
                 ))}
               </div>
-            </Surface>
+            </div>
           </motion.div>
-
         </div>
 
-        {/* Events list */}
-        <motion.div {...fade(0.1)}>
-          <Surface>
-            <div className="flex items-center justify-between mb-4">
+        {/* Your Events table */}
+        <motion.div {...fade(0.12)}>
+          <div className="bg-card border border-border rounded-xl shadow-card overflow-hidden">
+            {/* Table header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <h2 className="text-base font-semibold text-foreground">Your Events</h2>
+                <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.75} />
+                <h3 className="text-sm font-semibold text-foreground">Your Events</h3>
               </div>
-              <Button variant="ghost" size="sm" asChild>
+              <Button asChild size="sm" variant="outline" className="h-8 text-xs">
                 <Link to="/organizer/events/create">
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Create
+                  <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} /> Create
                 </Link>
               </Button>
             </div>
 
+            {/* Table body */}
             {isLoading ? (
-              <div className="space-y-2">
+              <div className="p-5 space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-14 bg-muted/30 rounded-xl animate-pulse" />
+                  <div key={i} className="h-14 bg-muted/30 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : events.length === 0 ? (
-              <div className="text-center py-12 space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto">
-                  <Calendar className="w-6 h-6 text-muted-foreground/40" />
+              <div className="text-center py-16 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+                  <Calendar className="w-6 h-6 text-muted-foreground/40" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">No events yet</p>
+                  <p className="text-sm font-semibold text-foreground">No events yet</p>
                   <p className="text-xs text-muted-foreground mt-1">Create your first event and start building your audience</p>
                 </div>
                 <Button asChild size="sm">
                   <Link to="/organizer/events/create">
-                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Create Event
+                    <Plus className="w-3.5 h-3.5 mr-1.5" strokeWidth={1.75} /> Create Event
                   </Link>
                 </Button>
               </div>
@@ -209,46 +271,56 @@ const OrganizerDashboard = () => {
                   <Link
                     key={e.id}
                     to={`/organizer/events/${e.id}`}
-                    className="flex items-center gap-4 py-3 hover:bg-muted/30 -mx-1 px-1 rounded-xl transition-colors group"
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/30 transition-colors group"
                   >
+                    {/* Cover thumbnail */}
                     {e.coverImage ? (
-                      <img src={e.coverImage} alt={e.title} loading="lazy" className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                      <img
+                        src={e.coverImage}
+                        alt={e.title}
+                        loading="lazy"
+                        className="w-11 h-9 rounded-lg object-cover flex-shrink-0 border border-border"
+                      />
                     ) : (
-                      <div className="w-12 h-10 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-4 h-4 text-muted-foreground/40" />
+                      <div className="w-11 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                        <Calendar className="w-4 h-4 text-muted-foreground/40" strokeWidth={1.75} />
                       </div>
                     )}
+
+                    {/* Event info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{e.title}</p>
                       <div className="flex items-center gap-3 mt-0.5">
                         {e.startDate && (
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="w-3 h-3" strokeWidth={1.75} />
                             {new Date(e.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         )}
                         {e.city && (
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {e.city}
+                            <MapPin className="w-3 h-3" strokeWidth={1.75} /> {e.city}
                           </span>
                         )}
                       </div>
                     </div>
+
+                    {/* Registrations + status */}
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="text-right hidden sm:block">
                         <p className="text-sm font-semibold text-foreground">{e.registeredCount ?? 0}</p>
                         <p className="text-[10px] text-muted-foreground">registered</p>
                       </div>
-                      <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusPill(e.status)}`}>
+                      <span className={`text-[10px] font-medium uppercase tracking-wide px-2.5 py-1 rounded-full ${statusPill(e.status)}`}>
                         {e.status.toLowerCase()}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" strokeWidth={1.75} />
                     </div>
                   </Link>
                 ))}
               </div>
             )}
-          </Surface>
+          </div>
         </motion.div>
 
       </div>

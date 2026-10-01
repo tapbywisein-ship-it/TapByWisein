@@ -17,7 +17,6 @@ export default {
         sans: ['"Inter Variable"', 'Inter', '"Geist Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         body: ['"Inter Variable"', 'Inter', '"Geist Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['"SF Mono"', 'Menlo', 'Monaco', 'Consolas', '"Courier New"', 'monospace'],
-        'instrument-serif': ['"Instrument Serif"', 'serif'],
       },
       colors: {
         /* Brand palette — use these in one-off sections/components */
