@@ -4,6 +4,23 @@ import { Logo } from '@/components/Logo';
 import { NavbarThemeToggle, ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/store/appStore';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, Shield, Sparkles, UserCircle, IndianRupee, ScrollText, Award, Menu, X,
 } from 'lucide-react';
 
@@ -18,11 +35,8 @@ const navItems = [
   { label: 'Audit Logs',  icon: ScrollText,      path: '/admin/audit-logs' },
   { label: 'Permissions', icon: Shield,          path: '/admin/permissions' },
   { label: 'Settings',    icon: Settings,        path: '/admin/settings' },
-  { label: 'Profile',     icon: UserCircle,      path: '/profile' },
 ];
 
-// Four primary tabs for the mobile bottom bar; the rest live in the "More"
-// sheet (same navItems as the desktop sidebar, so nothing goes missing).
 const mobileNav = [
   { label: 'Home',    icon: LayoutDashboard, path: '/admin/dashboard' },
   { label: 'Users',   icon: Users,           path: '/admin/users' },
@@ -30,16 +44,57 @@ const mobileNav = [
   { label: 'Revenue', icon: IndianRupee,     path: '/admin/revenue' },
 ];
 
+const UserAvatar = ({ avatar, name, email }: { avatar?: string; name?: string; email?: string }) => {
+  const [imgError, setImgError] = useState(false);
+
+  const isValidUrl =
+    avatar &&
+    typeof avatar === 'string' &&
+    avatar.trim() !== '' &&
+    (avatar.startsWith('http://') ||
+      avatar.startsWith('https://') ||
+      avatar.startsWith('/') ||
+      avatar.startsWith('data:'));
+
+  const getFirstLetter = () => {
+    if (name?.trim()) return name.trim()[0].toUpperCase();
+    if (email?.trim()) return email.trim()[0].toUpperCase();
+    return 'A';
+  };
+
+  if (isValidUrl && !imgError) {
+    return (
+      <img
+        src={avatar}
+        alt={name || 'Profile'}
+        className="w-full h-full object-cover"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <span className="font-bold text-sm text-foreground select-none uppercase">
+      {getFirstLetter()}
+    </span>
+  );
+};
+
 export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
-  // Belt-and-braces: ProtectedRoute already gates the routes, but defending
-  // here too means a non-admin can never accidentally see the admin nav (e.g.
-  // if a future page reuses this layout outside the guarded route).
   const role = useAppStore((s) => s.user?.role);
-  const handleLogout = () => { logout(); navigate('/login'); };
   const [moreOpen, setMoreOpen] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+
+  const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'Admin';
+
+  const onConfirmLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   if (role !== 'admin') {
     return (
@@ -79,17 +134,45 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             );
           })}
         </nav>
-        <div className="flex flex-col gap-1 pt-3 border-t border-border">
-          <button
-            onClick={handleLogout}
-            title="Sign out"
-            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Sign out</span>
-          </button>
+
+        {/* User Profile & Actions at Sidebar Bottom */}
+        <div className="pt-3 border-t border-border mt-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-muted/80 transition-colors text-left outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title={displayName}
+              >
+                <div className="w-9 h-9 rounded-full bg-primary/20 text-primary font-semibold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-border shadow-sm">
+                  <UserAvatar avatar={user?.avatar} name={user?.name} email={user?.email} />
+                </div>
+                <div className="flex-1 min-w-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-sm font-semibold text-foreground truncate leading-tight">{displayName}</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end" className="w-52 p-1.5 shadow-lg rounded-xl mb-1">
+              <DropdownMenuItem
+                onClick={() => navigate('/profile')}
+                className="cursor-pointer gap-2.5 py-2 px-2.5 rounded-lg text-foreground hover:bg-muted"
+              >
+                <UserCircle className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1" />
+              <DropdownMenuItem
+                onClick={() => setConfirmLogoutOpen(true)}
+                className="cursor-pointer gap-2.5 py-2 px-2.5 rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
+
       <div className="flex-1 md:ml-16 min-h-screen min-w-0">
         <main className="p-4 md:p-8 max-w-xwide mx-auto pb-24 md:pb-8">{children}</main>
       </div>
@@ -120,7 +203,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         </button>
       </nav>
 
-      {/* Mobile "More" sheet — full nav (same items as the desktop sidebar) */}
+      {/* Mobile "More" sheet */}
       {moreOpen && (
         <div className="md:hidden fixed inset-0 z-[60]" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" aria-hidden />
@@ -130,7 +213,18 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold">Menu</p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-muted-foreground/20 text-foreground font-semibold text-xs flex items-center justify-center overflow-hidden border border-border">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{getInitials(user?.name, user?.email)}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground leading-tight">{displayName}</p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
@@ -159,13 +253,28 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
                   </Link>
                 );
               })}
+              <Link
+                to="/profile"
+                onClick={() => setMoreOpen(false)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-colors ${
+                  location.pathname === '/profile'
+                    ? 'border-primary/40 bg-accent text-primary'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <UserCircle className="w-5 h-5" />
+                <span className="text-[11px] font-medium leading-tight">Profile</span>
+              </Link>
             </div>
             <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
               <ThemeToggle />
               <button
                 type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                onClick={() => {
+                  setMoreOpen(false);
+                  setConfirmLogoutOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sign out
               </button>
@@ -173,6 +282,27 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal for Sign out */}
+      <AlertDialog open={confirmLogoutOpen} onOpenChange={setConfirmLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will need to sign back in with your credentials to access the admin portal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onConfirmLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
