@@ -11,6 +11,7 @@ import { VerifyEmailBanner } from '@/components/VerifyEmailBanner';
 import { QuickShareButton } from '@/components/QuickShareButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import {
   Bell, Compass, Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
-  Building2, Boxes, X, Menu, Crown, AlertTriangle,
+  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/services/api';
@@ -40,18 +41,21 @@ import { toast } from 'sonner';
 
 // Left-sidebar nav (desktop). `badge` keys map to the live unread/pending counts.
 const navItems = [
-  { label: 'Discover',      icon: Compass,       path: '/discover' },
-  { label: 'Events',        icon: Calendar,      path: '/events' },
-  { label: 'Connect',       icon: Scan,          path: '/connect',        badge: 'connect' as const },
-  { label: 'Messages',      icon: MessageCircle, path: '/messages',       badge: 'messages' as const },
-  { label: 'Connections',   icon: Users,         path: '/connections' },
-  { label: 'Communities',   icon: Boxes,         path: '/communities' },
-  { label: 'Notifications', icon: Bell,          path: '/notifications',  badge: 'notifications' as const },
-  { label: 'My Tickets',    icon: Ticket,        path: '/my-tickets' },
-  { label: 'FK Score',      icon: Trophy,        path: '/gamification' },
-  { label: 'Tap Card',      icon: QrCode,        path: '/apply-card' },
-  { label: 'Plans',         icon: Crown,         path: '/pricing' },
-  { label: 'Profile',       icon: UserIcon,      path: '/profile' },
+  { label: 'Dashboard',     icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'Discover',      icon: Compass,         path: '/discover' },
+  { label: 'Events',        icon: Calendar,        path: '/events' },
+  { label: 'Connect',       icon: Scan,            path: '/connect',        badge: 'connect' as const },
+  { label: 'Messages',      icon: MessageCircle,   path: '/messages',       badge: 'messages' as const },
+  { label: 'Connections',   icon: Users,           path: '/connections' },
+  { label: 'Communities',   icon: Boxes,           path: '/communities' },
+  { label: 'Notifications', icon: Bell,            path: '/notifications',  badge: 'notifications' as const },
+  { label: 'My Tickets',    icon: Ticket,          path: '/my-tickets' },
+  { label: 'FK Score',      icon: Trophy,          path: '/gamification' },
+  { label: 'Tap Card',      icon: QrCode,          path: '/apply-card' },
+  // TEMP DISABLED: Plans page, re-enable when paid plans launch
+  // { label: 'Plans',         icon: Crown,         path: '/pricing' },
+  // TEMP MOVED: Profile now lives in the bottom account menu
+  // { label: 'Profile',       icon: UserIcon,      path: '/profile' },
 ];
 
 // Four primary tabs; everything else lives in the "More" sheet (same navItems
@@ -94,11 +98,16 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   // Organizer request dialog
   const [orgDialogOpen, setOrgDialogOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const [orgOrganization, setOrgOrganization] = useState('');
   // Gate the irreversible upgrade behind an explicit acknowledgement.
   const [orgAck, setOrgAck] = useState(false);
 
   const handleLogout = () => { logout(); navigate('/login'); };
+  const handleSignOutConfirm = () => {
+    handleLogout();
+    setSignOutOpen(false);
+  };
   const isOrganizer = user?.role === 'organizer';
 
   // Debounce search input
@@ -157,7 +166,9 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
 
       {/* ── Desktop left sidebar — collapsed to icons, expands on hover ──── */}
       <aside className="group hidden md:flex flex-col w-16 hover:w-60 transition-[width] duration-200 ease-out overflow-hidden border-r border-border px-2 py-4 fixed h-full z-40 bg-background">
-        <div className="mb-3 px-1"><Logo size="md" collapsible /></div>
+        <div className="mb-3 px-1"><Logo size="md" collapsible clickable={false} /></div>
+        {/* TEMP: logo no longer links to /dashboard */}
+        {/* <div className="mb-3 px-1"><Logo size="md" collapsible /></div> */}
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
@@ -227,7 +238,33 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           )}
         </nav>
         <div className="flex flex-col gap-1 pt-3 border-t border-border">
-          <button
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-muted flex items-center justify-center text-foreground text-xs font-semibold border border-border flex-shrink-0">
+                  {user?.photoUrl ? (
+                    <img src={user.photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = user?.name?.[0]?.toUpperCase() || 'U'; }} />
+                  ) : (
+                    user?.name?.[0]?.toUpperCase() || 'U'
+                  )}
+                </div>
+                <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">{user?.name || 'Account'}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link to="/profile"><UserIcon className="w-4 h-4 mr-2" /> Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSignOutOpen(true)} className="text-destructive focus:text-destructive">
+                <LogOut className="w-4 h-4 mr-2" /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* TEMP MOVED: Sign out now lives in the bottom account menu */}
+          {/* <button
             type="button"
             onClick={handleLogout}
             title="Sign out"
@@ -235,7 +272,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Sign out</span>
-          </button>
+          </button> */}
         </div>
       </aside>
 
@@ -246,7 +283,9 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         {/* ── Mobile top bar (md:hidden) ────────────────────── */}
         <header className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="h-14 px-4 flex items-center justify-between gap-3">
-            <Logo size="md" />
+            <Logo size="md" clickable={false} />
+            {/* TEMP: logo no longer links to /dashboard */}
+            {/* <Logo size="md" /> */}
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -325,9 +364,13 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem onSelect={() => setSignOutOpen(true)} className="text-destructive focus:text-destructive">
                     <LogOut className="w-4 h-4 mr-2" /> Sign out
                   </DropdownMenuItem>
+                  {/* TEMP MOVED: Sign out now opens confirmation dialog */}
+                  {/* <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" /> Sign out
+                  </DropdownMenuItem> */}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -437,7 +480,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
               <ThemeToggle />
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => { setMoreOpen(false); setSignOutOpen(true); }}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sign out
@@ -608,6 +651,13 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Sign out confirmation dialog ───────────────────── */}
+      <SignOutConfirmDialog
+        open={signOutOpen}
+        onOpenChange={setSignOutOpen}
+        onConfirm={handleSignOutConfirm}
+      />
     </div>
   );
 };

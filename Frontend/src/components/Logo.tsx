@@ -17,6 +17,7 @@ export const Logo = ({
   size = 'md',
   to,
   collapsible = false,
+  clickable = true,
 }: {
   size?: 'sm' | 'md' | 'lg';
   to?: string;
@@ -27,6 +28,12 @@ export const Logo = ({
    * clipped into a "molded" sliver at the 64px collapsed width.
    */
   collapsible?: boolean;
+  /**
+   * When false, renders the logo as a plain div/span instead of a Link.
+   * Use this when the logo should not be clickable (e.g., in the attendee
+   * layout where Dashboard is already in the nav list).
+   */
+  clickable?: boolean;
 }) => {
   // Logo is ~93×24; scale by height and let width follow the aspect ratio.
   const heights = { sm: 'h-5', md: 'h-6', lg: 'h-8' };
@@ -37,8 +44,8 @@ export const Logo = ({
 
   // Two variants swapped by the `dark` class (darkMode: 'class') — no JS needed.
   // logo-light = dark text for light backgrounds; logo-dark = white text for dark.
-  return (
-    <Link to={target} className="flex items-center group">
+  const logoContent = (
+    <>
       {collapsible && (
         // Blue T mark — reads on both themes; hidden once the rail expands.
         <img src="/logo-mark.png" alt="TapByWisein" className={`${heights[size]} w-auto block group-hover:hidden`} />
@@ -53,6 +60,20 @@ export const Logo = ({
         alt="TapByWisein"
         className={`${heights[size]} w-auto hidden ${collapsible ? 'dark:group-hover:block' : 'dark:block'}`}
       />
+    </>
+  );
+
+  if (!clickable) {
+    return (
+      <div className="flex items-center group cursor-default">
+        {logoContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={target} className="flex items-center group">
+      {logoContent}
     </Link>
   );
 };

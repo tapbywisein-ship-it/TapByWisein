@@ -4,7 +4,11 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL as string) || 'http://localhost:3000';
+// Derive socket URL from VITE_API_URL if VITE_SOCKET_URL is not set
+// Strip /api/v1 suffix. Socket.IO client handles http->ws and https->wss automatically.
+const API_URL = import.meta.env.VITE_API_URL as string;
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL as string) || 
+  (API_URL ? API_URL.replace(/\/api\/v1$/, '') : 'http://localhost:3000');
 
 let socket: Socket | null = null;
 

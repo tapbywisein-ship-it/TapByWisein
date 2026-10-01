@@ -24,6 +24,7 @@ import { useUpdateProfile, useMyProfile } from '@/hooks/useProfile';
 import { apiUpload } from '@/services/api';
 import { profileService } from '@/services/profile.service';
 import { useAppStore } from '@/store/appStore';
+import { BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
 
 const SKILL_SUGGESTIONS = [
   'Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Fundraising',
@@ -225,6 +226,11 @@ export const OnboardingWizard = ({ open, onOpenChange }: OnboardingWizardProps) 
                 rows={3}
                 placeholder="One sentence about what you're building."
               />
+              {bio && bio.trim().length <= BIO_MIN_LENGTH_EXCLUSIVE && (
+                <p className="text-xs text-destructive mt-1">
+                  Bio must be more than {BIO_MIN_LENGTH_EXCLUSIVE} characters. {BIO_MIN_LENGTH_EXCLUSIVE + 1 - bio.trim().length} more character{BIO_MIN_LENGTH_EXCLUSIVE + 1 - bio.trim().length !== 1 ? 's' : ''} needed.
+                </p>
+              )}
             </div>
           </div>
         )}
