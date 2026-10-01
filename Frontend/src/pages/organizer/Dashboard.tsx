@@ -47,7 +47,7 @@ const OrganizerDashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Welcome, <span className="font-bold text-[#1981FE]">{username}</span></h1>
+            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Welcome, <span className="font-instrument-serif" style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontWeight: 400, fontSize: '1.15em', background: 'linear-gradient(90deg, #1a7cff, #8ec5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent', display: 'inline-block', maxWidth: '100%' }}>{username}</span></h1>
             <p className="text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
           </div>
           <Button asChild>
