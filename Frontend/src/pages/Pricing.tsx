@@ -24,11 +24,30 @@ type Tier = {
   sub: string;
   cta: string;
   to: string | null;
-  plan?: PlanKey; // paid tiers open Razorpay checkout instead of navigating
+  plan?: PlanKey;
   highlight?: boolean;
   features: string[];
   limits?: string[];
 };
+
+/*
+ * ============================================================
+ * PRICING PLANS
+ * ============================================================
+ *
+ * ONLY THE FREE PLAN IS ENABLED BELOW.
+ *
+ * The following plans have been removed from the displayed
+ * pricing cards:
+ *
+ * - Tap Pro
+ * - Organizer Lite
+ * - Organizer Pro
+ * - Enterprise
+ *
+ * The NFC Founder Card below is still available separately.
+ * ============================================================
+ */
 
 const TIERS: Tier[] = [
   {
@@ -45,212 +64,398 @@ const TIERS: Tier[] = [
       'Basic networking analytics',
       '100 profile views / month',
     ],
-    limits: ['No NFC card, lead capture, custom blocks or CRM notes', 'Cannot host events'],
-  },
-  {
-    name: 'Tap Pro',
-    price: '₹299',
-    period: '/mo · ₹2,999/yr',
-    sub: 'Network better.',
-    cta: 'Go Pro',
-    to: null,
-    plan: 'pro_monthly',
-    highlight: true,
-    features: [
-      'Everything in Free',
-      'Lead capture + contact export',
-      'Connection notes, CRM tags & reminders',
-      'Custom card sections + branding',
-      'Startup showcase + “Open to” badges',
-      'Unlimited analytics & card views',
-      'Advanced suggestions + impact reports',
+    limits: [
+      'No NFC card, lead capture, custom blocks or CRM notes',
+      'Cannot host events',
     ],
   },
-  {
-    name: 'Organizer Lite',
-    price: '₹999',
-    period: '/mo',
-    sub: 'Host meetups.',
-    cta: 'Start hosting',
-    to: null,
-    plan: 'org_lite',
-    features: [
-      'Host free & paid events',
-      'Waitlists · approval entry · coupons',
-      'Check-in, guest lists & analytics',
-      'Email blasts + community creation',
-      'Co-host support',
-    ],
-    limits: ['Up to 2 active events · 200 attendees · 1 seat'],
-  },
-  {
-    name: 'Organizer Pro',
-    price: '₹2,999',
-    period: '/mo',
-    sub: 'Build communities.',
-    cta: 'Go Organizer Pro',
-    to: null,
-    plan: 'org_pro',
-    features: [
-      'Everything in Lite, unlimited',
-      'Multiple organizers · matchmaking engine',
-      'Cross-event attendee directory + insights',
-      'Lead exports · sponsor management',
-      'Revenue dashboard · custom branding',
-      'White-label registration · API access',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    sub: 'Run ecosystems.',
-    cta: 'Request a demo',
-    to: null,
-    features: [
-      'Dedicated account manager + SLA',
-      'Bulk / branded NFC cards · SSO',
-      'Private communities · recruitment mode',
-      'CRM integrations · custom integrations',
-      'Dedicated infrastructure',
-    ],
-  },
+
+  /*
+   * ==========================================================
+   * REMOVED: TAP PRO
+   * ==========================================================
+   *
+   * {
+   *   name: 'Tap Pro',
+   *   price: '₹299',
+   *   period: '/mo · ₹2,999/yr',
+   *   sub: 'Network better.',
+   *   cta: 'Go Pro',
+   *   to: null,
+   *   plan: 'pro_monthly',
+   *   highlight: true,
+   *   features: [
+   *     'Everything in Free',
+   *     'Lead capture + contact export',
+   *     'Connection notes, CRM tags & reminders',
+   *     'Custom card sections + branding',
+   *     'Startup showcase + “Open to” badges',
+   *     'Unlimited analytics & card views',
+   *     'Advanced suggestions + impact reports',
+   *   ],
+   * },
+   */
+
+  /*
+   * ==========================================================
+   * REMOVED: ORGANIZER LITE
+   * ==========================================================
+   *
+   * {
+   *   name: 'Organizer Lite',
+   *   price: '₹999',
+   *   period: '/mo',
+   *   sub: 'Host meetups.',
+   *   cta: 'Start hosting',
+   *   to: null,
+   *   plan: 'org_lite',
+   *   features: [
+   *     'Host free & paid events',
+   *     'Waitlists · approval entry · coupons',
+   *     'Check-in, guest lists & analytics',
+   *     'Email blasts + community creation',
+   *     'Co-host support',
+   *   ],
+   *   limits: ['Up to 2 active events · 200 attendees · 1 seat'],
+   * },
+   */
+
+  /*
+   * ==========================================================
+   * REMOVED: ORGANIZER PRO
+   * ==========================================================
+   *
+   * {
+   *   name: 'Organizer Pro',
+   *   price: '₹2,999',
+   *   period: '/mo',
+   *   sub: 'Build communities.',
+   *   cta: 'Go Organizer Pro',
+   *   to: null,
+   *   plan: 'org_pro',
+   *   features: [
+   *     'Everything in Lite, unlimited',
+   *     'Multiple organizers · matchmaking engine',
+   *     'Cross-event attendee directory + insights',
+   *     'Lead exports · sponsor management',
+   *     'Revenue dashboard · custom branding',
+   *     'White-label registration · API access',
+   *   ],
+   * },
+   */
+
+  /*
+   * ==========================================================
+   * REMOVED: ENTERPRISE
+   * ==========================================================
+   *
+   * {
+   *   name: 'Enterprise',
+   *   price: 'Custom',
+   *   sub: 'Run ecosystems.',
+   *   cta: 'Request a demo',
+   *   to: null,
+   *   features: [
+   *     'Dedicated account manager + SLA',
+   *     'Bulk / branded NFC cards · SSO',
+   *     'Private communities · recruitment mode',
+   *     'CRM integrations · custom integrations',
+   *     'Dedicated infrastructure',
+   *   ],
+   * },
+   */
 ];
 
 const Pricing = () => {
+  console.log("===== NEW PRICING.TSX LOADED =====");
+
   const [demoOpen, setDemoOpen] = useState(false);
-  const [busy, setBusy] = useState<PlanKey | null>(null);
+
+  /*
+   * NOTE:
+   * The subscription checkout code is no longer needed for the
+   * pricing cards because only the Free plan is displayed.
+   *
+   * It is left here/commented so you can easily restore paid
+   * subscriptions later if required.
+   */
+
+  // const [busy, setBusy] = useState<PlanKey | null>(null);
+
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAppStore();
 
-  const onSubscribe = async (plan: PlanKey) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: '/pricing' } } });
-      return;
-    }
-    setBusy(plan);
-    try {
-      const ok = await startSubscription(plan, { email: user?.email });
-      if (ok) toast.success('You’re subscribed - enjoy your new plan!');
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not start checkout');
-    } finally {
-      setBusy(null);
-    }
-  };
-
+  /*
+   * ==========================================================
+   * REMOVED: PAID SUBSCRIPTION CHECKOUT
+   * ==========================================================
+   *
+   * Since only Free is currently displayed, this function is
+   * not needed.
+   *
+   * const onSubscribe = async (plan: PlanKey) => {
+   *   if (!isAuthenticated) {
+   *     navigate('/login', {
+   *       state: { from: { pathname: '/pricing' } }
+   *     });
+   *     return;
+   *   }
+   *
+   *   setBusy(plan);
+   *
+   *   try {
+   *     const ok = await startSubscription(plan, {
+   *       email: user?.email
+   *     });
+   *
+   *     if (ok) {
+   *       toast.success(
+   *         'You’re subscribed - enjoy your new plan!'
+   *       );
+   *     }
+   *   } catch (e) {
+   *     toast.error(
+   *       e instanceof Error
+   *         ? e.message
+   *         : 'Could not start checkout'
+   *     );
+   *   } finally {
+   *     setBusy(null);
+   *   }
+   * };
+   */
+console.log("NEW PRICING PAGE LOADED");
   const body = (
     <>
-        <motion.div {...fadeUp()} className="text-center mb-12">
-          <h1 className="font-extrabold tracking-tight text-foreground" style={{ fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)', lineHeight: 1.06 }}>
-            Simple, honest{' '}
-            <span className="font-serif-display bg-clip-text text-transparent" style={{ backgroundImage: ACCENT_GRADIENT }}>
-              pricing.
-            </span>
-          </h1>
-          <p className="mt-3 text-lg text-muted-foreground">
-            Free to join. Upgrade to network better, or host with organizer tools.
-          </p>
-        </motion.div>
+      <motion.div {...fadeUp()} className="text-center mb-12">
+        <h1
+          className="font-extrabold tracking-tight text-foreground"
+          style={{
+            fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)',
+            lineHeight: 1.06
+          }}
+        >
+          Simple, honest{' '}
+          <span
+            className="font-serif-display bg-clip-text text-transparent"
+            style={{ backgroundImage: ACCENT_GRADIENT }}
+          >
+            pricing.
+          </span>
+        </h1>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {TIERS.map((t, i) => (
-            <motion.div key={t.name} {...fadeUp(i * 0.06)}>
-              <Surface
-                elevated={t.highlight}
-                hover
-                padding="none"
-                className={`h-full p-6 flex flex-col ${t.highlight ? 'border-primary ring-1 ring-primary/30' : ''}`}
-              >
+        {/*
+         * UPDATED:
+         * Removed "Upgrade to network better, or host with organizer
+         * tools" because those paid plans are no longer displayed.
+         */}
+        <p className="mt-3 text-lg text-muted-foreground">
+          Free to join. Get your digital profile and connect with your network.
+        </p>
+      </motion.div>
+
+      {/*
+       * ========================================================
+       * PRICING CARDS
+       * ========================================================
+       *
+       * Because TIERS now contains ONLY the Free plan, this
+       * automatically displays only the Free pricing card.
+       *
+       * No other changes to this section are required.
+       */}
+
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {TIERS.map((t, i) => (
+          <motion.div key={t.name} {...fadeUp(i * 0.06)}>
+            <Surface
+              elevated={t.highlight}
+              hover
+              padding="none"
+              className={`h-full p-6 flex flex-col ${
+                t.highlight
+                  ? 'border-primary ring-1 ring-primary/30'
+                  : ''
+              }`}
+            >
               {t.highlight && (
                 <span className="self-start mb-2 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   Most popular
                 </span>
               )}
-              <h2 className="text-lg font-semibold text-foreground">{t.name}</h2>
+
+              <h2 className="text-lg font-semibold text-foreground">
+                {t.name}
+              </h2>
+
               <p className="mt-1 flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">{t.price}</span>
-                {t.period && <span className="text-xs text-muted-foreground">{t.period}</span>}
+                <span className="text-3xl font-bold text-foreground">
+                  {t.price}
+                </span>
+
+                {t.period && (
+                  <span className="text-xs text-muted-foreground">
+                    {t.period}
+                  </span>
+                )}
               </p>
-              <p className="text-sm text-muted-foreground mb-4">{t.sub}</p>
+
+              <p className="text-sm text-muted-foreground mb-4">
+                {t.sub}
+              </p>
+
               <ul className="space-y-2 flex-1 mb-4">
                 {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" /> {f}
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-sm text-foreground"
+                  >
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    {f}
                   </li>
                 ))}
               </ul>
+
               {t.limits && (
                 <ul className="space-y-1 mb-5 border-t border-border pt-3">
                   {t.limits.map((l) => (
-                    <li key={l} className="text-xs text-muted-foreground">{l}</li>
+                    <li
+                      key={l}
+                      className="text-xs text-muted-foreground"
+                    >
+                      {l}
+                    </li>
                   ))}
                 </ul>
               )}
+
+              {/*
+               * Only the Free plan reaches this section now,
+               * because all paid plans were removed from TIERS.
+               */}
+
               {t.plan ? (
                 <Button
                   className="w-full"
                   variant={t.highlight ? 'default' : 'outline'}
-                  disabled={busy !== null}
-                  onClick={() => onSubscribe(t.plan!)}
+                  // disabled={busy !== null}
+                  // onClick={() => onSubscribe(t.plan!)}
                 >
-                  {busy === t.plan ? 'Opening…' : t.cta}
+                  {/*
+                   * Paid subscription button removed.
+                   * This branch will not be used while only Free
+                   * is present in TIERS.
+                   */}
+                  {t.cta}
                 </Button>
               ) : t.to ? (
-                <Button asChild className="w-full" variant={t.highlight ? 'default' : 'outline'}>
+                <Button
+                  asChild
+                  className="w-full"
+                  variant={t.highlight ? 'default' : 'outline'}
+                >
                   <Link to={t.to}>{t.cta}</Link>
                 </Button>
               ) : (
-                <Button className="w-full" variant="outline" onClick={() => setDemoOpen(true)}>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => setDemoOpen(true)}
+                >
                   {t.cta}
                 </Button>
               )}
-              </Surface>
-            </motion.div>
-          ))}
-        </div>
+            </Surface>
+          </motion.div>
+        ))}
+      </div>
 
-        {/* NFC Founder Card — one-time product, the easiest upsell */}
-        <motion.div {...fadeUp(0.1)}>
-          <Surface hover padding="none" className="mt-6 p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <CreditCard className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">NFC Founder Card</h3>
-                <p className="text-sm text-muted-foreground">
-                  Physical tap-to-connect card with QR fallback, dashboard & unlimited scans.
-                </p>
-              </div>
+      {/*
+       * ========================================================
+       * NFC FOUNDER CARD
+       * ========================================================
+       *
+       * THIS SECTION IS KEPT.
+       *
+       * Your NFC card payment remains available here:
+       *
+       * ₹499 one-time
+       * ₹999 metal
+       *
+       * The "Get a card" button goes to /apply-card.
+       */}
+
+      <motion.div {...fadeUp(0.1)}>
+        <Surface
+          hover
+          padding="none"
+          className="mt-6 p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <CreditCard className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <p className="text-sm text-foreground">
-                <span className="font-bold">₹499</span> one-time
-                <span className="text-muted-foreground"> · ₹999 metal</span>
+
+            <div>
+              <h3 className="font-semibold text-foreground">
+                NFC Founder Card
+              </h3>
+
+              <p className="text-sm text-muted-foreground">
+                Physical tap-to-connect card with QR fallback, dashboard & unlimited scans.
               </p>
-              <Button asChild size="sm">
-                <Link to="/apply-card">Get a card</Link>
-              </Button>
             </div>
-          </Surface>
-        </motion.div>
+          </div>
 
-        <motion.p {...fadeUp(0.15)} className="text-center text-xs text-muted-foreground mt-8">
-          Paid ticket sales carry a 5–8% platform fee (free events are always free). Featured
-          placement & sponsored networking available on request.
-        </motion.p>
+          <div className="flex items-center gap-3 shrink-0">
+            <p className="text-sm text-foreground">
+              <span className="font-bold">₹499</span> one-time
+              <span className="text-muted-foreground">
+                {' '}
+                · ₹999 metal
+              </span>
+            </p>
+
+            <Button asChild size="sm">
+              <Link to="/apply-card">Get a card</Link>
+            </Button>
+          </div>
+        </Surface>
+      </motion.div>
+
+      {/*
+       * ========================================================
+       * UPDATED FOOTER NOTE
+       * ========================================================
+       *
+       * Removed the old text about paid ticket platform fees,
+       * featured placement and sponsored networking.
+       */}
+
+      <motion.p
+        {...fadeUp(0.15)}
+        className="text-center text-xs text-muted-foreground mt-8"
+      >
+        Free to join. Get your digital profile and start connecting.
+      </motion.p>
     </>
   );
 
-  // Signed-in users see pricing inside their portal chrome (keeps the nav);
-  // anonymous visitors get the standalone marketing shell.
+  // Signed-in users see pricing inside their portal chrome
+  // (keeps the nav); anonymous visitors get the standalone
+  // marketing shell.
+
   if (isAuthenticated) {
     return (
       <PortalLayout>
         <div className="max-w-6xl mx-auto w-full pb-24 md:pb-8">
           {body}
         </div>
-        <RequestDemoModal open={demoOpen} onOpenChange={setDemoOpen} />
+
+        <RequestDemoModal
+          open={demoOpen}
+          onOpenChange={setDemoOpen}
+        />
       </PortalLayout>
     );
   }
@@ -258,10 +463,19 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <PublicNav />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">{body}</main>
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
+        {body}
+      </main>
+
       <FeatureBento />
+
       <PublicFooter />
-      <RequestDemoModal open={demoOpen} onOpenChange={setDemoOpen} />
+
+      <RequestDemoModal
+        open={demoOpen}
+        onOpenChange={setDemoOpen}
+      />
     </div>
   );
 };

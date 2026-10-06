@@ -12,7 +12,7 @@ import { useMyRegistrations } from '@/hooks/useEvents';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
-import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar } from '@/lib/profileCompletion';
+import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar, BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
 import { useMyCard } from '@/hooks/useFounderCard';
 import { toast } from 'sonner';
 import {
@@ -182,7 +182,7 @@ const AttendeeDashboard = () => {
   /* checklist items */
   const checklistItems = [
     { done: hasUploadedAvatar(profile?.avatar), label: 'Add a profile photo', action: 'Upload', to: '/profile' },
-    { done: !!(profile?.bio && profile.bio.length >= 20), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
+    { done: !!(profile?.bio && profile.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
     { done: !!(profile?.position || profile?.company), label: 'Add your role & company', action: 'Add', to: '/profile' },
     { done: (profile?.skills?.length ?? 0) >= 3, label: 'Add at least 3 skills', action: 'Add skills', to: '/profile' },
     { done: (profile?.interests?.length ?? 0) >= 2, label: 'Add interests', action: 'Add', to: '/profile' },
@@ -219,7 +219,7 @@ const AttendeeDashboard = () => {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
             <h1 className="text-4xl font-semibold text-foreground">
-              Welcome back, {user?.name?.split(' ')[0] || 'there'}
+              Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
           <Button

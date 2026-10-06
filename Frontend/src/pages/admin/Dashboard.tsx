@@ -7,6 +7,7 @@ import {
   IndianRupee, ArrowUpRight, UserPlus, ChevronRight,
 } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdmin';
+import { useAppStore } from '@/store/appStore';
 import { formatINR } from '@/lib/currency';
 
 const fade = (delay = 0) => ({
@@ -16,6 +17,8 @@ const fade = (delay = 0) => ({
 });
 
 const AdminDashboard = () => {
+  const user = useAppStore((s) => s.user);
+  const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'Admin';
   const { data: stats, isLoading, isError } = useAdminDashboard();
   const trend = stats?.signupTrend ?? [];
 
@@ -23,7 +26,9 @@ const AdminDashboard = () => {
     <AdminLayout>
       <div className="space-y-6 pb-8">
         <div>
-          <h1 className="text-3xl font-semibold text-foreground">Platform Overview</h1>
+          <h1 className="text-3xl font-semibold text-foreground">
+            Welcome back, {displayName}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Real-time platform health and growth</p>
         </div>
 

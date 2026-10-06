@@ -5,3 +5,5 @@ docker-compose.yml
 
 # macOS
 .DS_Store
+
+Frontend/.env

@@ -25,7 +25,8 @@ export function PublicFooter() {
           <span className="text-xs text-muted-foreground">© {year} TapByWisein</span>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-          <Link to="/pricing" className="text-muted-foreground transition-colors hover:text-foreground">Pricing</Link>
+          {/* TEMP DISABLED: Plans page, re-enable when paid plans launch */}
+          {/* <Link to="/pricing" className="text-muted-foreground transition-colors hover:text-foreground">Pricing</Link> */}
           <Link to="/discover" className="text-muted-foreground transition-colors hover:text-foreground">Discover</Link>
           <Link to="/terms" className="text-muted-foreground transition-colors hover:text-foreground">Terms and Conditions</Link>
           <Link to="/privacy" className="text-muted-foreground transition-colors hover:text-foreground">Privacy Policy</Link>

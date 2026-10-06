@@ -27,7 +27,7 @@ import {
   Clock, Tag, Ticket, Search, AlertCircle,
 } from 'lucide-react';
 
-const CATEGORIES = ['All', 'Tech', 'Business', 'Design', 'Health', 'Social', 'Arts', 'Sports', 'Food', 'Startup', 'AI'];
+const CATEGORIES = ['All', 'Tech', 'Startup', 'Design', 'AI', 'Business', 'Health', 'Social', 'Arts', 'Sports'];
 
 const EventsPage = () => {
   const user = useAppStore((s) => s.user);
@@ -92,8 +92,6 @@ const EventsPage = () => {
     setRegStep('success');
   };
 
-  // Paid events can't register through the quick modal (it only does free
-  // sign-up). Route them to the event page, where the Razorpay checkout lives.
   const isPaidEvent = (e: Event) => {
     const enabled = (e.ticketTypes ?? []).filter((t) => t.isEnabled ?? true);
     return enabled.length > 0
@@ -110,8 +108,6 @@ const EventsPage = () => {
     ? `tapbywisein://registration/${registrationId}`
     : `tapbywisein://event/${registerModal?.id}/user/${user?.id}`;
 
-  // Public browsing: logged-out visitors get the minimal PublicNav shell; signed-in
-  // users keep their portal chrome. Registering still routes through /login.
   const wrap = (children: ReactNode) =>
     isAuthenticated ? (
       <PortalLayout>{children}</PortalLayout>
@@ -125,9 +121,6 @@ const EventsPage = () => {
   return wrap(
     <>
       <div className="space-y-6 pb-24 md:pb-8">
-        {/* Filter active banner: comes from /card/:id → "Find at events" link.
-            Tells the user the list has been narrowed to events they and the
-            target person are BOTH registered for. */}
         {withUser && (
           <Surface className="flex items-center gap-2 border-primary/30 bg-primary/5 py-2.5">
             <span className="text-xs text-foreground">
@@ -147,49 +140,73 @@ const EventsPage = () => {
           </Surface>
         )}
 
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-3xl font-semibold text-foreground">Events</h1>
-          <div className="flex items-center gap-2">
+        {/* Hero Header & Quick Search Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+              Discover Events
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold border border-primary/20">
+                {events.length} available
+              </span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 font-medium">
+              Find tech meetups, startup pitch nights, and design workshops near you
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={() => setSavedOnly((s) => !s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
                 savedOnly
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-border text-muted-foreground hover:text-foreground'
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground hover:border-border/80'
               }`}
             >
-              {savedOnly ? 'Saved only' : 'Show saved'}
+              {savedOnly ? '★ Saved Only' : '☆ Saved Events'}
             </button>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+
+            <div className="relative flex-1 md:flex-initial">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search events..."
-                className="pl-9 h-8 text-sm w-48"
+                className="pl-9 pr-8 h-9 text-sm w-full md:w-64 rounded-xl border-border/80 bg-card shadow-sm focus:border-primary"
               />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Category filter */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                category === cat
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border rounded-card shadow-card-xs text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Category Pills */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+          {CATEGORIES.map((cat) => {
+            const active = category === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold tracking-tight transition-all duration-200 border ${
+                  active
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm font-bold'
+                    : 'bg-card border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-border'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Events grid */}
+        {/* Events Grid with 3D Card Animation */}
         {isError && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <span className="flex items-center gap-2.5">
@@ -202,9 +219,9 @@ const EventsPage = () => {
           </div>
         )}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {[...Array(6)].map((_, i) => (
-              <Surface key={i} className="h-48 animate-pulse">
+              <Surface key={i} className="h-56 animate-pulse rounded-2xl">
                 <div className="h-4 bg-muted/50 rounded w-1/3 mb-3" />
                 <div className="h-6 bg-muted/50 rounded w-2/3 mb-2" />
                 <div className="h-3 bg-muted/50 rounded w-1/2" />
@@ -216,139 +233,158 @@ const EventsPage = () => {
             <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-muted-foreground">No events found.</p>
             {search || category !== 'All' ? (
-              <Button variant="ghost" size="sm" className="mt-3"
+              <Button variant="ghost" size="sm" className="mt-3 rounded-full"
                 onClick={() => { setSearch(''); setCategory('All'); }}>
                 Clear filters
               </Button>
             ) : null}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {events.map((e, i) => {
-              const theme = getTheme(e.theme);
-              // Prefer backend registrationStatus, fall back to local registration data
-              const isRegistered =
-                e.registrationStatus === 'REGISTERED' || e.registrationStatus === 'ATTENDED' ||
-                (e.registrationStatus == null && registeredEventIds.has(e.id) && !waitlistedEventIds.has(e.id));
-              const isWaitlisted =
-                e.registrationStatus === 'WAITLISTED' ||
-                (e.registrationStatus == null && waitlistedEventIds.has(e.id));
-              const { topLabel: price } = getRegistrationPricing(e);
-              const isFull = e.registeredCount !== undefined && e.registeredCount >= e.capacity;
+          <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <AnimatePresence mode="popLayout">
+              {events.map((e, i) => {
+                const theme = getTheme(e.theme);
+                const isRegistered =
+                  e.registrationStatus === 'REGISTERED' || e.registrationStatus === 'ATTENDED' ||
+                  (e.registrationStatus == null && registeredEventIds.has(e.id) && !waitlistedEventIds.has(e.id));
+                const isWaitlisted =
+                  e.registrationStatus === 'WAITLISTED' ||
+                  (e.registrationStatus == null && waitlistedEventIds.has(e.id));
+                const { topLabel: price } = getRegistrationPricing(e);
+                const isFull = e.registeredCount !== undefined && e.registeredCount >= e.capacity;
 
-              // "Posted by" — prefer the organizer's company, else their name.
-              const org = e.organizer;
-              const organizerName =
-                org?.profile?.company ||
-                (org?.profile ? `${org.profile.firstName} ${org.profile.lastName}`.trim() : org?.username) ||
-                null;
+                const org = e.organizer;
+                const organizerName =
+                  org?.profile?.company ||
+                  (org?.profile ? `${org.profile.firstName} ${org.profile.lastName}`.trim() : org?.username) ||
+                  null;
 
-              // Days left to register — uses the explicit deadline when the
-              // organizer set one, else counts down to the event start.
-              const { closed: registrationClosed, label: daysLeftLabel, urgent: daysLeftUrgent } =
-                registrationCountdown(e.startDate, e.registrationDeadline);
+                const { closed: registrationClosed, label: daysLeftLabel, urgent: daysLeftUrgent } =
+                  registrationCountdown(e.startDate, e.registrationDeadline);
 
-              return (
-                <motion.div key={e.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                  <Surface hover className="h-full flex flex-col overflow-hidden p-0">
-                    {/* Cover image (falls back to the event theme gradient) */}
-                    <Link to={`/event/${e.id}`} className="relative block">
-                      {e.coverImage ? (
-                        <img
-                          src={e.coverImage}
-                          alt={e.title}
-                          loading="lazy"
-                          className="w-full aspect-[16/9] object-contain bg-muted"
-                        />
-                      ) : (
-                        <div className="w-full aspect-[16/9]" style={{ background: theme.gradient }} aria-hidden />
-                      )}
-                      {e.category && (
-                        <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background/85 text-foreground backdrop-blur-sm border border-border">
-                          {e.category}
-                        </span>
-                      )}
-                      {isRegistered && (
-                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white flex items-center gap-1 shadow-sm">
-                          <CheckCircle2 className="w-3 h-3" /> Registered
-                        </span>
-                      )}
-                      {!isRegistered && isWaitlisted && (
-                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500 text-white flex items-center gap-1 shadow-sm">
-                          Waitlisted
-                        </span>
-                      )}
-                    </Link>
-
-                    <div className="p-5 flex flex-col flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-lg font-semibold text-foreground leading-tight flex-1 min-w-0">
-                          <Link to={`/event/${e.id}`} className="hover:text-primary transition-colors line-clamp-2">
-                            {e.title}
-                          </Link>
-                        </h3>
-                        <SaveEventButton eventId={e.id} />
-                      </div>
-
-                      {organizerName && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate">By {organizerName}</p>
-                      )}
-
-                      <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        {new Date(e.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      {(e.city || e.address) && (
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{e.locationType === 'VIRTUAL' ? 'Online' : (e.city || e.address)}</span>
-                        </p>
-                      )}
-
-                      {/* Guests + days left to register */}
-                      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" /> {e.registeredCount ?? 0}/{e.capacity} going
-                        </span>
-                        <span className={`flex items-center gap-1 ml-auto ${daysLeftUrgent ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}`}>
-                          <Clock className="w-3 h-3" /> {daysLeftLabel}
-                        </span>
-                      </div>
-
-                      {/* Price + register / registered */}
-                      <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
-                        <span className="text-sm font-medium text-primary flex items-center gap-1">
-                          <Tag className="w-3 h-3" /> {price}
-                        </span>
-                        {isRegistered ? (
-                          <Button variant="outline" size="sm" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:text-emerald-600" asChild>
-                            <Link to={`/event/${e.id}`}>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Registered
-                            </Link>
-                          </Button>
-                        ) : isWaitlisted ? (
-                          <Button variant="ghost" size="sm" disabled>
-                            <Clock className="w-3 h-3 mr-1" /> Waitlisted
-                          </Button>
-                        ) : registrationClosed ? (
-                          <Button variant="ghost" size="sm" disabled>Closed</Button>
+                return (
+                  <motion.div
+                    key={e.id}
+                    layout
+                    initial={{ opacity: 0, y: 20, rotateX: 6 }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.35, delay: i * 0.04 }}
+                    whileHover={{
+                      y: -6,
+                      rotateX: -2,
+                      rotateY: 2,
+                      transition: { duration: 0.25, ease: 'easeOut' },
+                    }}
+                    className="perspective-1000 group h-full"
+                  >
+                    <Surface className="h-full flex flex-col overflow-hidden p-0 rounded-2xl border border-border/80 group-hover:border-primary/40 group-hover:shadow-xl group-hover:shadow-primary/5 transition-all duration-300 bg-card">
+                      {/* Cover image (falls back to theme gradient) */}
+                      <Link to={`/event/${e.id}`} className="relative block overflow-hidden">
+                        {e.coverImage ? (
+                          <img
+                            src={e.coverImage}
+                            alt={e.title}
+                            loading="lazy"
+                            className="w-full aspect-[16/9] object-cover bg-muted group-hover:scale-105 transition-transform duration-500 ease-out"
+                          />
                         ) : (
-                          <Button
-                            size="sm"
-                            disabled={isFull && !e.waitlistEnabled}
-                            onClick={() => openModal(e)}
-                          >
-                            <Ticket className="w-3 h-3 mr-1" />
-                            {isFull ? (e.waitlistEnabled ? 'Waitlist' : 'Full') : (isPaidEvent(e) ? 'Get tickets' : 'Register')}
-                          </Button>
+                          <div className="w-full aspect-[16/9] group-hover:scale-105 transition-transform duration-500 ease-out" style={{ background: theme.gradient }} aria-hidden />
                         )}
+
+                        {/* Glassmorphic Category Badge */}
+                        {e.category && (
+                          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-black/60 text-white backdrop-blur-md border border-white/20 shadow-sm">
+                            {e.category}
+                          </span>
+                        )}
+
+                        {isRegistered && (
+                          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/90 text-white backdrop-blur-md flex items-center gap-1 shadow-md">
+                            <CheckCircle2 className="w-3 h-3" /> Registered
+                          </span>
+                        )}
+                        {!isRegistered && isWaitlisted && (
+                          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-500/90 text-white backdrop-blur-md flex items-center gap-1 shadow-md">
+                            Waitlisted
+                          </span>
+                        )}
+                      </Link>
+
+                      <div className="p-5 flex flex-col flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-lg font-bold text-foreground leading-snug flex-1 min-w-0">
+                            <Link to={`/event/${e.id}`} className="group-hover:text-primary transition-colors line-clamp-2">
+                              {e.title}
+                            </Link>
+                          </h3>
+                          <SaveEventButton eventId={e.id} />
+                        </div>
+
+                        {organizerName && (
+                          <p className="text-xs text-muted-foreground font-medium mt-1 truncate">
+                            Hosted by <span className="text-foreground font-semibold">{organizerName}</span>
+                          </p>
+                        )}
+
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          {new Date(e.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+
+                        {(e.city || e.address) && (
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate">{e.locationType === 'VIRTUAL' ? 'Online Event' : (e.city || e.address)}</span>
+                          </p>
+                        )}
+
+                        {/* Guests + days left to register */}
+                        <div className="flex items-center gap-3 mt-3.5 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Users className="w-3.5 h-3.5 text-muted-foreground" /> {e.registeredCount ?? 0}/{e.capacity} attending
+                          </span>
+                          <span className={`flex items-center gap-1 ml-auto font-medium ${daysLeftUrgent ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                            <Clock className="w-3.5 h-3.5" /> {daysLeftLabel}
+                          </span>
+                        </div>
+
+                        {/* Price + register / registered */}
+                        <div className="flex items-center justify-between pt-3.5 mt-auto border-t border-border">
+                          <span className="text-sm font-bold text-primary flex items-center gap-1">
+                            <Tag className="w-3.5 h-3.5" /> {price}
+                          </span>
+                          {isRegistered ? (
+                            <Button variant="outline" size="sm" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-full" asChild>
+                              <Link to={`/event/${e.id}`}>
+                                <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Registered
+                              </Link>
+                            </Button>
+                          ) : isWaitlisted ? (
+                            <Button variant="ghost" size="sm" disabled className="rounded-full">
+                              <Clock className="w-3 h-3 mr-1" /> Waitlisted
+                            </Button>
+                          ) : registrationClosed ? (
+                            <Button variant="ghost" size="sm" disabled className="rounded-full">Closed</Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="rounded-full shadow-sm hover:shadow-md transition-all"
+                              disabled={isFull && !e.waitlistEnabled}
+                              onClick={() => openModal(e)}
+                            >
+                              <Ticket className="w-3.5 h-3.5 mr-1" />
+                              {isFull ? (e.waitlistEnabled ? 'Waitlist' : 'Full') : (isPaidEvent(e) ? 'Get tickets' : 'Register')}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Surface>
-                </motion.div>
-              );
-            })}
-          </div>
+                    </Surface>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
 
