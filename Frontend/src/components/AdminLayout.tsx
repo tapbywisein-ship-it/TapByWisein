@@ -171,7 +171,6 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        </div>
       </aside>
 
       <div className="flex-1 md:ml-16 min-h-screen min-w-0">
