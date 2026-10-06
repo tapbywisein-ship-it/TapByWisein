@@ -1,8 +1,2 @@
-import { createRoot } from "react-dom/client";
-import Clarity from "@microsoft/clarity";
-import App from "./App.tsx";
-import "./index.css";
-
-Clarity.init("xen9f4xfx0");
-
-createRoot(document.getElementById("root")!).render(<App />);
+window.onerror = function(message, source, lineno, colno, error) { document.body.innerHTML += '<div style=\"position:fixed;top:0;left:0;background:red;color:white;z-index:9999;padding:10px;\">' + message + '</div>'; };
+import { createRoot } from "react-dom/client"; import Clarity from "@microsoft/clarity"; import App from "./App.tsx"; import "./index.css";  Clarity.init("xen9f4xfx0");  createRoot(document.getElementById("root")!).render(<App />);

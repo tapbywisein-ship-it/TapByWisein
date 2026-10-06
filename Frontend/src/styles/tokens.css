@@ -1,0 +1,23 @@
+:root {
+  /* graphite — typography, structure, contrast */
+  --graphite-900: #212529;
+  --graphite-800: #343a40;
+  --graphite-700: #495057;
+  /* silver — material, hardware */
+  --silver-600: #6c757d;
+  --silver-400: #adb5bd;
+  --silver-300: #ced4da;
+  --silver-200: #dee2e6;
+  --silver-100: #e9ecef;
+  /* blue — connection, technology, interaction (accent only) */
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  /* environment */
+  --paper: #f8f9fa;
+  --white: #ffffff;
+
+  --font: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --gutter: clamp(16px, 4vw, 48px);
+  --max: 1320px;
+}

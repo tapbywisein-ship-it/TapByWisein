@@ -1,0 +1,364 @@
+﻿/* ==========================================================================
+   MASTER UI REFINEMENT - PREMIUM SILVER & ELECTRIC BLUE
+   ========================================================================== */
+
+/* ---------- Global Layout Fixes (Priority 1) ---------- */
+.hero {
+  /* Remove fixed height and overflow to let the page scroll naturally */
+  height: auto;
+  overflow: visible;
+  /* Original padding, margin, max-width, grid properties remain intact */
+}
+
+.hero-left {
+  /* Make the left side sticky so it stays in view while the right side scrolls */
+  position: sticky;
+  top: clamp(80px, 10vh, 120px);
+  align-self: start;
+  z-index: 5;
+}
+
+.hero-right {
+  /* Allow the right column to flow naturally */
+  display: block;
+  position: relative;
+}
+
+.hero-right-scroll {
+  /* No longer a nested scroll container, just a standard wrapper */
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
+  padding-bottom: 20vh; 
+}
+
+/* Ensure the connecting thread divider spans the full scrolling right column */
+.hero-right::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(var(--wm-size) * 0.5);
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--silver-300) 0%, rgba(206, 212, 218, 0) 100%);
+}
+
+/* ---------- Ecosystem Section (Padding & Transitions) ---------- */
+.ecosystem-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 15vh 0;
+  min-height: 50vh;
+  opacity: 0.25;
+  transition: opacity 1s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.ecosystem-section.is-active {
+  opacity: 1;
+}
+
+/* ---------- Navigator Dots (Priority 2) ---------- */
+/* Using the alternate design suggested by the user: 
+   "place a compact vertical progress indicator slightly to the left of the right-side content" 
+   Since the sections scroll, the dots need to be sticky to stay in the middle of the screen! */
+.section-indicators {
+  position: sticky;
+  top: 50vh;
+  left: -12px; /* Aligned exactly over the vertical divider */
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 10;
+  float: left; /* Keep it out of the way of the sections */
+  margin-right: -12px; /* Pull the content back over it if needed */
+  height: 0; /* Don't take up vertical space in the flow */
+}
+/* Wait, sticking the dots inside hero-right? 
+   Instead of float: left, we can just put it outside the sections wrapper in WiseInSection.tsx, 
+   but it's already there! It's just inside hero-right. So position: sticky will work perfectly! */
+.section-indicators::before {
+  /* The subtle silver line connecting the dots */
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 1px;
+  background: var(--silver-300);
+  transform: translateX(-50%);
+  z-index: -1;
+}
+.section-dot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+.section-dot-fill {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--silver-300);
+  border: 1px solid var(--silver-400);
+  transition: all 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.section-dot:hover .section-dot-fill {
+  background: var(--silver-400);
+  transform: scale(1.2);
+}
+.section-dot.is-active .section-dot-fill {
+  width: 8px;
+  height: 8px;
+  background: #2563EB;
+  border-color: #60A5FA;
+  box-shadow: 0 0 16px 4px rgba(37, 99, 235, 0.3), 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* ---------- Main Wordmark - TapByWiseIN (Priority 3) ---------- */
+.wordmark {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Right-Side Section Labels (Priority 4) ---------- */
+.wisein-mark {
+  position: relative;
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  display: inline-block;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.6s ease;
+  opacity: 0.8;
+}
+.wisein-mark::before {
+  content: "";
+  display: inline-block;
+  vertical-align: middle;
+  width: 24px;
+  height: 1px;
+  margin: -2px 14px 0 0;
+  background: var(--silver-300);
+  transition: all 0.6s ease;
+}
+
+/* Section 1: TAPBYWISEIN */
+.ecosystem-section:nth-child(1) .wisein-mark {
+  background-image: linear-gradient(110deg, #111827 0%, #212529 40%, #ADB5BD 45%, #60A5FA 50%, #2563EB 55%, #111827 100%);
+  background-size: 300% auto;
+}
+.ecosystem-section:nth-child(1).is-active .wisein-mark {
+  opacity: 1;
+  animation: shineSweepLabel 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.ecosystem-section:nth-child(1).is-active .wisein-mark::before {
+  background: #2563EB;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+}
+
+/* Section 2: BYWISEIN */
+.ecosystem-section:nth-child(2) .wisein-mark {
+  background-image: linear-gradient(110deg, #6C757D 0%, #ADB5BD 40%, #DEE2E6 45%, #60A5FA 50%, #6C757D 100%);
+  background-size: 300% auto;
+}
+.ecosystem-section:nth-child(2).is-active .wisein-mark {
+  opacity: 1;
+  animation: shineSweepLabel 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.ecosystem-section:nth-child(2).is-active .wisein-mark::before {
+  background: #60A5FA;
+  box-shadow: 0 0 8px rgba(222, 226, 230, 0.6);
+}
+
+/* Section 3: WISEIN */
+.ecosystem-section:nth-child(3) .wisein-mark {
+  background-image: linear-gradient(110deg, #212529 0%, #343A40 40%, #DEE2E6 45%, #2563EB 50%, #212529 100%);
+  background-size: 300% auto;
+}
+.ecosystem-section:nth-child(3).is-active .wisein-mark {
+  opacity: 1;
+  animation: shineSweepLabel 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.ecosystem-section:nth-child(3).is-active .wisein-mark::before {
+  background: #343A40;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+
+@keyframes shineSweepLabel {
+  0% { background-position: 200% center; }
+  25% { background-position: -100% center; }
+  100% { background-position: -100% center; }
+}
+
+/* ---------- Large Section Titles ---------- */
+.wisein-title {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--graphite-900);
+  background: linear-gradient(
+    110deg,
+    #212529 0%,
+    #343A40 40%,
+    #ADB5BD 47%,
+    #60A5FA 50%,
+    #DEE2E6 52%,
+    #343A40 60%,
+    #212529 100%
+  );
+  background-size: 300% 100%;
+  background-position: 150% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  max-width: 14ch;
+  text-wrap: balance;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.ecosystem-section.is-active .wisein-title {
+  animation: titleReveal 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards,
+             titleShine 9s cubic-bezier(0.4, 0, 0.2, 1) 1.5s infinite;
+}
+
+/* ---------- Hero Image Glow (Priority 5) ---------- */
+.hero-stage::before {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  background: radial-gradient(circle at center, rgba(96, 165, 250, 0.15) 0%, rgba(173, 181, 189, 0.1) 40%, transparent 70%);
+  filter: blur(24px);
+  z-index: -1;
+  animation: stagePulse 8s infinite alternate ease-in-out;
+}
+@keyframes stagePulse {
+  0% { opacity: 0.5; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1.05); }
+}
+
+/* ---------- Descriptions and Buttons (Priority 6) ---------- */
+.wisein-copy {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 1.65;
+  font-weight: 400;
+  color: #6C757D;
+  max-width: 38ch;
+}
+.cta {
+  margin-top: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 24px 0 26px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #3B82F6, #1D4ED8);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 8px 24px rgba(37, 99, 235, 0.4), 0 0 16px rgba(96, 165, 250, 0.3);
+}
+.cta .arrow {
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.cta:hover .arrow {
+  transform: translateX(5px);
+}
+
+/* ---------- Overall Background (Priority 7) ---------- */
+.page::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100vh;
+  background: radial-gradient(circle at 70% 30%, rgba(96, 165, 250, 0.03), transparent 50%),
+              radial-gradient(circle at 30% 80%, rgba(173, 181, 189, 0.05), transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+  position: fixed; /* Keep it stationary behind the content */
+}
+
+/* ---------- Ecosystem Footer (Priority 8) ---------- */
+.eco-head {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  letter-spacing: 0.1em;
+}
+.eco-item {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(173, 181, 189, 0.25);
+  border-radius: 16px;
+  transition: all 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+  padding: 32px 24px;
+}
+.eco-item:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.08);
+  transform: translateY(-4px);
+}
+.eco-id {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-weight: 700;
+  color: var(--silver-600);
+}
+.eco-name {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-weight: 600;
+}
+.eco-desc {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  color: #6C757D;
+  line-height: 1.6;
+}
+.eco-legal {
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  color: var(--silver-600);
+}
+
+/* ---------- Responsive Adjustments ---------- */
+@media (max-width: 1080px) {
+  .hero-left {
+    position: relative;
+    top: auto;
+  }
+  .section-indicators {
+    display: none;
+  }
+  .ecosystem-section {
+    min-height: auto;
+    padding: 6vh 0;
+    opacity: 1; /* always fully visible on mobile */
+  }
+  .ecosystem-section .wisein-title {
+    opacity: 1;
+    transform: translateY(0);
+    animation: titleShine 9s cubic-bezier(0.4, 0, 0.2, 1) 1.5s infinite;
+  }
+}

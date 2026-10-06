@@ -1,0 +1,662 @@
+/* =====================================================================
+ * TapByWiseIN landing — page composition
+ * ===================================================================== */
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip;
+  display: flex;
+  flex-direction: column;
+}
+.page > :not(.page-bg) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- environment: studio light + technical grid ---------- */
+.page-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.page-light {
+  position: absolute;
+  inset: 0;
+  background:
+    /* key light, upper left — over the wordmark and the scene */
+    radial-gradient(58% 48% at 32% 30%, #ffffff 0%, rgba(255, 255, 255, 0) 72%),
+    /* fill light, upper right */
+    radial-gradient(38% 36% at 80% 22%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 70%),
+    /* the faint cool bounce from the scene onto the page */
+    radial-gradient(42% 26% at 32% 52%, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0) 70%),
+    linear-gradient(180deg, #f8f9fa 0%, #f5f6f8 55%, #eef0f2 100%);
+}
+.page-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: calc(50% + 0.5px) -1px;
+}
+
+/* ---------- navbar ---------- */
+.nav-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 20px var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  display: inline-flex;
+  border-radius: 10px;
+  filter: drop-shadow(0 4px 8px rgba(33, 37, 41, 0.14));
+}
+.nav-signin {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--graphite-800);
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--silver-300);
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.25s, background-color 0.25s, color 0.25s;
+}
+.nav-signin:hover {
+  border-color: var(--silver-400);
+  background: #fff;
+  color: var(--graphite-900);
+}
+
+/* ---------- hero grid ---------- */
+.hero {
+  --wm-size: clamp(2.4rem, 4.3vw, 4.1rem);
+  max-width: var(--max);
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(4px, 1.6vh, 20px) var(--gutter) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-rows: auto auto;
+  column-gap: clamp(28px, 4.5vw, 72px);
+}
+.hero-left,
+.hero-right {
+  grid-row: 1 / span 2;
+  display: grid;
+  grid-template-rows: subgrid;
+  min-width: 0;
+}
+
+/* ---------- TAPBYWISEIN wordmark: graphite satin + silver reflection ---------- */
+.wordmark {
+  position: relative;
+  display: inline-block;
+  font-family: "Manrope Variable", "Manrope", sans-serif;
+  font-size: var(--wm-size);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-feature-settings: "kern" 1, "case" 1;
+  color: #111827;
+  background: linear-gradient(
+    180deg,
+    #343A40 0%,
+    #212529 22%,
+    #111827 48%,
+    #111827 72%,
+    #212529 88%,
+    #343A40 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.95)) drop-shadow(0 8px 14px rgba(33, 37, 41, 0.08));
+}
+/* the slow studio-light sweep */
+.wordmark::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    104deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(173, 181, 189, 0.4) 46%,
+    rgba(96, 165, 250, 0.7) 48.5%,
+    rgba(222, 226, 230, 0.95) 50%,
+    rgba(37, 99, 235, 0.6) 51.5%,
+    rgba(173, 181, 189, 0.4) 54%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 150% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sheen 9s cubic-bezier(0.4, 0, 0.2, 1) 1s infinite;
+}
+@keyframes sheen {
+  0% { background-position: 150% 0; }
+  15% { background-position: -50% 0; }
+  100% { background-position: -50% 0; }
+}
+
+.hero-id {
+  align-self: end;
+  width: min(100%, calc((100vh - 270px) * 16 / 9));
+  min-width: min(100%, 520px);
+  display: flex;
+  justify-content: flex-start;
+}
+.hero-sub {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--graphite-700);
+}
+.hero-index {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--silver-600);
+  padding-right: 12px;
+  border-right: 1px solid var(--silver-300);
+  line-height: 1.2;
+}
+
+/* ---------- the scene ---------- */
+.hero-stage {
+  position: relative;
+  margin-top: clamp(14px, 2.6vh, 30px);
+  /* keep the whole hero above the fold on short desktop screens */
+  width: min(100%, calc((100vh - 270px) * 16 / 9));
+  min-width: min(100%, 520px);
+}
+.hero-anim {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  /* feather the frame into the page: no box, no player */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 78%, transparent 100%);
+  mask-composite: intersect;
+}
+.hero-floor {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 2%;
+  height: 36px;
+  background: radial-gradient(closest-side, rgba(33, 37, 41, 0.07), rgba(33, 37, 41, 0));
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ---------- WISEIN (right) ---------- */
+.hero-right {
+  position: relative;
+  padding-left: clamp(22px, 2.6vw, 40px);
+}
+/* the thread: where the connection continues */
+.hero-right::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(var(--wm-size) * 0.5);
+  bottom: 6%;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--silver-400) 0%, var(--silver-300) 35%, rgba(206, 212, 218, 0) 100%);
+}
+.wisein-id {
+  align-self: end;
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--wm-size);
+  margin-bottom: calc(14px + 15px * 1.2); /* match the TAPBYWISEIN sub-line so rows align */
+}
+.thread-node {
+  position: absolute;
+  left: calc(-1 * clamp(22px, 2.6vw, 40px) - 3.5px);
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -0.5px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid var(--blue-500);
+}
+.thread-node > span {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 50%;
+  border: 1px solid var(--blue-500);
+  opacity: 0;
+}
+.thread-node > .thread-ping {
+  animation: ping 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(3.4); opacity: 0; }
+}
+.wisein-mark {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: var(--graphite-800);
+}
+.wisein-mark::before {
+  content: "";
+  display: inline-block;
+  vertical-align: middle;
+  width: 18px;
+  height: 1px;
+  margin: -2px 14px 0 0;
+  background: var(--silver-400);
+}
+
+.wisein-body {
+  align-self: start;
+  padding-top: clamp(8px, 2.2vh, 24px);
+  max-width: 400px;
+}
+.wisein-title {
+  font-size: clamp(1.7rem, 2.55vw, 2.45rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  color: var(--graphite-900);
+  max-width: 13ch;
+  text-wrap: balance;
+}
+.wisein-copy {
+  margin-top: 18px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--graphite-700);
+  max-width: 36ch;
+}
+
+.cta {
+  margin-top: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 18px 0 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #fff;
+  background: linear-gradient(180deg, #2f6df0, var(--blue-600));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(29, 78, 216, 0.3), 0 8px 18px -10px rgba(37, 99, 235, 0.55);
+  transition: background 0.25s, box-shadow 0.25s, transform 0.25s var(--ease-out);
+}
+.cta .arrow,
+.eco-action .arrow {
+  transition: transform 0.3s var(--ease-out);
+}
+.cta:hover {
+  background: linear-gradient(180deg, #2563eb, #1f57d6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(29, 78, 216, 0.35), 0 10px 20px -10px rgba(37, 99, 235, 0.6);
+}
+.cta:hover .arrow {
+  transform: translateX(3px);
+}
+.cta:active {
+  transform: translateY(1px);
+}
+
+/* ---------- ecosystem ---------- */
+.eco {
+  width: 100%;
+  max-width: var(--max);
+  margin: auto auto 0;
+  padding: clamp(36px, 6vh, 72px) var(--gutter) 24px;
+}
+.eco-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.eco-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--graphite-700);
+}
+.eco-lede {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--silver-600);
+}
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.48));
+  border: 1px solid rgba(206, 212, 218, 0.85);
+  box-shadow: inset 0 1px 0 #fff, 0 22px 44px -32px rgba(33, 37, 41, 0.28);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  backdrop-filter: blur(10px) saturate(1.05);
+  overflow: hidden;
+}
+.eco-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px 24px;
+  transition: background-color 0.3s;
+}
+.eco-item + .eco-item {
+  border-left: 1px solid rgba(206, 212, 218, 0.7);
+}
+.eco-item.is-linked:hover,
+.eco-item.is-available:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.eco-item.is-linked:hover .arrow {
+  transform: translateX(3px);
+}
+.eco-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: -28px; /* the rail runs to the edge of the cell and on into the next */
+}
+.eco-node {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid var(--silver-400);
+  flex: none;
+}
+.eco-item.is-current .eco-node {
+  background: var(--blue-600);
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+.eco-index {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--silver-600);
+}
+.eco-line {
+  flex: 1;
+  height: 1px;
+  background: var(--silver-300);
+}
+.eco-item:last-child .eco-line {
+  background: linear-gradient(to right, var(--silver-300), rgba(206, 212, 218, 0));
+}
+.eco-name {
+  margin-top: 20px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  color: var(--graphite-900);
+}
+.eco-tagline {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--graphite-800);
+}
+.eco-desc {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--silver-600);
+  max-width: 34ch;
+}
+.eco-action {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--graphite-700);
+}
+.eco-item.is-reserved .eco-action {
+  color: var(--silver-600);
+}
+.eco-item.is-reserved .eco-action::after {
+  content: "Reserved";
+  margin-left: 2px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--silver-300);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--silver-600);
+}
+.eco-item.is-available .eco-action {
+  color: var(--blue-600);
+}
+.eco-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue-600);
+}
+.eco-legal {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--silver-600);
+}
+
+/* ---------- entrance motion ---------- */
+.reveal {
+  opacity: 0;
+  animation: reveal-up 1s var(--ease-out) forwards;
+}
+.reveal-1 { animation-delay: 0.1s; }
+.reveal-2 { animation-name: reveal-soft; animation-duration: 1.4s; animation-delay: 0.3s; }
+.reveal-3 { animation-delay: 0.65s; }
+.reveal-4 { animation-name: reveal-fade; animation-delay: 0.95s; }
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-soft {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; opacity: 1; }
+  .thread-node > .thread-ping { animation: none; }
+}
+
+/* ---------- tablet ---------- */
+@media (max-width: 1080px) {
+  .hero {
+    --wm-size: clamp(2rem, 4.6vw, 3rem);
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+  .hero-stage { min-width: 0; width: 100%; }
+  .wisein-copy { font-size: 14.5px; }
+  .eco-item { padding: 22px 22px 22px; }
+  .eco-top { margin-right: -22px; }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 760px) {
+  .nav-inner { padding-top: 14px; padding-bottom: 14px; }
+  .hero {
+    --wm-size: min(9.4vw, 2.6rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .hero-left,
+  .hero-right {
+    grid-row: auto;
+    display: block;
+  }
+  .hero-sub { font-size: 14px; margin-top: 10px; }
+  .hero-stage {
+    width: auto;
+    margin: 14px calc(-1 * var(--gutter)) 0;
+  }
+  .hero-anim {
+    aspect-ratio: 4 / 3;
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 6%, #000 82%, transparent 100%);
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 6%, #000 82%, transparent 100%);
+  }
+  .hero-right {
+    margin-top: 8px;
+    padding: 26px 0 0;
+  }
+  .hero-right::before {
+    top: 0;
+    bottom: auto;
+    width: auto;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, var(--silver-400), rgba(206, 212, 218, 0));
+  }
+  .wisein-id { height: auto; margin: 0; }
+  .thread-node { left: -3.5px; top: -26px; margin-top: -4px; }
+  .wisein-body { padding-top: 14px; }
+  .wisein-title { font-size: 1.75rem; }
+  .eco { padding-top: 44px; }
+  .eco-head { flex-direction: column; gap: 4px; }
+  .eco-grid { grid-template-columns: minmax(0, 1fr); }
+  .eco-item + .eco-item { border-left: 0; border-top: 1px solid rgba(206, 212, 218, 0.7); }
+  .eco-item { padding: 20px 20px 22px; }
+  .eco-top { margin-right: -20px; }
+  .eco-name { margin-top: 14px; }
+  .eco-legal { flex-direction: column; gap: 4px; }
+}
+
+﻿/* ==========================================================================
+   URGENT LAYOUT FIX
+   ========================================================================== */
+
+/* 1. Ensure the right column flows normally, overriding original subgrid */
+.hero-right {
+  display: block;
+  position: relative;
+  height: 100%;
+}
+
+/* 2. Fix the dots so they do not take up space in the document flow,
+      causing the massive empty area at the top of the right column. */
+.section-indicators {
+  position: sticky;
+  top: clamp(200px, 35vh, 400px);
+  margin-left: calc(-1 * clamp(22px, 2.6vw, 40px) - 12px); /* Perfectly aligns with left: 0 vertical divider */
+  width: 24px;
+  height: 0; /* Prevents pushing down the next element */
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 10;
+}
+.section-indicators::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 1px;
+  background: var(--silver-300);
+  transform: translateX(-50%);
+  z-index: -1;
+}
+.section-dot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.section-dot-fill {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--silver-300);
+  border: 1px solid var(--silver-400);
+  transition: all 0.3s ease;
+}
+.section-dot.is-active .section-dot-fill {
+  width: 8px;
+  height: 8px;
+  background: #2563EB;
+  border-color: #60A5FA;
+}
+
+/* 3. Ensure the sections do not have excessive blank space */
+.ecosystem-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Add just enough padding to separate sections without massive gaps */
+  padding: 0 0 10vh 0;
+  opacity: 0.4;
+  transition: opacity 0.4s ease;
+}
+/* The first section doesn't need top padding because we want it aligned with the left side */
+.ecosystem-section:first-child {
+  padding-top: 0;
+}
+.ecosystem-section.is-active {
+  opacity: 1;
+}
+
+/* 4. Keep the left-side sticky so it remains anchored while right side scrolls naturally */
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: clamp(40px, 6vh, 80px);
+  align-self: start;
+  height: max-content; /* Ensure it sizes to its content and sticks properly */
+}

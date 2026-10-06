@@ -18,6 +18,7 @@ import { captureReferralFromUrl } from "@/lib/referral";
 
 // Entry points stay eager so the first paint has no async hop.
 import LandingPage from "./pages/LandingPage";
+import TapByWiseinProduct from "./pages/TapByWiseinProduct";
 import LoginPage from "./pages/LoginPage";
 
 // Everything else is route-split: each page becomes its own chunk that the
@@ -200,6 +201,8 @@ const App = () => (
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/tapbywisein" element={<Navigate to="/" replace />} />
+          <Route path="/tapbywisein/product" element={<TapByWiseinProduct />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

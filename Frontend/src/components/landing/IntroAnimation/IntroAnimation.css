@@ -1,0 +1,118 @@
+/* TapByWiseIN intro — stage styles. Everything is scoped under .ti-root. */
+.ti-root {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  contain: layout paint;
+  container-type: inline-size;
+}
+
+.ti-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  overflow: hidden;
+  background: #c9d3dc;
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+.ti-root.is-ready .ti-stage { opacity: 1; }
+
+.ti-plates,
+.ti-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+}
+.ti-plate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  will-change: transform, opacity, filter;
+}
+
+/* the only text inside the animation */
+.ti-label {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.55em 1.15em 0.55em 0.6em;
+  border-radius: 999px;
+  overflow: hidden;
+  white-space: nowrap;
+  font: 650 clamp(8.5px, 1.5cqw, 13.5px) / 1 var(--ti-label-font, inherit);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #212529;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(248, 249, 250, 0.7));
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(206, 212, 218, 0.6),
+    0 10px 26px -12px rgba(15, 23, 42, 0.45),
+    0 2px 6px -2px rgba(15, 23, 42, 0.18);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.15);
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform, opacity, clip-path;
+}
+.ti-badge {
+  width: 1.75em;
+  height: 1.75em;
+  flex: none;
+  overflow: visible;
+}
+.ti-badge-bg { fill: #2563eb; }
+.ti-badge-ring {
+  fill: none;
+  stroke: rgba(191, 219, 254, 0.95);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transform: rotate(-90deg);
+  transform-origin: 12px 12px;
+}
+.ti-badge-check {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.ti-label-text {
+  display: inline-flex;
+  margin-right: -0.3em; /* cancel trailing letter-spacing */
+}
+.ti-ch {
+  display: inline-block;
+  opacity: 0;
+}
+.ti-sheen {
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 30%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  mix-blend-mode: soft-light;
+  opacity: 0;
+}
+
+.ti-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}

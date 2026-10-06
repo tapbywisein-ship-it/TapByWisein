@@ -1,0 +1,84 @@
+﻿/* ==========================================================================
+   URGENT LAYOUT FIX
+   ========================================================================== */
+
+/* 1. Ensure the right column flows normally, overriding original subgrid */
+.hero-right {
+  display: block;
+  position: relative;
+  height: 100%;
+}
+
+/* 2. Fix the dots so they do not take up space in the document flow,
+      causing the massive empty area at the top of the right column. */
+.section-indicators {
+  position: absolute;
+  top: clamp(200px, 35vh, 400px);
+  left: -20px; /* Positioned near the divider */
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 10;
+}
+.section-indicators::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 1px;
+  background: var(--silver-300);
+  transform: translateX(-50%);
+  z-index: -1;
+}
+.section-dot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.section-dot-fill {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--silver-300);
+  border: 1px solid var(--silver-400);
+  transition: all 0.3s ease;
+}
+.section-dot.is-active .section-dot-fill {
+  width: 8px;
+  height: 8px;
+  background: #2563EB;
+  border-color: #60A5FA;
+}
+
+/* 3. Ensure the sections do not have excessive blank space */
+.ecosystem-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Add just enough padding to separate sections without massive gaps */
+  padding: 0 0 10vh 0;
+  opacity: 0.4;
+  transition: opacity 0.4s ease;
+}
+/* The first section doesn't need top padding because we want it aligned with the left side */
+.ecosystem-section:first-child {
+  padding-top: 0;
+}
+.ecosystem-section.is-active {
+  opacity: 1;
+}
+
+/* 4. Keep the left-side sticky so it remains anchored while right side scrolls naturally */
+.hero-left {
+  position: sticky;
+  top: clamp(40px, 6vh, 80px);
+  align-self: start;
+}
