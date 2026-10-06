@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/store/appStore';
+import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
   LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X,
 } from 'lucide-react';
@@ -39,6 +40,11 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
   const logout = useAppStore((s) => s.logout);
   const handleLogout = () => { logout(); navigate('/login'); };
   const [moreOpen, setMoreOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const handleSignOutConfirm = () => {
+    handleLogout();
+    setSignOutOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -68,7 +74,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
         </nav>
         <div className="flex flex-col gap-1 pt-3 border-t border-border">
           <button
-            onClick={handleLogout}
+            onClick={() => setSignOutOpen(true)}
             title="Sign out"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
@@ -154,7 +160,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
               <ThemeToggle />
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => { setMoreOpen(false); setSignOutOpen(true); }}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sign out

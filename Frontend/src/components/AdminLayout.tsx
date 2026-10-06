@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { NavbarThemeToggle, ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/store/appStore';
+import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
   LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, Shield, Sparkles, UserCircle, IndianRupee, ScrollText, Award, Menu, X,
 } from 'lucide-react';
@@ -40,6 +41,11 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const role = useAppStore((s) => s.user?.role);
   const handleLogout = () => { logout(); navigate('/login'); };
   const [moreOpen, setMoreOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const handleSignOutConfirm = () => {
+    handleLogout();
+    setSignOutOpen(false);
+  };
 
   if (role !== 'admin') {
     return (
@@ -81,7 +87,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         </nav>
         <div className="flex flex-col gap-1 pt-3 border-t border-border">
           <button
-            onClick={handleLogout}
+            onClick={() => setSignOutOpen(true)}
             title="Sign out"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
@@ -164,7 +170,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
               <ThemeToggle />
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => { setMoreOpen(false); setSignOutOpen(true); }}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sign out
@@ -173,6 +179,13 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
       )}
+
+      {/* ── Sign out confirmation dialog ───────────────────── */}
+      <SignOutConfirmDialog
+        open={signOutOpen}
+        onOpenChange={setSignOutOpen}
+        onConfirm={handleSignOutConfirm}
+      />
     </div>
   );
 };
