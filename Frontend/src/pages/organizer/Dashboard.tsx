@@ -106,8 +106,8 @@ const OrganizerDashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground">
-              Welcome back, {displayName}
+            <h1 className="text-3xl font-semibold text-foreground tracking-tight">
+              Welcome back, <span className="font-bold text-[#1981FE]">{displayName}</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
           </div>
