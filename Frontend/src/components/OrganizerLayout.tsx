@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/store/appStore';
+import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,13 +89,13 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
-
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'User';
 
-  const onConfirmLogout = () => {
+  const handleSignOutConfirm = () => {
     logout();
     navigate('/login');
+    setSignOutOpen(false);
   };
 
   return (
@@ -123,8 +124,6 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
               </Link>
             );
           })}
-        </nav>
-
         {/* User Profile & Actions at Sidebar Bottom */}
         <div className="pt-3 border-t border-border mt-auto">
           <DropdownMenu>
@@ -152,7 +151,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1" />
               <DropdownMenuItem
-                onClick={() => setConfirmLogoutOpen(true)}
+                onClick={() => setSignOutOpen(true)}
                 className="cursor-pointer gap-2.5 py-2 px-2.5 rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10"
               >
                 <LogOut className="w-4 h-4" />
@@ -261,10 +260,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
               <ThemeToggle />
               <button
                 type="button"
-                onClick={() => {
-                  setMoreOpen(false);
-                  setConfirmLogoutOpen(true);
-                }}
+                onClick={() => { setMoreOpen(false); setSignOutOpen(true); }}
                 className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Sign out
@@ -274,26 +270,12 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
         </div>
       )}
 
-      {/* Confirmation Modal for Sign out */}
-      <AlertDialog open={confirmLogoutOpen} onOpenChange={setConfirmLogoutOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You will need to sign back in with your credentials to access your dashboard.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onConfirmLogout}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sign out
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ── Sign out confirmation dialog ───────────────────── */}
+      <SignOutConfirmDialog
+        open={signOutOpen}
+        onOpenChange={setSignOutOpen}
+        onConfirm={handleSignOutConfirm}
+      />
     </div>
   );
 };

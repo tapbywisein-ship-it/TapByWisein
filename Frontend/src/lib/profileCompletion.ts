@@ -11,6 +11,9 @@ interface ProfileLike {
   website?: string | null;
 }
 
+/** Minimum bio length (exclusive) for profile completion - must be more than this many characters */
+export const BIO_MIN_LENGTH_EXCLUSIVE = 20;
+
 /**
  * True only when the user actually set their own profile photo — i.e. an avatar
  * uploaded to our Supabase storage. OAuth sign-in auto-imports a provider avatar
@@ -28,7 +31,7 @@ export function profileCompletion(p: ProfileLike | null | undefined): number {
   if (!p) return 0;
   let score = 0;
   if (hasUploadedAvatar(p.avatar)) score += 15;
-  if (p.bio && p.bio.trim().length >= 20) score += 10;
+  if (p.bio && p.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE) score += 10;
   if (p.position || p.company) score += 15;
   if ((p.skills?.length ?? 0) >= 3) score += 20;
   else if ((p.skills?.length ?? 0) > 0) score += 10;

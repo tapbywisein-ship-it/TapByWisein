@@ -18,6 +18,7 @@ import { useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useAppStore } from '@/store/appStore';
 import { apiUpload } from '@/services/api';
 import { profileService } from '@/services/profile.service';
+import { BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
 
 /** Social/website link fields — validated as URLs (backend requires a full URL). */
 const LINK_KEYS = ['linkedin', 'twitter', 'website', 'pitchUrl'] as const;
@@ -479,19 +480,33 @@ const ProfilePage = () => {
         <Surface>
           <h2 className="text-sm font-semibold text-foreground mb-2">About</h2>
           {editing ? (
-            <textarea
-              value={form.bio ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-              placeholder="Tell your story…"
-              rows={4}
-              className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background resize-none"
-            />
-          ) : (
-            <p className="text-sm text-foreground leading-relaxed">
-              {profile?.bio || (
-                <span className="text-muted-foreground">No bio yet.</span>
+            <div>
+              <textarea
+                value={form.bio ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+                placeholder="Tell your story…"
+                rows={4}
+                className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background resize-none"
+              />
+              {form.bio && form.bio.trim().length <= BIO_MIN_LENGTH_EXCLUSIVE && (
+                <p className="text-xs text-destructive mt-1">
+                  Bio must be more than {BIO_MIN_LENGTH_EXCLUSIVE} characters. {BIO_MIN_LENGTH_EXCLUSIVE + 1 - form.bio.trim().length} more character{BIO_MIN_LENGTH_EXCLUSIVE + 1 - form.bio.trim().length !== 1 ? 's' : ''} needed.
+                </p>
               )}
-            </p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {profile?.bio || (
+                  <span className="text-muted-foreground">No bio yet.</span>
+                )}
+              </p>
+              {profile?.bio && profile.bio.trim().length <= BIO_MIN_LENGTH_EXCLUSIVE && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add more details to complete your profile
+                </p>
+              )}
+            </div>
           )}
         </Surface>
 
