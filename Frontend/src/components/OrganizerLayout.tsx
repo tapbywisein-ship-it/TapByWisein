@@ -124,6 +124,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
               </Link>
             );
           })}
+        </nav>
         {/* User Profile & Actions at Sidebar Bottom */}
         <div className="pt-3 border-t border-border mt-auto">
           <DropdownMenu>
