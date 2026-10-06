@@ -211,9 +211,6 @@ export const organizerService = {
     );
   },
 
-  async cancelEvent(eventId: string) {
-    return apiFetch<{ data: null }>(`/events/${eventId}/cancel`, { method: 'POST' });
-  },
 
   async exportAttendeesCsv(eventId: string): Promise<void> {
     const { data } = await supabase.auth.getSession();

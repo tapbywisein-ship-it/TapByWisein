@@ -1,6 +1,49 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
+
+
+@layer utilities {
+  .text-metal {
+    background-image: 
+      /* Animated narrow silver reflection */
+      linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 44%,
+        rgba(206, 212, 218, 0.35) 48%,
+        rgba(222, 226, 230, 0.5) 50%,
+        rgba(206, 212, 218, 0.35) 52%,
+        transparent 56%,
+        transparent 100%
+      ),
+      /* Static dark graphite base — primarily #212529 */
+      linear-gradient(
+        105deg,
+        #1A1D20 0%,
+        #212529 30%,
+        #2A2F34 50%,
+        #212529 70%,
+        #1A1D20 100%
+      ) !important;
+    background-size: 250% auto, 100% auto !important;
+    background-repeat: no-repeat, no-repeat !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
+  
+  .animate-metal-sweep {
+    animation: metallicSweep 8s ease-in-out infinite !important;
+  }
+}
+
+@keyframes metallicSweep {
+  0% { background-position: -250% center, center center; }
+  25% { background-position: 250% center, center center; }
+  100% { background-position: 250% center, center center; }
+}
+
 
 @layer base {
   :root {
@@ -324,3 +367,4 @@
   transition: background 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+@tailwind utilities;
