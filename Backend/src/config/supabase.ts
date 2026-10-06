@@ -6,8 +6,14 @@ import logger from '@utils/logger';
 // Used ONLY on the server side for verifying OAuth tokens
 let supabaseAdmin: SupabaseClient;
 
+const serviceKey =
+  env.SUPABASE_SERVICE_ROLE_KEY &&
+  env.SUPABASE_SERVICE_ROLE_KEY !== 'PASTE_SERVICE_ROLE_KEY_HERE'
+    ? env.SUPABASE_SERVICE_ROLE_KEY
+    : env.SUPABASE_ANON_KEY;
+
 try {
-  supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  supabaseAdmin = createClient(env.SUPABASE_URL, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

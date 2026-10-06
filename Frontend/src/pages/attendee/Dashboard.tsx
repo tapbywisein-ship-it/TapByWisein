@@ -219,7 +219,7 @@ const AttendeeDashboard = () => {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
             <h1 className="text-4xl font-semibold text-foreground">
-              Welcome back, {user?.name?.split(' ')[0] || 'there'}
+              Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
           <Button
