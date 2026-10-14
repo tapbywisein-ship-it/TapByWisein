@@ -86,13 +86,16 @@ export const OrganizerEventLayout = () => {
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="w-4 h-4" /> Share
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/organizer/events/${id}/manage`)}
-              >
-                <Pencil className="w-4 h-4" /> Edit
-              </Button>
+              {/* Edit is only available while the event is still a DRAFT */}
+              {event?.status === 'DRAFT' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/organizer/events/${id}/edit`)}
+                >
+                  <Pencil className="w-4 h-4" /> Edit
+                </Button>
+              )}
             </div>
           </div>
 

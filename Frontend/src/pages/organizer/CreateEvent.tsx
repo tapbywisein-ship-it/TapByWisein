@@ -20,7 +20,20 @@ import { getCountryOptions, getStateOptions, getCityOptions, type GeoOption } fr
 import { apiUpload } from '@/services/api';
 import { toast } from 'sonner';
 import {
-  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, Sparkles,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -356,6 +369,12 @@ const CreateEventPage = () => {
   // Admins manage events via /admin — bounce them to their dashboard.
   if (isAuthenticated && userRole === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Published (or cancelled) events cannot be edited — redirect back to the
+  // event overview so even a direct URL visit (/edit) is blocked.
+  if (isEdit && editEvent && editEvent.status !== 'DRAFT') {
+    return <Navigate to={`/organizer/events/${editEventId}`} replace />;
   }
 
   // Attendees can't create events — offer the instant self-serve upgrade instead
@@ -784,27 +803,73 @@ const CreateEventPage = () => {
                 <Calendar className="w-4 h-4" />
                 <span>Personal Calendar</span>
               </div>
-              <div className="flex items-center gap-1 ml-auto">
-                {(['PUBLIC', 'PRIVATE'] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => set('visibility', v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      form.visibility === v
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-border text-muted-foreground hover:text-foreground'
-                    }`}
+              <div className="ml-auto">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted/70 text-foreground text-xs font-medium transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    >
+                      {form.visibility === 'PRIVATE' ? (
+                        <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                      ) : (
+                        <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                      <span>{form.visibility === 'PRIVATE' ? 'Private' : 'Public'}</span>
+                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-72 p-1.5 rounded-2xl shadow-2xl border border-border bg-popover dark:bg-zinc-950 text-popover-foreground dark:border-zinc-800"
                   >
-                    {v === 'PUBLIC' ? 'Public' : 'Private'}
-                  </button>
-                ))}
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PUBLIC')}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors focus:bg-primary/15 hover:bg-primary/15 data-[highlighted]:bg-primary/15 dark:focus:bg-blue-600/25 dark:hover:bg-blue-600/25 dark:data-[highlighted]:bg-blue-600/25 ${
+                        form.visibility === 'PUBLIC'
+                          ? 'bg-primary/10 text-primary dark:bg-blue-600/20 dark:text-blue-400'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      <Globe className={`w-4 h-4 mt-0.5 shrink-0 ${form.visibility === 'PUBLIC' ? 'text-primary dark:text-blue-400' : 'text-muted-foreground'}`} />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className="text-xs font-semibold leading-tight">Public</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                          Shown on your calendar and eligible to be featured.
+                        </p>
+                      </div>
+                      {form.visibility === 'PUBLIC' && (
+                        <Check className="w-4 h-4 text-primary dark:text-blue-400 shrink-0 mt-0.5" />
+                      )}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PRIVATE')}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer mt-1 transition-colors focus:bg-primary/15 hover:bg-primary/15 data-[highlighted]:bg-primary/15 dark:focus:bg-blue-600/25 dark:hover:bg-blue-600/25 dark:data-[highlighted]:bg-blue-600/25 ${
+                        form.visibility === 'PRIVATE'
+                          ? 'bg-primary/10 text-primary dark:bg-blue-600/20 dark:text-blue-400'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 mt-0.5 shrink-0 ${form.visibility === 'PRIVATE' ? 'text-primary dark:text-blue-400' : 'text-muted-foreground'}`} />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className="text-xs font-semibold leading-tight">Private</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                          Unlisted. Only people with the link can register.
+                        </p>
+                      </div>
+                      {form.visibility === 'PRIVATE' && (
+                        <Check className="w-4 h-4 text-primary dark:text-blue-400 shrink-0 mt-0.5" />
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
             {/* Event name — clearly labeled input (not a page-title heading) */}
             <div className="space-y-1.5">
-              <Label htmlFor="event-title">Event Name</Label>
+              <Label htmlFor="event-title">Event Name <span className="text-red-500">*</span></Label>
               <Input
                 id="event-title"
                 value={form.title}
@@ -818,17 +883,25 @@ const CreateEventPage = () => {
             {(myCommunities?.length ?? 0) > 0 && (
               <div className="space-y-1.5">
                 <Label htmlFor="event-community">Community (optional)</Label>
-                <select
-                  id="event-community"
-                  value={form.communityId}
-                  onChange={(e) => set('communityId', e.target.value)}
-                  className="w-full h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                <Select
+                  value={form.communityId || 'none'}
+                  onValueChange={(val) => set('communityId', val === 'none' ? '' : val)}
                 >
-                  <option value="">No community</option>
-                  {myCommunities!.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="event-community"
+                    className="w-full h-10 px-3 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:ring-1 focus:ring-primary"
+                  >
+                    <SelectValue placeholder="No community" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border border-border bg-popover dark:bg-zinc-950 text-popover-foreground dark:border-zinc-800 shadow-xl">
+                    <SelectItem value="none">No community</SelectItem>
+                    {myCommunities!.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -839,11 +912,11 @@ const CreateEventPage = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col sm:flex-row gap-2 flex-1">
                     <div className="flex-1">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start date</label>
+                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start date <span className="text-red-500">*</span></label>
                       <Input type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-9 text-sm" />
                     </div>
                     <div className="w-28">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start time</label>
+                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start time <span className="text-red-500">*</span></label>
                       <Input type="time" value={form.startTime} onChange={(e) => set('startTime', e.target.value)} className="h-9 text-sm" />
                     </div>
                   </div>
@@ -853,11 +926,11 @@ const CreateEventPage = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col sm:flex-row gap-2 flex-1">
                     <div className="flex-1">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">End date</label>
+                      <label className="text-[11px] text-muted-foreground block mb-0.5">End date <span className="text-red-500">*</span></label>
                       <Input type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-9 text-sm" />
                     </div>
                     <div className="w-28">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">End time</label>
+                      <label className="text-[11px] text-muted-foreground block mb-0.5">End time <span className="text-red-500">*</span></label>
                       <Input type="time" value={form.endTime} onChange={(e) => set('endTime', e.target.value)} className="h-9 text-sm" />
                     </div>
                   </div>
@@ -1051,16 +1124,19 @@ const CreateEventPage = () => {
                 <span className="text-sm font-medium text-foreground">Category</span>
                 <span className="text-xs text-red-500">*</span>
               </div>
-              <select
+              <Select
                 value={form.category}
-                onChange={(e) => set('category', e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                onValueChange={(val) => set('category', val)}
               >
-                <option value="">Select a category…</option>
-                {['Meetup', 'Workshop', 'Conference', 'Hackathon', 'Fireside', 'Networking', 'Other'].map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-10 px-3 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:ring-1 focus:ring-primary">
+                  <SelectValue placeholder="Select a category…" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border border-border bg-popover dark:bg-zinc-950 text-popover-foreground dark:border-zinc-800 shadow-xl">
+                  {['Meetup', 'Workshop', 'Conference', 'Hackathon', 'Fireside', 'Networking', 'Other'].map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Surface>
 
             {/* Event Options section */}

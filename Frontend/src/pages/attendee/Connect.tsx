@@ -7,7 +7,7 @@ import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAppStore } from '@/store/appStore';
-import { useMyCard } from '@/hooks/useFounderCard';
+import { useMyCard, useCardAnalytics } from '@/hooks/useFounderCard';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useActiveEventId } from '@/lib/useActiveEvent';
 import { connectionsService } from '@/services/connections.service';
@@ -20,6 +20,7 @@ const ConnectPage = () => {
   const [mode, setMode] = useState<'scan' | 'show' | 'nfc'>('show');
   const user = useAppStore((s) => s.user);
   const { data: card } = useMyCard();
+  const { data: analytics } = useCardAnalytics();
   const { data: profileData } = useMyProfile();
   const activeEventId = useActiveEventId();
   const navigate = useNavigate();
@@ -196,9 +197,9 @@ const ConnectPage = () => {
           <h3 className="text-sm font-medium text-foreground mb-3">Your Profile Stats</h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { label: 'Profile views', value: '-' },
-              { label: 'QR scans', value: '-' },
-              { label: 'Connections', value: '-' },
+              { label: 'Profile views', value: analytics?.totalViews ?? '-' },
+              { label: 'QR scans', value: analytics?.taps ?? '-' },
+              { label: 'Connections', value: analytics?.connections ?? '-' },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-xl font-bold text-foreground">{s.value}</p>

@@ -170,6 +170,22 @@
     color: hsl(var(--foreground));
   }
 
+  /* Dark mode theme for select dropdowns & option elements */
+  .dark select {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+
+  .dark select option {
+    background-color: #121212;
+    color: #ffffff;
+  }
+
+  .dark select option:checked {
+    background-color: #1981FE !important;
+    color: #ffffff !important;
+  }
+
   :focus-visible {
     outline: 2px solid hsl(var(--ring) / 0.5);
     outline-offset: 2px;

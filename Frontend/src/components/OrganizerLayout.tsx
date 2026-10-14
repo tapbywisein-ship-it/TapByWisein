@@ -34,7 +34,7 @@ const navItems = [
   { label: 'Payouts',      icon: Wallet,           path: '/organizer/payouts' },
   { label: 'Connect',      icon: Scan,             path: '/connect' },
   { label: 'Connections',  icon: Network,          path: '/connections' },
-  { label: 'Browse Events', icon: Compass,         path: '/events' },
+  { label: 'Browse Events', icon: Compass,         path: '/discover' },
   { label: 'My Tickets',   icon: Ticket,           path: '/my-tickets' },
   { label: 'Tap Card',     icon: QrCode,           path: '/apply-card' },
 ];
