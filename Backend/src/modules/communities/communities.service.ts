@@ -33,17 +33,31 @@ const withCounts = <T extends WithCounts>({ _count, ...rest }: T) => ({
 
 class CommunitiesService {
   async create(organizerId: string, dto: CreateCommunityDto) {
-    let slug = slugify(dto.name);
+    const trimmedName = dto.name.trim();
+
+    // Enforce unique community name (case-insensitive) across active communities
+    const existing = await prisma.community.findFirst({
+      where: {
+        name: { equals: trimmedName, mode: 'insensitive' },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new BadRequestError('A community with this name already exists. Please choose a different name.');
+    }
+
+    let slug = slugify(trimmedName);
     for (let i = 0; i < 5; i++) {
       const exists = await prisma.community.findUnique({ where: { slug }, select: { id: true } });
       if (!exists) break;
-      slug = `${slugify(dto.name)}-${Math.random().toString(36).slice(2, 6)}`;
+      slug = `${slugify(trimmedName)}-${Math.random().toString(36).slice(2, 6)}`;
     }
 
     const community = await prisma.community.create({
       data: {
         organizerId,
-        name: dto.name,
+        name: trimmedName,
         slug,
         description: dto.description || null,
         avatar: dto.avatar || null,
@@ -68,10 +82,25 @@ class CommunitiesService {
     });
     if (!community) throw new NotFoundError('Community');
 
+    if (dto.name) {
+      const trimmedName = dto.name.trim();
+      const existing = await prisma.community.findFirst({
+        where: {
+          name: { equals: trimmedName, mode: 'insensitive' },
+          deletedAt: null,
+          id: { not: id },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        throw new BadRequestError('A community with this name already exists. Please choose a different name.');
+      }
+    }
+
     return prisma.community.update({
       where: { id },
       data: {
-        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
         ...(dto.description !== undefined ? { description: dto.description || null } : {}),
         ...(dto.avatar !== undefined ? { avatar: dto.avatar || null } : {}),
         ...(dto.coverImage !== undefined ? { coverImage: dto.coverImage || null } : {}),
@@ -296,7 +325,7 @@ class CommunitiesService {
 
     const pagination = parsePaginationQuery({ page, limit });
     const where = { communityId, deletedAt: null };
-    const [posts, total] = await Promise.all([
+    const [posts, total, likesData] = await Promise.all([
       prisma.communityPost.findMany({
         where,
         include: {
@@ -308,12 +337,156 @@ class CommunitiesService {
         take: pagination.limit,
       }),
       prisma.communityPost.count({ where }),
+      prisma.$queryRawUnsafe<{ postId: string; count: number }[]>(
+        `SELECT "postId", COUNT(*)::int as count
+        FROM community_post_likes
+        WHERE "postId" IN (
+          SELECT id FROM community_posts WHERE "communityId" = $1 AND "deletedAt" IS NULL
+        )
+        GROUP BY "postId"`,
+        communityId
+      ).catch(() => [] as { postId: string; count: number }[]),
+    ]);
+
+    let userLikedPostIds = new Set<string>();
+    if (viewerId && posts.length > 0) {
+      const postIds = posts.map(p => p.id);
+      const likedRecords = await prisma.$queryRawUnsafe<{ postId: string }[]>(
+        `SELECT "postId"
+        FROM community_post_likes
+        WHERE "userId" = $1
+          AND "postId" = ANY($2::text[])`,
+        viewerId,
+        postIds
+      ).catch(() => [] as { postId: string }[]);
+      userLikedPostIds = new Set(likedRecords.map(r => r.postId));
+    }
+
+    const likeCountMap = new Map<string, number>();
+    for (const item of likesData) {
+      likeCountMap.set(item.postId, item.count);
+    }
+
+    return {
+      posts: posts.map(({ _count, ...p }) => ({
+        ...p,
+        commentCount: _count.comments,
+        likeCount: likeCountMap.get(p.id) ?? 0,
+        isLiked: userLikedPostIds.has(p.id),
+      })),
+      pagination: buildPaginationMeta(total, pagination.page, pagination.limit),
+    };
+  }
+
+  /** Author edits their own post (or owner/moderator). */
+  async updatePost(
+    communityId: string,
+    postId: string,
+    userId: string,
+    input: { body?: string; imageUrl?: string }
+  ) {
+    const post = await prisma.communityPost.findFirst({
+      where: { id: postId, communityId, deletedAt: null },
+      select: { id: true, authorId: true, createdAt: true },
+    });
+    if (!post) throw new NotFoundError('Post');
+
+    // Posts can only be edited within 1 hour of creation
+    const oneHourMs = 60 * 60 * 1000;
+    const isWithinOneHour = Date.now() - new Date(post.createdAt).getTime() <= oneHourMs;
+    if (!isWithinOneHour) {
+      throw new BadRequestError('Posts can only be edited within 1 hour of posting');
+    }
+
+    if (post.authorId !== userId) {
+      const role = await this.membershipRole(communityId, userId);
+      if (role !== 'owner' && role !== 'moderator') {
+        throw new ForbiddenError('You can only edit your own posts');
+      }
+    }
+
+    const trimmed = input.body?.trim();
+    if (input.body !== undefined && !trimmed) {
+      throw new BadRequestError('Post cannot be empty');
+    }
+    if (trimmed && trimmed.length > 4000) {
+      throw new BadRequestError('Post is too long (max 4000 chars)');
+    }
+
+    const updated = await prisma.communityPost.update({
+      where: { id: postId },
+      data: {
+        ...(trimmed !== undefined ? { body: trimmed } : {}),
+        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl || null } : {}),
+      },
+      include: {
+        author: { select: this.AUTHOR_SELECT },
+        _count: { select: { comments: true } },
+      },
+    });
+
+    const [likesCountRes, isLikedRes] = await Promise.all([
+      prisma.$queryRawUnsafe<{ count: number }[]>(
+        'SELECT COUNT(*)::int as count FROM community_post_likes WHERE "postId" = $1',
+        postId
+      ).catch(() => [{ count: 0 }]),
+      prisma.$queryRawUnsafe<{ id: string }[]>(
+        'SELECT id FROM community_post_likes WHERE "postId" = $1 AND "userId" = $2 LIMIT 1',
+        postId,
+        userId
+      ).catch(() => []),
     ]);
 
     return {
-      posts: posts.map(({ _count, ...p }) => ({ ...p, commentCount: _count.comments })),
-      pagination: buildPaginationMeta(total, pagination.page, pagination.limit),
+      ...updated,
+      commentCount: updated._count.comments,
+      likeCount: likesCountRes[0]?.count ?? 0,
+      isLiked: isLikedRes.length > 0,
     };
+  }
+
+  /** Toggle like on a community post */
+  async togglePostLike(communityId: string, postId: string, userId: string) {
+    const post = await prisma.communityPost.findFirst({
+      where: { id: postId, communityId, deletedAt: null },
+      select: { id: true, communityId: true },
+    });
+    if (!post) throw new NotFoundError('Post');
+
+    // Check membership / access
+    const role = await this.membershipRole(communityId, userId);
+    if (!role) throw new ForbiddenError('Join this community to like posts');
+
+    const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      'SELECT id FROM community_post_likes WHERE "postId" = $1 AND "userId" = $2 LIMIT 1',
+      postId,
+      userId
+    );
+
+    let isLiked = false;
+    if (existing.length > 0) {
+      await prisma.$executeRawUnsafe(
+        'DELETE FROM community_post_likes WHERE "postId" = $1 AND "userId" = $2',
+        postId,
+        userId
+      );
+      isLiked = false;
+    } else {
+      await prisma.$executeRawUnsafe(
+        'INSERT INTO community_post_likes (id, "postId", "userId", "createdAt") VALUES (gen_random_uuid(), $1, $2, NOW())',
+        postId,
+        userId
+      );
+      isLiked = true;
+    }
+
+    const likesCountRes = await prisma.$queryRawUnsafe<{ count: number }[]>(
+      'SELECT COUNT(*)::int as count FROM community_post_likes WHERE "postId" = $1',
+      postId
+    );
+    const likeCount = likesCountRes[0]?.count ?? 0;
+
+    return { isLiked, likeCount };
   }
 
   /** Members post to the feed; only the owner/moderators may pin. */
@@ -403,14 +576,14 @@ class CommunitiesService {
     await prisma.communityPost.update({ where: { id: postId }, data: { deletedAt: new Date() } });
   }
 
-  async listComments(postId: string, page?: number, limit?: number) {
+  async listComments(postId: string, viewerId?: string, page?: number, limit?: number) {
     const post = await prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null },
       select: { id: true },
     });
     if (!post) throw new NotFoundError('Post');
     const pagination = parsePaginationQuery({ page, limit });
-    const [comments, total] = await Promise.all([
+    const [comments, total, likesData] = await Promise.all([
       prisma.communityPostComment.findMany({
         where: { postId },
         include: { author: { select: this.AUTHOR_SELECT } },
@@ -419,8 +592,44 @@ class CommunitiesService {
         take: pagination.limit,
       }),
       prisma.communityPostComment.count({ where: { postId } }),
+      prisma.$queryRawUnsafe<{ commentId: string; count: number }[]>(
+        `SELECT "commentId", COUNT(*)::int as count
+        FROM community_comment_likes
+        WHERE "commentId" IN (
+          SELECT id FROM community_post_comments WHERE "postId" = $1
+        )
+        GROUP BY "commentId"`,
+        postId
+      ).catch(() => [] as { commentId: string; count: number }[]),
     ]);
-    return { comments, pagination: buildPaginationMeta(total, pagination.page, pagination.limit) };
+
+    let userLikedCommentIds = new Set<string>();
+    if (viewerId && comments.length > 0) {
+      const commentIds = comments.map(c => c.id);
+      const likedRecords = await prisma.$queryRawUnsafe<{ commentId: string }[]>(
+        `SELECT "commentId"
+        FROM community_comment_likes
+        WHERE "userId" = $1
+          AND "commentId" = ANY($2::text[])`,
+        viewerId,
+        commentIds
+      ).catch(() => [] as { commentId: string }[]);
+      userLikedCommentIds = new Set(likedRecords.map(r => r.commentId));
+    }
+
+    const likeCountMap = new Map<string, number>();
+    for (const item of likesData) {
+      likeCountMap.set(item.commentId, item.count);
+    }
+
+    return {
+      comments: comments.map(cm => ({
+        ...cm,
+        likeCount: likeCountMap.get(cm.id) ?? 0,
+        isLiked: userLikedCommentIds.has(cm.id),
+      })),
+      pagination: buildPaginationMeta(total, pagination.page, pagination.limit),
+    };
   }
 
   async addComment(postId: string, authorId: string, body: string) {
@@ -436,10 +645,111 @@ class CommunitiesService {
     const role = await this.membershipRole(post.communityId, authorId);
     if (!role) throw new ForbiddenError('Join this community to comment');
 
-    return prisma.communityPostComment.create({
+    const created = await prisma.communityPostComment.create({
       data: { postId, authorId, body: trimmed },
       include: { author: { select: this.AUTHOR_SELECT } },
     });
+
+    return {
+      ...created,
+      likeCount: 0,
+      isLiked: false,
+    };
+  }
+
+  /** Author edits their own comment within 1 hour. */
+  async updateComment(commentId: string, userId: string, body: string) {
+    const trimmed = body?.trim();
+    if (!trimmed) throw new BadRequestError('Comment cannot be empty');
+    if (trimmed.length > 2000) throw new BadRequestError('Comment is too long (max 2000 chars)');
+
+    const comment = await prisma.communityPostComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, authorId: true, createdAt: true, post: { select: { communityId: true } } },
+    });
+    if (!comment) throw new NotFoundError('Comment');
+
+    // Comments can only be edited within 1 hour of creation
+    const oneHourMs = 60 * 60 * 1000;
+    const isWithinOneHour = Date.now() - new Date(comment.createdAt).getTime() <= oneHourMs;
+    if (!isWithinOneHour) {
+      throw new BadRequestError('Comments can only be edited within 1 hour of posting');
+    }
+
+    if (comment.authorId !== userId) {
+      const role = await this.membershipRole(comment.post.communityId, userId);
+      if (role !== 'owner' && role !== 'moderator') {
+        throw new ForbiddenError('You can only edit your own comments');
+      }
+    }
+
+    const updated = await prisma.communityPostComment.update({
+      where: { id: commentId },
+      data: { body: trimmed },
+      include: { author: { select: this.AUTHOR_SELECT } },
+    });
+
+    const [likesCountRes, isLikedRes] = await Promise.all([
+      prisma.$queryRawUnsafe<{ count: number }[]>(
+        'SELECT COUNT(*)::int as count FROM community_comment_likes WHERE "commentId" = $1',
+        commentId
+      ).catch(() => [{ count: 0 }]),
+      prisma.$queryRawUnsafe<{ id: string }[]>(
+        'SELECT id FROM community_comment_likes WHERE "commentId" = $1 AND "userId" = $2 LIMIT 1',
+        commentId,
+        userId
+      ).catch(() => []),
+    ]);
+
+    return {
+      ...updated,
+      likeCount: likesCountRes[0]?.count ?? 0,
+      isLiked: isLikedRes.length > 0,
+    };
+  }
+
+  /** Toggle like on a community post comment */
+  async toggleCommentLike(commentId: string, userId: string) {
+    const comment = await prisma.communityPostComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, post: { select: { communityId: true } } },
+    });
+    if (!comment) throw new NotFoundError('Comment');
+
+    // Check membership / access
+    const role = await this.membershipRole(comment.post.communityId, userId);
+    if (!role) throw new ForbiddenError('Join this community to like comments');
+
+    const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      'SELECT id FROM community_comment_likes WHERE "commentId" = $1 AND "userId" = $2 LIMIT 1',
+      commentId,
+      userId
+    );
+
+    let isLiked = false;
+    if (existing.length > 0) {
+      await prisma.$executeRawUnsafe(
+        'DELETE FROM community_comment_likes WHERE "commentId" = $1 AND "userId" = $2',
+        commentId,
+        userId
+      );
+      isLiked = false;
+    } else {
+      await prisma.$executeRawUnsafe(
+        'INSERT INTO community_comment_likes (id, "commentId", "userId", "createdAt") VALUES (gen_random_uuid(), $1, $2, NOW())',
+        commentId,
+        userId
+      );
+      isLiked = true;
+    }
+
+    const likesCountRes = await prisma.$queryRawUnsafe<{ count: number }[]>(
+      'SELECT COUNT(*)::int as count FROM community_comment_likes WHERE "commentId" = $1',
+      commentId
+    );
+    const likeCount = likesCountRes[0]?.count ?? 0;
+
+    return { isLiked, likeCount };
   }
 
   async deleteComment(commentId: string, userId: string): Promise<void> {
