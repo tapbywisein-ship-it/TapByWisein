@@ -206,6 +206,7 @@ model User {
   communityMemberships  CommunityMember[]
   communityPosts        CommunityPost[]
   communityPostComments CommunityPostComment[]
+  communityPostLikes    CommunityPostLike[]
   pushSubscriptions     PushSubscription[]
   eventBlasts           EventBlast[]
   introRequestsMade     IntroRequest[]         @relation("IntroRequester")
@@ -466,11 +467,27 @@ model CommunityPost {
   community Community              @relation(fields: [communityId], references: [id], onDelete: Cascade)
   author    User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  CommunityPostComment[]
+  likes     CommunityPostLike[]
 
   // Feed query: one community's posts, pinned first then newest.
   @@index([communityId, pinned, createdAt])
   @@index([authorId])
   @@map("community_posts")
+}
+
+model CommunityPostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("community_post_likes")
 }
 
 model CommunityPostComment {

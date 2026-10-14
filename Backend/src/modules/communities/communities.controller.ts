@@ -97,6 +97,21 @@ export class CommunitiesController {
     sendCreated(res, post, 'Announcement posted');
   }
 
+  async updatePost(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.userId;
+    const { id, postId } = req.params as Record<string, string>;
+    const { body, imageUrl } = req.body as { body?: string; imageUrl?: string };
+    const updated = await communitiesService.updatePost(id, postId, userId, { body, imageUrl });
+    sendSuccess(res, updated, 'Post updated');
+  }
+
+  async toggleLike(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.userId;
+    const { id, postId } = req.params as Record<string, string>;
+    const result = await communitiesService.togglePostLike(id, postId, userId);
+    sendSuccess(res, result, result.isLiked ? 'Post liked' : 'Post unliked');
+  }
+
   async deletePost(req: Request, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const { id, postId } = req.params as Record<string, string>;
@@ -105,10 +120,12 @@ export class CommunitiesController {
   }
 
   async listComments(req: Request, res: Response): Promise<void> {
+    const viewerId = req.user?.userId;
     const { postId } = req.params as Record<string, string>;
     const { page, limit } = req.query as { page?: string; limit?: string };
     const result = await communitiesService.listComments(
       postId,
+      viewerId,
       page ? Number(page) : undefined,
       limit ? Number(limit) : undefined
     );
@@ -121,6 +138,21 @@ export class CommunitiesController {
     const { body } = req.body as { body: string };
     const comment = await communitiesService.addComment(postId, authorId, body);
     sendCreated(res, comment, 'Comment added');
+  }
+
+  async updateComment(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.userId;
+    const { commentId } = req.params as Record<string, string>;
+    const { body } = req.body as { body: string };
+    const updated = await communitiesService.updateComment(commentId, userId, body);
+    sendSuccess(res, updated, 'Comment updated');
+  }
+
+  async toggleCommentLike(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.userId;
+    const { commentId } = req.params as Record<string, string>;
+    const result = await communitiesService.toggleCommentLike(commentId, userId);
+    sendSuccess(res, result, result.isLiked ? 'Comment liked' : 'Comment unliked');
   }
 
   async deleteComment(req: Request, res: Response): Promise<void> {
