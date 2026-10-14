@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Calendar, Users, Zap, BarChart3, Plus, ChevronRight,
   AlertCircle, IndianRupee, CheckCircle2, Circle, TrendingUp,
-  MapPin, Clock, ArrowRight, Compass,
+  MapPin, Clock, ArrowRight, Compass, Globe, Lock,
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useMyProfile } from '@/hooks/useProfile';
@@ -291,7 +291,7 @@ const OrganizerDashboard = () => {
                 <h2 className="text-base font-semibold text-foreground">Your Events</h2>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/events">
+                <Link to="/discover">
                   <Compass className="w-3.5 h-3.5 mr-1.5" /> Browse Events
                 </Link>
               </Button>
@@ -313,7 +313,7 @@ const OrganizerDashboard = () => {
                   <p className="text-xs text-muted-foreground mt-1">Discover events happening around you</p>
                 </div>
                 <Button asChild size="sm" variant="outline">
-                  <Link to="/events">
+                  <Link to="/discover">
                     <Compass className="w-3.5 h-3.5 mr-1.5" /> Browse Events
                   </Link>
                 </Button>
@@ -350,14 +350,31 @@ const OrganizerDashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right hidden sm:block">
+                      <div className="text-right hidden sm:block w-16">
                         <p className="text-sm font-semibold text-foreground">{e.registeredCount ?? 0}</p>
                         <p className="text-[10px] text-muted-foreground">registered</p>
                       </div>
-                      <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusPill(e.status)}`}>
+                      <span className={`w-[72px] justify-center text-[10px] font-medium tracking-wide py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
+                        e.visibility === 'PRIVATE'
+                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                      }`}>
+                        {e.visibility === 'PRIVATE' ? (
+                          <>
+                            <Lock className="w-2.5 h-2.5" />
+                            <span>Private</span>
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="w-2.5 h-2.5" />
+                            <span>Public</span>
+                          </>
+                        )}
+                      </span>
+                      <span className={`w-24 text-center text-[10px] uppercase tracking-wider py-0.5 rounded-full border shrink-0 ${statusPill(e.status)}`}>
                         {e.status.toLowerCase()}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0" />
                     </div>
                   </Link>
                 ))}
@@ -372,3 +389,4 @@ const OrganizerDashboard = () => {
 };
 
 export default OrganizerDashboard;
+

@@ -416,7 +416,7 @@ const AttendeeDashboard = () => {
                     ))}
                   </div>
                   <Button size="sm" asChild>
-                    <Link to="/events">Browse Events</Link>
+                    <Link to="/discover">Browse Events</Link>
                   </Button>
                 </div>
               ) : (
@@ -598,3 +598,4 @@ const AttendeeDashboard = () => {
 };
 
 export default AttendeeDashboard;
+

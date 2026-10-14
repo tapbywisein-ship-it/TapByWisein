@@ -117,13 +117,11 @@ const MyTickets = () => {
           <p className="text-sm text-muted-foreground py-12 text-center">Loading your tickets…</p>
         ) : list.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <TicketIcon className="w-10 h-10 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">No {tab} tickets.</p>
-            {tab === 'upcoming' && (
-              <Button asChild variant="outline">
-                <Link to="/discover">Discover events</Link>
-              </Button>
-            )}
+            <TicketIcon className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+            <p className="text-foreground font-medium">No {tab} tickets.</p>
+            <Button asChild variant="outline">
+              <Link to="/discover">Discover events</Link>
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

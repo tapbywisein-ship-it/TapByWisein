@@ -32,7 +32,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 // TEMP DISABLED: Plans page, re-enable when paid plans launch
-// const Pricing = lazy(() => import("./pages/Pricing"));
+const Pricing = lazy(() => import("./pages/Pricing"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const PublicEventPage = lazy(() => import("./pages/PublicEventPage"));
 const ImpactReportPage = lazy(() => import("./pages/ImpactReport"));
@@ -211,8 +211,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           {/* TEMP DISABLED: Plans page, re-enable when paid plans launch */}
-          {/* <Route path="/pricing" element={<Pricing />} /> */}
-          <Route path="/pricing" element={<Navigate to="/" replace />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           {/* Public shareable event page — no auth required */}
           <Route path="/e/:id" element={<PublicEventPage />} />

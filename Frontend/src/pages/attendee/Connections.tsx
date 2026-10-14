@@ -243,7 +243,7 @@ const ConnectionsPage = () => {
             {received.length === 0 && sent.length === 0 ? (
               <div className="text-center py-16">
                 <UserPlus className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-muted-foreground">No pending requests.</p>
+                <p className="text-foreground font-medium">No pending requests.</p>
               </div>
             ) : (
               <div className="space-y-6">

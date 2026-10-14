@@ -430,9 +430,11 @@ const AttendeeDirectoryPage = () => {
                     ))}
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <a href={`mailto:${a.email}`}>
-                      <Button variant="ghost" size="sm" className="text-xs"><Mail className="w-3 h-3 mr-1" /> Email</Button>
-                    </a>
+                    <Button asChild variant="ghost" size="sm" className="text-xs">
+                      <a href={`mailto:${a.email}`} target="_blank" rel="noopener noreferrer">
+                        <Mail className="w-3 h-3 mr-1" /> Email
+                      </a>
+                    </Button>
                   </div>
                 </Surface>
               </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,19 @@ import { useAppStore } from '@/store/appStore';
 import {
   useCommunityPosts,
   useCreateCommunityPost,
+  useUpdateCommunityPost,
+  useTogglePostLike,
   useDeleteCommunityPost,
   usePostComments,
   useAddComment,
+  useUpdateComment,
+  useToggleCommentLike,
+  useDeleteComment,
 } from '@/hooks/useCommunities';
-import type { CommunityPost, PostAuthor } from '@/services/communities.service';
+import type { CommunityPost, CommunityPostComment, PostAuthor } from '@/services/communities.service';
 import {
-  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2,
+  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2, ChevronDown,
+  Heart, Edit3, Check, X,
 } from 'lucide-react';
 
 const authorName = (a: PostAuthor | null | undefined) =>
@@ -43,7 +49,140 @@ const Avatar = ({ author, size = 'md' }: { author: PostAuthor | null | undefined
   );
 };
 
-/** One post: body + meta + expandable comment thread. */
+/** One comment: body + author + like + 1-hour edit. */
+const CommentRow = ({
+  comment,
+  postId,
+  communityId,
+  canModerate,
+}: {
+  comment: CommunityPostComment;
+  postId: string;
+  communityId: string;
+  canModerate: boolean;
+}) => {
+  const user = useAppStore((s) => s.user);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBody, setEditBody] = useState(comment.body);
+  const updateComment = useUpdateComment(postId);
+  const toggleLike = useToggleCommentLike(postId);
+  const deleteComment = useDeleteComment(postId, communityId);
+
+  const isAuthor = comment.authorId === user?.id;
+  const isWithinOneHour = Date.now() - new Date(comment.createdAt).getTime() <= 60 * 60 * 1000;
+  const canEdit = isAuthor && isWithinOneHour;
+  const canDelete = isAuthor || canModerate;
+
+  const handleSaveEdit = () => {
+    const trimmed = editBody.trim();
+    if (!trimmed) return;
+    updateComment.mutate(
+      { commentId: comment.id, body: trimmed },
+      { onSuccess: () => setIsEditing(false) }
+    );
+  };
+
+  return (
+    <div className="flex items-start gap-2 group">
+      <Avatar author={comment.author} size="sm" />
+      <div className="min-w-0 flex-1 rounded-lg bg-muted/40 px-2.5 py-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground truncate">{authorName(comment.author)}</span>
+          <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(comment.createdAt)}</span>
+        </div>
+
+        {isEditing ? (
+          <div className="mt-1 space-y-1.5">
+            <Input
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEdit();
+                if (e.key === 'Escape') {
+                  setEditBody(comment.body);
+                  setIsEditing(false);
+                }
+              }}
+              className="h-7 text-xs bg-background"
+              maxLength={2000}
+            />
+            <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditBody(comment.body);
+                  setIsEditing(false);
+                }}
+                disabled={updateComment.isPending}
+                className="text-[11px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={!editBody.trim() || updateComment.isPending}
+                className="text-[11px] font-medium text-primary hover:underline px-1.5 py-0.5 rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap break-words">{comment.body}</p>
+        )}
+
+        {/* Comment Actions: Like, Edit, Delete */}
+        <div className="flex items-center gap-2.5 mt-1 pt-0.5">
+          <button
+            type="button"
+            onClick={() => toggleLike.mutate(comment.id)}
+            disabled={toggleLike.isPending}
+            className={`flex items-center gap-1 text-[11px] transition-colors ${
+              comment.isLiked
+                ? 'text-rose-500 font-semibold'
+                : 'text-muted-foreground hover:text-rose-500'
+            }`}
+            title={comment.isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart
+              className={`w-3 h-3 transition-transform active:scale-125 ${
+                comment.isLiked ? 'fill-rose-500 text-rose-500' : ''
+              }`}
+            />
+            <span>{comment.likeCount && comment.likeCount > 0 ? comment.likeCount : 'Like'}</span>
+          </button>
+
+          {canEdit && !isEditing && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditBody(comment.body);
+                setIsEditing(true);
+              }}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Edit
+            </button>
+          )}
+
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Delete this comment?')) deleteComment.mutate(comment.id);
+              }}
+              disabled={deleteComment.isPending}
+              className="text-[11px] text-muted-foreground hover:text-rose-500 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 const PostCard = ({
   post,
   communityId,
@@ -54,15 +193,31 @@ const PostCard = ({
   canModerate: boolean;
 }) => {
   const user = useAppStore((s) => s.user);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBody, setEditBody] = useState(post.body);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
   const { data: comments, isLoading: commentsLoading } = usePostComments(showComments ? post.id : null);
   const addComment = useAddComment(communityId);
   const deletePost = useDeleteCommunityPost(communityId);
+  const updatePost = useUpdateCommunityPost(communityId);
+  const toggleLike = useTogglePostLike(communityId);
 
   const name = authorName(post.author);
   const p = post.author?.profile;
-  const canDelete = canModerate || post.authorId === user?.id;
+  const isAuthor = post.authorId === user?.id;
+  const isWithinOneHour = Date.now() - new Date(post.createdAt).getTime() <= 60 * 60 * 1000;
+  const canEdit = (isAuthor || canModerate) && isWithinOneHour;
+  const canDelete = canModerate || isAuthor;
+
+  const handleSaveEdit = () => {
+    const trimmed = editBody.trim();
+    if (!trimmed) return;
+    updatePost.mutate(
+      { postId: post.id, body: trimmed },
+      { onSuccess: () => setIsEditing(false) }
+    );
+  };
 
   const submitComment = () => {
     const body = comment.trim();
@@ -92,12 +247,73 @@ const PostCard = ({
               {[p?.position, p?.company].filter(Boolean).join(' · ')}
             </p>
           )}
-          <p className="text-sm text-foreground leading-relaxed mt-1.5 whitespace-pre-wrap break-words">{post.body}</p>
+
+          {isEditing ? (
+            <div className="mt-2 space-y-2">
+              <Textarea
+                value={editBody}
+                onChange={(e) => setEditBody(e.target.value)}
+                rows={3}
+                maxLength={4000}
+                className="resize-none text-sm"
+                placeholder="Edit your post..."
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditBody(post.body);
+                    setIsEditing(false);
+                  }}
+                  disabled={updatePost.isPending}
+                >
+                  <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={!editBody.trim() || updatePost.isPending}
+                >
+                  {updatePost.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-foreground leading-relaxed mt-1.5 whitespace-pre-wrap break-words">{post.body}</p>
+          )}
+
           {post.imageUrl && (
             <img src={post.imageUrl} alt="" loading="lazy" className="mt-2 rounded-lg max-h-80 object-cover" />
           )}
 
-          <div className="flex items-center gap-3 mt-2.5">
+          <div className="flex items-center gap-3.5 mt-2.5">
+            {/* Like button */}
+            <button
+              type="button"
+              onClick={() => toggleLike.mutate(post.id)}
+              disabled={toggleLike.isPending}
+              className={`flex items-center gap-1.5 text-xs transition-colors ${
+                post.isLiked
+                  ? 'text-rose-500 font-semibold'
+                  : 'text-muted-foreground hover:text-rose-500'
+              }`}
+              title={post.isLiked ? 'Unlike' : 'Like'}
+            >
+              <Heart
+                className={`w-3.5 h-3.5 transition-transform active:scale-125 ${
+                  post.isLiked ? 'fill-rose-500 text-rose-500' : ''
+                }`}
+              />
+              <span>{post.likeCount && post.likeCount > 0 ? post.likeCount : 'Like'}</span>
+            </button>
+
+            {/* Comment button */}
             <button
               type="button"
               onClick={() => setShowComments((s) => !s)}
@@ -106,6 +322,22 @@ const PostCard = ({
               <MessageCircle className="w-3.5 h-3.5" />
               {post.commentCount > 0 ? `${post.commentCount} comment${post.commentCount !== 1 ? 's' : ''}` : 'Comment'}
             </button>
+
+            {/* Edit button */}
+            {canEdit && !isEditing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditBody(post.body);
+                  setIsEditing(true);
+                }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Edit3 className="w-3.5 h-3.5" /> Edit
+              </button>
+            )}
+
+            {/* Delete button */}
             {canDelete && (
               <button
                 type="button"
@@ -126,16 +358,13 @@ const PostCard = ({
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
               ) : (
                 (comments ?? []).map((cm) => (
-                  <div key={cm.id} className="flex items-start gap-2">
-                    <Avatar author={cm.author} size="sm" />
-                    <div className="min-w-0 flex-1 rounded-lg bg-muted/40 px-2.5 py-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-foreground truncate">{authorName(cm.author)}</span>
-                        <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(cm.createdAt)}</span>
-                      </div>
-                      <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap break-words">{cm.body}</p>
-                    </div>
-                  </div>
+                  <CommentRow
+                    key={cm.id}
+                    comment={cm}
+                    postId={post.id}
+                    communityId={communityId}
+                    canModerate={canModerate}
+                  />
                 ))
               )}
               <div className="flex items-center gap-2">
@@ -185,54 +414,104 @@ export const CommunityFeed = ({
     );
   };
 
-  return (
-    <div>
-      <h2 className="text-sm font-semibold text-foreground mb-3">Feed</h2>
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-      {(isMember || isOwner) && (
-        <Surface className="mb-3">
-          <Textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={2}
-            placeholder="Share something with the community…"
-            maxLength={4000}
-          />
-          <div className="flex items-center justify-between mt-2">
-            {isOwner ? (
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={asAnnouncement}
-                  onChange={(e) => setAsAnnouncement(e.target.checked)}
-                  className="accent-[hsl(var(--primary))]"
-                />
-                <Megaphone className="w-3.5 h-3.5" /> Announce (notifies all members)
-              </label>
-            ) : <span />}
-            <Button size="sm" onClick={submit} disabled={!body.trim() || createPost.isPending}>
-              {createPost.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post'}
-            </Button>
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    // Show arrow if user has scrolled up more than 120px from bottom
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    setShowScrollDown(distanceFromBottom > 120);
+  };
+
+  return (
+    <div className="flex flex-col h-full min-h-0 relative">
+      <div className="flex items-center justify-between pb-2 shrink-0">
+        <h2 className="text-sm font-semibold text-foreground">Feed</h2>
+      </div>
+
+      {/* Scrollable feed messages */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto space-y-3 pr-1 py-1 relative"
+      >
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(2)].map((_, i) => <Surface key={i} className="h-24 animate-pulse" />)}
           </div>
-        </Surface>
+        ) : (posts ?? []).length === 0 ? (
+          <Surface className="text-center py-10">
+            <MessagesSquare className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {isMember || isOwner ? 'No posts yet — start the conversation below.' : 'No posts yet — follow to join the conversation.'}
+            </p>
+          </Surface>
+        ) : (
+          (posts ?? []).map((post) => (
+            <PostCard key={post.id} post={post} communityId={communityId} canModerate={isOwner} />
+          ))
+        )}
+      </div>
+
+      {/* Floating scroll to latest / bottom button */}
+      {showScrollDown && (
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          aria-label="Scroll to latest feed"
+          className="absolute right-6 bottom-48 md:bottom-44 z-20 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+          title="Jump to latest"
+        >
+          <ChevronDown className="w-4 h-4" />
+        </button>
       )}
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(2)].map((_, i) => <Surface key={i} className="h-24 animate-pulse" />)}
-        </div>
-      ) : (posts ?? []).length === 0 ? (
-        <Surface className="text-center py-10">
-          <MessagesSquare className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">
-            {isMember || isOwner ? 'No posts yet — start the conversation.' : 'No posts yet — follow to join the conversation.'}
-          </p>
-        </Surface>
-      ) : (
-        <div className="space-y-3">
-          {(posts ?? []).map((post) => (
-            <PostCard key={post.id} post={post} communityId={communityId} canModerate={isOwner} />
-          ))}
+      {/* Fixed bottom composer input like WhatsApp / Slack */}
+      {(isMember || isOwner) && (
+        <div className="pt-2 shrink-0 border-t border-border mt-2 bg-card">
+          <Surface className="p-3 shadow-sm border border-border">
+            <Textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              rows={2}
+              placeholder="Share something with the community… (Enter to post, Shift+Enter for newline)"
+              maxLength={4000}
+              className="resize-none"
+            />
+            <div className="flex items-center justify-between mt-2 pt-1">
+              {isOwner ? (
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={asAnnouncement}
+                    onChange={(e) => setAsAnnouncement(e.target.checked)}
+                    className="accent-[hsl(var(--primary))]"
+                  />
+                  <Megaphone className="w-3.5 h-3.5" /> Announce (notifies all members)
+                </label>
+              ) : <span />}
+              <Button size="sm" onClick={submit} disabled={!body.trim() || createPost.isPending}>
+                {createPost.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post'}
+              </Button>
+            </div>
+          </Surface>
         </div>
       )}
     </div>

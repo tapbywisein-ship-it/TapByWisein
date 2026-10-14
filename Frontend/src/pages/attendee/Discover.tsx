@@ -53,7 +53,7 @@ const BackgroundGraphics = () => (
   </>
 );
 
-const DiscoverPage = () => {
+const DiscoverPage = () => { console.log('Discover Page Re-rendered!');
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') ?? '');
@@ -400,10 +400,10 @@ const DiscoverPage = () => {
               return (
                 <motion.div key={e.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 + (i % 9) * 0.05, ease: "easeOut" }}>
                   <Link to={`/event/${e.id}`} className="block group h-full">
-                    <div className="premium-glass-card rounded-[20px] flex flex-col h-full p-[8px]">
+                    <div className="premium-glass-card rounded-[20px] flex flex-col h-full p-0 overflow-hidden">
                       
                       {/* Image Area */}
-                      <div className="relative aspect-[16/9] w-full rounded-[14px] overflow-hidden bg-[#F8F9FA] border border-[#DEE2E6]/50 shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20">
+                      <div className="relative aspect-[4/3] w-full rounded-t-[20px] overflow-hidden bg-[#F8F9FA] border-b border-[#DEE2E6]/50 shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20">
                         {e.coverImage ? (
                           <img src={e.coverImage} alt={e.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]" />
                         ) : (
@@ -430,7 +430,7 @@ const DiscoverPage = () => {
                       </div>
 
                       {/* Content Area */}
-                      <div className="p-[16px] pt-[18px] flex flex-col flex-1 bg-transparent z-20">
+                      <div className="p-5 flex flex-col flex-1 bg-transparent z-20">
                         <h3 className="text-[18px] font-[700] text-[#212529] leading-[1.3] line-clamp-2 group-hover:text-[#2563EB] transition-colors">
                           {e.title}
                         </h3>
@@ -476,3 +476,5 @@ const DiscoverPage = () => {
 };
 
 export default DiscoverPage;
+
+
