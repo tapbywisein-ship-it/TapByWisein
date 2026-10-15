@@ -14,7 +14,7 @@ import { connectionsService } from '@/services/connections.service';
 import { QrScanner } from '@/components/QrScanner';
 import { NfcReader } from '@/components/NfcReader';
 import { NfcProvisioner } from '@/components/NfcProvisioner';
-import { Scan, QrCode, Nfc, Sparkles, UserPlus } from 'lucide-react';
+import { Scan, QrCode, Nfc, Sparkles, UserPlus, Loader2 } from 'lucide-react';
 
 const ConnectPage = () => {
   const [mode, setMode] = useState<'scan' | 'show' | 'nfc'>('show');
@@ -30,7 +30,7 @@ const ConnectPage = () => {
 
   // The QR encodes the public-card URL. Anyone scanning it (TapByWisein app or a
   // generic QR reader) lands on the same /c/:slug page.
-  const cardSlug = (card as { publicSlug?: string | null } | undefined)?.publicSlug;
+  const cardSlug = (card as { publicSlug?: string | null; slug?: string | null } | undefined)?.publicSlug || (card as any)?.slug;
   const cardUrl = cardSlug
     ? `${window.location.origin}/c/${cardSlug}`
     : `${window.location.origin}/card/${user?.id ?? ''}`;
@@ -90,12 +90,12 @@ const ConnectPage = () => {
               </div>
             </div>
 
-            <div className="bg-foreground p-5 rounded-2xl inline-block mb-6">
+            <div className="bg-white p-5 rounded-2xl inline-block mb-6 shadow-md border border-border">
               <QRCodeSVG
                 value={cardUrl}
                 size={200}
-                bgColor="#E8E0D0"
-                fgColor="#0D0D0D"
+                bgColor="#ffffff"
+                fgColor="#000000"
                 level="M"
               />
             </div>
@@ -138,7 +138,7 @@ const ConnectPage = () => {
         )}
 
         {mode === 'scan' && (
-          <Surface>
+          <Surface className="relative">
             <div className="mb-3">
               <h3 className="text-lg font-semibold text-foreground">Scan a card</h3>
               <p className="text-xs text-muted-foreground">
@@ -146,6 +146,11 @@ const ConnectPage = () => {
                 {activeEventId && ' This scan will be tagged to this event.'}
               </p>
             </div>
+            {connect.isPending && (
+              <div className="mb-3 flex items-center justify-center gap-2 p-3 rounded-lg bg-primary/10 text-primary text-sm font-medium animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin" /> Connecting to scanned user...
+              </div>
+            )}
             <QrScanner
               onResult={(value) => {
                 if (!connect.isPending) connect.mutate(value);

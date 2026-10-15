@@ -15,7 +15,7 @@ import type { AttendeeItem } from '@/services/organizer.service';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   REGISTERED: { label: 'Registered', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  ATTENDED:   { label: 'Checked In', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  ATTENDED:   { label: 'Checked\u00A0In', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
   WAITLISTED: { label: 'Waitlisted', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
   CANCELLED:  { label: 'Cancelled',  color: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };
@@ -28,6 +28,41 @@ We have an exciting update for you!
 
 Best,
 [Your name]`;
+
+const AttendeeAvatar = ({
+  src,
+  name,
+  className = "w-8 h-8",
+  textClassName = "text-xs",
+}: {
+  src?: string | null;
+  name: string;
+  className?: string;
+  textClassName?: string;
+}) => {
+  const [error, setError] = useState(false);
+  const initial = (name || '?')[0]?.toUpperCase();
+
+  if (!src || error) {
+    return (
+      <div
+        className={`${className} rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold flex-shrink-0 border border-primary/30 select-none ${textClassName}`}
+      >
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      loading="lazy"
+      onError={() => setError(true)}
+      className={`${className} rounded-full object-cover flex-shrink-0 border border-primary/20`}
+    />
+  );
+};
 
 const AttendeeDirectoryPage = () => {
   const [search, setSearch]             = useState('');
@@ -209,7 +244,7 @@ const AttendeeDirectoryPage = () => {
           ) : (
             <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[850px] table-auto">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 w-10">
@@ -224,9 +259,13 @@ const AttendeeDirectoryPage = () => {
                         }
                       </button>
                     </th>
-                    {['Attendee', 'Company', 'Event', 'Tier', 'FK Score', 'Status', ''].map((h) => (
-                      <th key={h} className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap">{h}</th>
-                    ))}
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap min-w-[180px]">Attendee</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap min-w-[120px]">Company</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap min-w-[140px]">Event</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap min-w-[100px]">Tier</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap min-w-[80px]">FK Score</th>
+                    <th className="text-left text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap w-32 min-w-[128px]">Status</th>
+                    <th className="text-right text-xs text-muted-foreground font-medium px-4 py-3 whitespace-nowrap w-20"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -264,13 +303,7 @@ const AttendeeDirectoryPage = () => {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              {a.user?.profile?.avatar ? (
-                                <img src={a.user.profile.avatar} alt={name} loading="lazy" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold flex-shrink-0">
-                                  {name[0]?.toUpperCase()}
-                                </div>
-                              )}
+                              <AttendeeAvatar src={a.user?.profile?.avatar} name={name} className="w-8 h-8" textClassName="text-xs" />
                               <div>
                                 <p className="text-sm font-medium text-foreground whitespace-nowrap">{name}</p>
                                 <p className="text-[11px] text-muted-foreground">{a.user?.profile?.position ?? a.email}</p>
@@ -280,27 +313,27 @@ const AttendeeDirectoryPage = () => {
                           <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                             {a.user?.profile?.company ?? '-'}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <span className="chip text-[10px] whitespace-nowrap">{a.event?.title ?? '-'}</span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {isFounder ? (
-                              <span className="flex items-center gap-1 text-[10px] text-primary"><Crown className="w-3 h-3" /> FounderCard</span>
+                              <span className="flex items-center gap-1 text-[10px] text-primary whitespace-nowrap"><Crown className="w-3 h-3" /> FounderCard</span>
                             ) : (
-                              <span className="text-[10px] text-muted-foreground">Free</span>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">Free</span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm font-bold text-foreground">
                               {a.user?.gamification?.fkScore ?? 0}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${sc.color}`}>
+                          <td className="px-4 py-3 whitespace-nowrap w-32 min-w-[128px]">
+                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border whitespace-nowrap shrink-0 select-none ${sc.color}`}>
                               {sc.label}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
                             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedAttendee(a)}>
                               <Eye className="w-3 h-3 mr-1" /> View
                             </Button>
@@ -337,13 +370,7 @@ const AttendeeDirectoryPage = () => {
                             : <Square className="w-4 h-4" />}
                         </button>
                       )}
-                      {a.user?.profile?.avatar ? (
-                        <img src={a.user.profile.avatar} alt={name} loading="lazy" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold flex-shrink-0">
-                          {name[0]?.toUpperCase()}
-                        </div>
-                      )}
+                      <AttendeeAvatar src={a.user?.profile?.avatar} name={name} className="w-9 h-9" textClassName="text-xs" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-medium text-foreground truncate">{name}</p>
@@ -398,13 +425,9 @@ const AttendeeDirectoryPage = () => {
                 <Surface className="relative">
                   <button onClick={() => setSelectedAttendee(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground text-xs">✕</button>
                   <div className="text-center mb-5">
-                    {a.user?.profile?.avatar ? (
-                      <img src={a.user.profile.avatar} alt={name} loading="lazy" className="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-primary/30" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold mx-auto mb-3">
-                        {name[0]?.toUpperCase()}
-                      </div>
-                    )}
+                    <div className="flex justify-center mb-3">
+                      <AttendeeAvatar src={a.user?.profile?.avatar} name={name} className="w-16 h-16" textClassName="text-xl" />
+                    </div>
                     <h3 className="text-xl font-semibold text-foreground">{name}</h3>
                     <p className="text-sm text-muted-foreground">
                       {a.user?.profile?.position ?? ''}{a.user?.profile?.company ? ` · ${a.user.profile.company}` : ''}
@@ -431,7 +454,11 @@ const AttendeeDirectoryPage = () => {
                   </div>
                   <div className="flex gap-2 mt-4">
                     <Button asChild variant="ghost" size="sm" className="text-xs">
-                      <a href={`mailto:${a.email}`} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(a.email)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <Mail className="w-3 h-3 mr-1" /> Email
                       </a>
                     </Button>
