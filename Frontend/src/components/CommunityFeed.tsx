@@ -19,7 +19,7 @@ import {
 } from '@/hooks/useCommunities';
 import type { CommunityPost, CommunityPostComment, PostAuthor } from '@/services/communities.service';
 import {
-  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2, ChevronDown,
+  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2, ChevronDown, ChevronUp,
   Heart, Edit3, Check, X,
 } from 'lucide-react';
 
@@ -414,13 +414,13 @@ export const CommunityFeed = ({
     );
   };
 
-  const [showScrollDown, setShowScrollDown] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToTop = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
+        top: 0,
         behavior: 'smooth',
       });
     }
@@ -428,10 +428,9 @@ export const CommunityFeed = ({
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    // Show arrow if user has scrolled up more than 120px from bottom
-    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-    setShowScrollDown(distanceFromBottom > 120);
+    const { scrollTop } = scrollRef.current;
+    // Show arrow if user has scrolled down more than 120px
+    setShowScrollTop(scrollTop > 120);
   };
 
   return (
@@ -464,16 +463,16 @@ export const CommunityFeed = ({
         )}
       </div>
 
-      {/* Floating scroll to latest / bottom button */}
-      {showScrollDown && (
+      {/* Floating scroll to top button */}
+      {showScrollTop && (
         <button
           type="button"
-          onClick={scrollToBottom}
-          aria-label="Scroll to latest feed"
+          onClick={scrollToTop}
+          aria-label="Scroll to top of feed"
           className="absolute right-6 bottom-48 md:bottom-44 z-20 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-          title="Jump to latest"
+          title="Scroll to top"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronUp className="w-4 h-4" />
         </button>
       )}
 
