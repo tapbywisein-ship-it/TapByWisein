@@ -22,12 +22,13 @@ import { getRegistrationPricing } from '@/lib/ticketPricing';
 import { registrationCountdown } from '@/lib/eventCountdown';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Event } from '@/services/events.service';
+import { EVENT_CATEGORIES } from '@/constants/categories';
 import {
   Calendar, Users, MapPin, CheckCircle2, X,
   Clock, Tag, Ticket, Search, AlertCircle,
 } from 'lucide-react';
 
-const CATEGORIES = ['All', 'Tech', 'Startup', 'Design', 'AI', 'Business', 'Health', 'Social', 'Arts', 'Sports'];
+const CATEGORIES = ['All', ...EVENT_CATEGORIES.map((c) => c.label)];
 
 const EventsPage = () => {
   const user = useAppStore((s) => s.user);

@@ -22,12 +22,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X,
+  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X, CalendarDays,
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard',    icon: LayoutDashboard, path: '/organizer/dashboard' },
   { label: 'Create Event', icon: Calendar,         path: '/organizer/events/create' },
+  { label: 'My Calendars', icon: CalendarDays,     path: '/my-calendar' },
   { label: 'Communities',  icon: Boxes,            path: '/organizer/communities' },
   { label: 'Attendees',    icon: Users,            path: '/organizer/attendees' },
   { label: 'Leads',        icon: Download,         path: '/organizer/leads' },

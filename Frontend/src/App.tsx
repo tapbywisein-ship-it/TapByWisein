@@ -58,6 +58,7 @@ const EventAttendeesPage = lazy(() => import("./pages/attendee/EventAttendees"))
 const PeopleIMetPage = lazy(() => import("./pages/attendee/PeopleIMet"));
 const MessagesPage = lazy(() => import("./pages/attendee/Messages"));
 const MyTicketsPage = lazy(() => import("./pages/attendee/MyTickets"));
+const MyCalendarPage = lazy(() => import("./pages/attendee/MyCalendar"));
 const CheckInLanding = lazy(() => import("./pages/CheckInLanding"));
 const ClaimAccountPage = lazy(() => import("./pages/ClaimAccount"));
 const NetworkSearchPage = lazy(() => import("./pages/attendee/NetworkSearch"));
@@ -166,6 +167,7 @@ const TITLE_BY_PREFIX: [string, string][] = [
   ["/notifications", "Notifications"],
   ["/profile", "Profile"],
   ["/my-tickets", "My Tickets"],
+  ["/my-calendar", "My Calendars"],
   ["/apply-card", "Tap Card"],
   ["/card-analytics", "Card Analytics"],
   ["/organizer/payouts", "Payouts"],
@@ -237,6 +239,7 @@ const App = () => (
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/messages/:id" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/my-tickets" element={<ProtectedRoute><MyTicketsPage /></ProtectedRoute>} />
+          <Route path="/my-calendar" element={<ProtectedRoute><MyCalendarPage /></ProtectedRoute>} />
           {/* Public browsing: anyone can discover/browse events + communities; joining gates to /login. */}
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/communities" element={<BrowseCommunitiesPage />} />

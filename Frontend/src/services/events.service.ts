@@ -105,6 +105,13 @@ export interface Event {
   updatedAt: string;
   organizerId: string;
   organizer?: EventOrganizer;
+  communityId?: string | null;
+  community?: {
+    id: string;
+    name: string;
+    slug: string;
+    avatar?: string | null;
+  } | null;
   registeredCount?: number;
   spotsLeft?: number;
   registrationStatus?: 'REGISTERED' | 'ATTENDED' | 'CANCELLED' | 'WAITLISTED' | null;

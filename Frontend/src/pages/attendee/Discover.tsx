@@ -7,18 +7,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { getTheme } from '@/lib/eventThemes';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
-import { Calendar, MapPin, Search, AlertCircle, CheckCircle2, Clock, Cpu, TrendingUp, Palette, HeartPulse, Sparkles, Music, Trophy, Utensils, Users, Compass } from 'lucide-react';
+import { Calendar, MapPin, Search, AlertCircle, CheckCircle2, Clock, Users, Compass } from 'lucide-react';
+import { EVENT_CATEGORIES } from '@/constants/categories';
 
-const CATEGORIES = [
-  { id: 'tech',     label: 'Tech',     icon: Cpu },
-  { id: 'business', label: 'Business', icon: TrendingUp },
-  { id: 'design',   label: 'Design',   icon: Palette },
-  { id: 'health',   label: 'Health',   icon: HeartPulse },
-  { id: 'social',   label: 'Social',   icon: Sparkles },
-  { id: 'arts',     label: 'Arts',     icon: Music },
-  { id: 'sports',   label: 'Sports',   icon: Trophy },
-  { id: 'food',     label: 'Food',     icon: Utensils },
-];
+const CATEGORIES = EVENT_CATEGORIES;
 
 const PremiumSearchIcon = () => (
   <motion.div
@@ -64,7 +56,7 @@ const DiscoverPage = () => { console.log('Discover Page Re-rendered!');
 
   const { data, isLoading, isError, refetch } = useEvents({
     q: search || undefined,
-    category: selectedCategory || undefined,
+    category: (CATEGORIES.find((c) => c.id === selectedCategory)?.label || selectedCategory) || undefined,
     city: city || undefined,
     price: priceFilter || undefined,
     startDate: dateFrom ? new Date(dateFrom).toISOString() : undefined,
