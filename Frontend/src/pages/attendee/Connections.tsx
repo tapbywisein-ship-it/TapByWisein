@@ -243,7 +243,14 @@ const ConnectionsPage = () => {
             {received.length === 0 && sent.length === 0 ? (
               <div className="text-center py-16">
                 <UserPlus className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-foreground font-medium">No pending requests.</p>
+                <p className="text-foreground font-medium">No pending requests</p>
+                <p className="text-xs text-muted-foreground/70 mt-1 mb-4">
+                  Incoming connection requests and invites you have sent will appear here.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button size="sm" onClick={() => navigate('/connect')}>Scan to connect</Button>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/discover')}>Discover events</Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">

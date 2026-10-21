@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import {
   Bell, Compass, Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
-  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard,
+  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/services/api';
@@ -44,6 +44,7 @@ const navItems = [
   { label: 'Dashboard',     icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Discover',      icon: Compass,         path: '/discover' },
   { label: 'Events',        icon: Calendar,        path: '/events' },
+  { label: 'My Calendars',  icon: CalendarDays,    path: '/my-calendar' },
   { label: 'Connect',       icon: Scan,            path: '/connect',        badge: 'connect' as const },
   { label: 'Messages',      icon: MessageCircle,   path: '/messages',       badge: 'messages' as const },
   { label: 'Connections',   icon: Users,           path: '/connections' },
