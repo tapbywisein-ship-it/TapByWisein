@@ -551,7 +551,7 @@ const AttendeeDashboard = () => {
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7"
+                          className="w-full text-xs h-7 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >
