@@ -539,12 +539,10 @@ const AttendeeDashboard = () => {
                             </div>
                           )}
                         </Link>
-                        {/* mt-auto pushes the button to the bottom, so buttons line up
-                            even when cards have different amounts of text. */}
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7 mt-auto"
+                          className="w-full text-xs h-7"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >
