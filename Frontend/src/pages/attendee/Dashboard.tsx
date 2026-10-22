@@ -186,10 +186,6 @@ const AttendeeDashboard = () => {
     { done: !!(profile?.bio && profile.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
     { done: !!(profile?.position || profile?.company), label: 'Add your role & company', action: 'Add', to: '/profile' },
     { done: (profile?.skills?.length ?? 0) >= 3, label: 'Add at least 3 skills', action: 'Add skills', to: '/profile' },
-    { done: (profile?.interests?.length ?? 0) >= 2, label: 'Add interests', action: 'Add', to: '/profile' },
-    { done: (profile?.lookingFor?.length ?? 0) >= 1, label: 'Add what you\'re looking for', action: 'Add', to: '/profile' },
-    { done: !!(profile?.linkedin || profile?.twitter || profile?.website), label: 'Link a social profile', action: 'Connect', to: '/profile' },
-    { done: myEvents.length > 0, label: 'Register for an event', action: 'Browse', to: '/events' },
   ];
   const completedSteps = checklistItems.filter((i) => i.done).length;
   const nextStep = checklistItems.find((i) => !i.done);
@@ -223,14 +219,6 @@ const AttendeeDashboard = () => {
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="mt-2 shrink-0 gap-1.5"
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 className="w-3.5 h-3.5" /> Share Card
-          </Button>
         </motion.div>
 
         {/* Stats row */}
@@ -278,7 +266,7 @@ const AttendeeDashboard = () => {
                 </div>
 
                 <div className="divide-y divide-border">
-                  {checklistItems.slice(0, 4).map((item) => (
+                  {checklistItems.map((item) => (
                     <ChecklistItem key={item.label} {...item} />
                   ))}
                 </div>
@@ -528,30 +516,35 @@ const AttendeeDashboard = () => {
                     const sent = sentIds.has(s.id);
                     return (
                       <div key={s.id} className="flex flex-col items-center text-center p-4 rounded-xl bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
-                        {p?.avatar ? (
-                          <img src={p.avatar} alt={name} loading="lazy" className="w-12 h-12 rounded-full object-cover mb-2" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold mb-2">
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
-                        {(p?.position || p?.company) && (
-                          <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
-                            {[p?.position, p?.company].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                        {p?.skills && p.skills.length > 0 && (
-                          <div className="flex flex-wrap gap-1 justify-center mb-2">
-                            {p.skills.slice(0, 2).map((sk) => (
-                              <span key={sk} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{sk}</span>
-                            ))}
-                          </div>
-                        )}
+                        {/* Clicking the person opens their card, like the Connections widget does. */}
+                        <Link to={`/card/${s.id}`} className="flex flex-col items-center w-full">
+                          {p?.avatar ? (
+                            <img src={p.avatar} alt={name} loading="lazy" className="w-12 h-12 rounded-full object-cover mb-2" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold mb-2">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                          {(p?.position || p?.company) && (
+                            <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
+                              {[p?.position, p?.company].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                          {p?.skills && p.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 justify-center mb-2">
+                              {p.skills.slice(0, 2).map((sk) => (
+                                <span key={sk} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{sk}</span>
+                              ))}
+                            </div>
+                          )}
+                        </Link>
+                        {/* mt-auto pushes the button to the bottom, so buttons line up
+                            even when cards have different amounts of text. */}
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7"
+                          className="w-full text-xs h-7 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >
