@@ -168,15 +168,15 @@ const MessagesPage = () => {
               <Surface className="text-center" padding="lg">
                 <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                 {/* With no conversations there is nothing "on the left" to pick,
-                    so point the user to people they can connect with instead. */}
+                    so point the user to their connections, the people they can message. */}
                 {!isLoading && convos.length === 0 ? (
                   <>
                     <p className="text-sm font-medium text-foreground">No messages yet</p>
                     <p className="text-sm text-muted-foreground mt-1 mb-3">
-                      Connect with someone to start chatting.
+                      Message one of your connections to start chatting.
                     </p>
-                    <Button size="sm" onClick={() => navigate('/people')}>
-                      Find people
+                    <Button size="sm" onClick={() => navigate('/connections')}>
+                      View connections
                     </Button>
                   </>
                 ) : (
