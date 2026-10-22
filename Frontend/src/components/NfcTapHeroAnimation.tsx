@@ -677,7 +677,7 @@ export const NfcTapHeroAnimation: React.FC<{ className?: string }> = ({ classNam
     <div 
       className={`relative w-full h-[500px] lg:h-[650px] overflow-visible ${className}`} 
       ref={mountRef}
-      aria-label="3D cinematic animation: a TapByWisein premium metal card taps the back of a phone, lighting up with a blue NFC signal and connecting."
+      aria-label="3D cinematic animation: a TapByWisein Tap Card taps the back of a phone, lighting up with a blue signal and connecting."
     >
       <div 
         ref={haloRef} 

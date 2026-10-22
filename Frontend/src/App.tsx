@@ -31,6 +31,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 // TEMP DISABLED: Plans page, re-enable when paid plans launch
 const Pricing = lazy(() => import("./pages/Pricing"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
@@ -147,7 +148,7 @@ const RouterMounted = () => {
 };
 
 const BRAND = "TapByWisein";
-const DEFAULT_TITLE = "TapByWisein - NFC Business Cards for Startup Networking Events";
+const DEFAULT_TITLE = "TapByWisein - Tap Cards for Startup Networking Events";
 // Longest-prefix match → "<Page> | TapByWisein". Detail pages keep the brand default.
 const TITLE_BY_PREFIX: [string, string][] = [
   ["/login", "Sign in"],
@@ -212,6 +213,7 @@ const App = () => (
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
           {/* TEMP DISABLED: Plans page, re-enable when paid plans launch */}
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth/callback" element={<AuthCallback />} />

@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import {
   Bell, Compass, Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
-  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
+  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays, Loader2,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/services/api';
@@ -124,7 +124,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
     else { setSearchInput(''); setDebouncedQ(''); }
   }, [searchOpen]);
 
-  const { data: searchResults } = useQuery<SearchResult>({
+  const { data: searchResults, isLoading: searchLoading, isError: searchError, refetch: refetchSearch } = useQuery<SearchResult>({
     queryKey: ['search', debouncedQ],
     queryFn: () =>
       apiFetch<{ data: SearchResult }>(`/search?q=${encodeURIComponent(debouncedQ)}`).then((r) => r.data),
@@ -518,7 +518,38 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
               )}
             </div>
 
-            {debouncedQ.length >= 2 && !hasResults && (
+            {debouncedQ.length === 0 && (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                Type at least 2 characters to search
+              </div>
+            )}
+
+            {debouncedQ.length === 1 && (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                Type at least 2 characters to search
+              </div>
+            )}
+
+            {debouncedQ.length >= 2 && searchLoading && (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Searching...
+              </div>
+            )}
+
+            {debouncedQ.length >= 2 && searchError && (
+              <div className="px-4 py-8 text-center">
+                <p className="text-sm text-muted-foreground mb-3">Something went wrong. Try again.</p>
+                <button
+                  onClick={() => refetchSearch()}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {debouncedQ.length >= 2 && !searchLoading && !searchError && !hasResults && (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                 No results for "{debouncedQ}"
               </div>
