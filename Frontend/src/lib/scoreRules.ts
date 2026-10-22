@@ -1,13 +1,17 @@
+// Icons come from lucide-react, the same icon set used across the app,
+// so they look the same on every device (emoji render differently per OS).
+import { UserCheck, Ticket, CalendarCheck, Handshake, CreditCard, ScanLine, Award, LogIn, ImagePlus } from 'lucide-react';
+
 export const SCORE_RULES = [
-  { action: 'Complete your profile', points: 50, icon: '📝' },
-  { action: 'Register for an event', points: 20, icon: '🎟️' },
-  { action: 'Attend an event (check-in)', points: 50, icon: '✅' },
-  { action: 'Make a connection', points: 10, icon: '🤝' },
-  { action: 'Activate your Founder Card', points: 100, icon: '💳' },
-  { action: 'Scan a QR code', points: 5, icon: '📷' },
-  { action: 'Earn a badge', points: 25, icon: '🏆' },
-  { action: 'First login', points: 10, icon: '👋' },
-  { action: 'Add a profile photo', points: 15, icon: '🖼️' },
+  { action: 'Complete your profile', points: 50, icon: UserCheck },
+  { action: 'Register for an event', points: 20, icon: Ticket },
+  { action: 'Attend an event (check-in)', points: 50, icon: CalendarCheck },
+  { action: 'Make a connection', points: 10, icon: Handshake },
+  { action: 'Activate your Founder Card', points: 100, icon: CreditCard },
+  { action: 'Scan a QR code', points: 5, icon: ScanLine },
+  { action: 'Earn a badge', points: 25, icon: Award },
+  { action: 'First login', points: 10, icon: LogIn },
+  { action: 'Add a profile photo', points: 15, icon: ImagePlus },
 ] as const;
 
 export const LEVEL_THRESHOLDS = [
