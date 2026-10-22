@@ -30,7 +30,7 @@ export function PublicFooter() {
           <Link to="/discover" className="text-muted-foreground transition-colors hover:text-foreground">Discover</Link>
           <Link to="/terms" className="text-muted-foreground transition-colors hover:text-foreground">Terms and Conditions</Link>
           <Link to="/privacy" className="text-muted-foreground transition-colors hover:text-foreground">Privacy Policy</Link>
-          <Link to="/terms" className="text-muted-foreground transition-colors hover:text-foreground">Refund Policy</Link>
+          <Link to="/refund-policy" className="text-muted-foreground transition-colors hover:text-foreground">Refund Policy</Link>
         </nav>
       </div>
       <div className="border-t border-border">

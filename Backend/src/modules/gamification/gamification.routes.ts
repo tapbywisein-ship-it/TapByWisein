@@ -4,6 +4,9 @@ import { authenticate } from '@middlewares/authenticate';
 
 const router = Router();
 
+// Public endpoint for score rules (no auth required)
+router.get('/rules', gamificationController.getScoreRules.bind(gamificationController));
+
 router.use(authenticate);
 
 router.get('/me', gamificationController.getMyScore.bind(gamificationController));

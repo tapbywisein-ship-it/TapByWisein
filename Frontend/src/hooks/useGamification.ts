@@ -7,6 +7,7 @@ export const gamKeys = {
   myBadges: () => ['gamification', 'my-badges'] as const,
   allBadges: () => ['gamification', 'all-badges'] as const,
   history: (page: number) => ['gamification', 'history', page] as const,
+  scoreRules: () => ['gamification', 'score-rules'] as const,
 };
 
 export function useMyScore() {
@@ -46,5 +47,13 @@ export function useScoreHistory(page = 1, limit = 20) {
     queryKey: gamKeys.history(page),
     queryFn: () => gamificationService.getScoreHistory(page, limit),
     select: (res) => res.data,
+  });
+}
+
+export function useScoreRules() {
+  return useQuery({
+    queryKey: gamKeys.scoreRules(),
+    queryFn: () => gamificationService.getScoreRules(),
+    staleTime: Infinity, // Score rules rarely change
   });
 }

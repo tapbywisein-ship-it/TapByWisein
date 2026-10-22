@@ -7,7 +7,7 @@ import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
-import { useMyScore, useScoreHistory } from '@/hooks/useGamification';
+import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
 import { useMyRegistrations } from '@/hooks/useEvents';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -153,6 +153,7 @@ const AttendeeDashboard = () => {
   const upcomingEvents = myEvents
     .filter((r) => r.status === 'REGISTERED' || r.status === 'WAITLISTED')
     .slice(0, 3);
+  const { data: scoreRules = [] } = useScoreRules();
 
   const profile = profileData?.profile;
   const pct = profileCompletion(profile);
@@ -325,8 +326,8 @@ const AttendeeDashboard = () => {
                   <p className="text-xs text-muted-foreground">FK Score</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {[
-                      { label: '+50 Attend event', done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
-                      { label: '+20 Connect', done: false },
+                      { label: `+${scoreRules.find(r => r.action === 'Attend an event (check-in)')?.points} Attend event`, done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
+                      { label: `+${scoreRules.find(r => r.action === 'Make a connection')?.points} Connect`, done: false },
                     ].map((hint) => (
                       <span key={hint.label} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${hint.done ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-muted/40 border-border text-muted-foreground'}`}>
                         {hint.done ? '✓' : ''} {hint.label}
