@@ -181,7 +181,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         </button>
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Primary">
           {navItems.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge =
               item.badge === 'connect'
                 ? pendingRequests ?? 0
@@ -397,7 +397,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       >
         <div className="flex justify-around py-1.5">
           {bottomNav.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge = item.path === '/connect' && pendingRequests ? pendingRequests : 0;
             return (
               <Link
