@@ -730,11 +730,10 @@ const EventDetailUnified = () => {
             <Button className="w-full" size="lg" onClick={handleRegister}>
               {requiresPayment ? 'Sign in to buy a ticket' : 'Register'}
             </Button>
-          ) : user?.role !== 'attendee' ? (
-            <p className="text-xs text-muted-foreground text-center py-3">
-              Sign in as an Attendee to register for events.
-            </p>
           ) : requiresPayment ? (
+            // Anyone signed in can join, whatever their role. This page used to
+            // block organizers ("Sign in as an Attendee"), while the backend and
+            // the Events list already let them register.
             <div className="space-y-2">
               {/* Coupon */}
               {couponApplied ? (
