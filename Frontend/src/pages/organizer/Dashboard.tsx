@@ -43,10 +43,10 @@ const OrganizerDashboard = () => {
 
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
-  const pendingItems = checklistItems.filter((i) => !i.done);
+  const allDone = completedCount === totalCount;
   // Wait for the profile to load: before it arrives every task looks undone,
-  // which flashed "0/4" and then hid the card a few seconds later.
-  const isProfileIncomplete = !!profile && pendingItems.length > 0;
+  // which flashed "0/4". Once loaded the card always stays (4/4 when done).
+  const showProfileSetup = !!profile;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 10 },
@@ -103,8 +103,8 @@ const OrganizerDashboard = () => {
         </motion.div>
 
         {/* Top Row: Profile Setup & Quick Actions Side-by-Side */}
-        <div className={`grid grid-cols-1 ${isProfileIncomplete ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
-          {isProfileIncomplete && (
+        <div className={`grid grid-cols-1 ${showProfileSetup ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
+          {showProfileSetup && (
             <motion.div {...fade(0.02)} className="h-full">
               <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
                 <div>
@@ -121,22 +121,26 @@ const OrganizerDashboard = () => {
                   </div>
                   <div className="h-px bg-border/60 mb-3" />
 
-                  {/* Scrollable list of pending unentered items only */}
+                  {/* All 4 tasks, done ones ticked, like the attendee Dashboard */}
                   <div className="max-h-40 overflow-y-auto pr-1 space-y-3">
-                    {pendingItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-3 text-sm">
+                    {checklistItems.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                          <span className="truncate text-sm text-foreground font-medium">
+                          {item.done
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                            : <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />}
+                          <span className={`truncate text-sm font-medium ${item.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                             {item.label}
                           </span>
                         </div>
-                        <Link
-                          to={item.to}
-                          className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
-                        >
-                          {item.action}
-                        </Link>
+                        {!item.done && (
+                          <Link
+                            to={item.to}
+                            className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
+                          >
+                            {item.action}
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -144,7 +148,7 @@ const OrganizerDashboard = () => {
 
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full py-2.5 shadow-sm mt-3">
                   <Link to="/profile" className="flex items-center justify-center gap-2">
-                    Complete profile <ArrowRight className="w-4 h-4" />
+                    {allDone ? 'View profile' : 'Complete profile'} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </Surface>

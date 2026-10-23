@@ -12,7 +12,7 @@ import { useMyRegistrations } from '@/hooks/useEvents';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
-import { profileNeedsOnboarding, profileCompletion, profileSetupChecklist } from '@/lib/profileCompletion';
+import { profileNeedsOnboarding, profileSetupChecklist } from '@/lib/profileCompletion';
 import { hasEventEnded } from '@/lib/eventCountdown';
 import { levelProgress } from '@/lib/scoreRules';
 import { useMyCard } from '@/hooks/useFounderCard';
@@ -164,7 +164,6 @@ const AttendeeDashboard = () => {
   const { data: scoreRules = [] } = useScoreRules();
 
   const profile = profileData?.profile;
-  const pct = profileCompletion(profile);
 
   // Accepted connections — total count (exact, from the paginated meta) + the
   // most recent few for the Dashboard widget.
@@ -248,8 +247,9 @@ const AttendeeDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {/* ── Profile Checklist ── */}
-          {/* Only once the profile has loaded, so it doesn't flash 0/4 first. */}
-          {profile && pct < 100 && (
+          {/* Shown once the profile has loaded (so it doesn't flash 0/4 first),
+              and kept at 4/4 when everything is done. */}
+          {profile && (
             <motion.div {...fade(0.08)} className="lg:col-span-1">
               <Surface className="h-full">
                 <div className="flex items-center justify-between mb-3">
@@ -265,7 +265,7 @@ const AttendeeDashboard = () => {
                   <motion.div
                     className="progress-fill"
                     initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
+                    animate={{ width: `${(completedSteps / checklistItems.length) * 100}%` }}
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
