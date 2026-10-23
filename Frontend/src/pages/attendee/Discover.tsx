@@ -45,7 +45,7 @@ const BackgroundGraphics = () => (
   </>
 );
 
-const DiscoverPage = () => { console.log('Discover Page Re-rendered!');
+const DiscoverPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') ?? '');

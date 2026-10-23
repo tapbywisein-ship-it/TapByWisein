@@ -13,7 +13,7 @@ import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useMyProfile } from '@/hooks/useProfile';
 import { profileSetupChecklist } from '@/lib/profileCompletion';
 import { useAppStore } from '@/store/appStore';
-import { formatINR } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 
 /* ── status pill ─────────────────────────────────────────────────────── */
 const statusPill = (status: string) => {
@@ -84,7 +84,7 @@ const OrganizerDashboard = () => {
             { label: 'Total Events',   value: stats?.totalEvents   ?? 0, icon: Calendar,     fmt: (v: number) => String(v) },
             { label: 'Upcoming',       value: stats?.upcomingEvents ?? 0, icon: Zap,          fmt: (v: number) => String(v) },
             { label: 'Attendees',      value: stats?.totalAttendees ?? 0, icon: Users,        fmt: (v: number) => String(v) },
-            { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatINR(v) },
+            { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatAmount(v) },
             { label: 'Check-in Rate',  value: stats?.checkInRate    ?? 0, icon: CheckCircle2, fmt: (v: number) => `${v}%` },
             { label: 'Leads',          value: stats?.totalLeads     ?? 0, icon: BarChart3,    fmt: (v: number) => String(v) },
           ] as const).map(({ label, value, icon: Icon, fmt }) => (
