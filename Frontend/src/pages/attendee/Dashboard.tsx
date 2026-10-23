@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
@@ -23,25 +24,6 @@ import {
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
   UserPlus, Eye, Award, TrendingUp, Copy, X,
 } from 'lucide-react';
-
-/* ─── animated counter ─────────────────────────────────────────────── */
-const Counter = ({ to, delay = 0 }: { to: number; delay?: number }) => {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      let cur = 0;
-      const step = Math.max(1, to / 50);
-      const id = setInterval(() => {
-        cur += step;
-        if (cur >= to) { setVal(to); clearInterval(id); }
-        else setVal(Math.floor(cur));
-      }, 20);
-      return () => clearInterval(id);
-    }, delay);
-    return () => clearTimeout(t);
-  }, [to, delay]);
-  return <>{val}</>;
-};
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
 const ShareSheet = ({ cardUrl, onClose }: { cardUrl: string; onClose: () => void }) => {
@@ -235,7 +217,7 @@ const AttendeeDashboard = () => {
             <Surface key={label} padding="md" className="text-center">
               <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-3" />
               <p className={`text-3xl font-bold mb-0.5 ${gold ? 'text-primary' : 'text-foreground'}`}>
-                <Counter to={value} delay={150} />
+                <AnimatedCounter value={value} />
               </p>
               <p className="text-xs text-muted-foreground">{label}</p>
               <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>

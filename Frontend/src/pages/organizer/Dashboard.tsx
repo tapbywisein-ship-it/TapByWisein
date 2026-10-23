@@ -1,5 +1,6 @@
 import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { PeopleYouMayKnow } from '@/components/PeopleYouMayKnow';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -92,11 +93,10 @@ const OrganizerDashboard = () => {
           ] as const).map(({ label, value, icon: Icon, fmt }) => (
             <Surface key={label} padding="md" className="text-center">
               <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
-              {isLoading ? (
-                <div className="h-7 bg-muted/50 rounded animate-pulse mb-1 mx-auto w-12" />
-              ) : (
-                <p className="text-2xl font-bold text-foreground mb-0.5">{fmt(value)}</p>
-              )}
+              {/* Rolls digits while loading, then counts up to the real number. */}
+              <p className="text-2xl font-bold text-foreground mb-0.5">
+                <AnimatedCounter value={isLoading ? undefined : value} format={fmt} />
+              </p>
               <p className="text-[11px] text-muted-foreground">{label}</p>
             </Surface>
           ))}
