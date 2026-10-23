@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useMyProfile } from '@/hooks/useProfile';
-import { hasUploadedAvatar } from '@/lib/profileCompletion';
+import { profileSetupChecklist } from '@/lib/profileCompletion';
 import { useAppStore } from '@/store/appStore';
 import { formatINR } from '@/lib/currency';
 
@@ -38,56 +38,8 @@ const OrganizerDashboard = () => {
   const trend  = stats?.registrationTrend ?? [];
   const profile = profileData?.profile;
 
-  const checklistItems = [
-    {
-      done: hasUploadedAvatar(profile?.avatar ?? user?.avatar) || !!(profile?.avatar ?? user?.avatar),
-      label: 'Add a profile photo',
-      action: 'Upload',
-      to: '/profile',
-    },
-    {
-      done: !!((profile?.bio ?? user?.bio)?.trim()),
-      label: 'Write a short bio',
-      action: 'Add bio',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.position || profile?.company || user?.designation || user?.company),
-      label: 'Add your role & company',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.skills ?? user?.skills)?.length ?? 0) >= 1,
-      label: 'Add at least 3 skills',
-      action: 'Add skills',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.interests ?? user?.interests)?.length ?? 0) >= 1,
-      label: 'Add interests',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.lookingFor ?? user?.lookingFor)?.length ?? 0) >= 1,
-      label: 'Add what you\'re looking for',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.linkedin || profile?.twitter || profile?.website || user?.linkedin || user?.twitter || user?.website),
-      label: 'Link a social profile',
-      action: 'Connect',
-      to: '/profile',
-    },
-    {
-      done: events.length > 0 || (stats?.totalEvents ?? 0) > 0,
-      label: 'Create your first event',
-      action: 'Create',
-      to: '/organizer/events/create',
-    },
-  ];
+  // Same 4 Profile Setup tasks and rules as the attendee Dashboard.
+  const checklistItems = profileSetupChecklist(profile);
 
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;

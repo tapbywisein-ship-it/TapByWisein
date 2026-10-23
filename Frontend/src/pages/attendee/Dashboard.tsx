@@ -12,7 +12,7 @@ import { useMyRegistrations } from '@/hooks/useEvents';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
-import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar, BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
+import { profileNeedsOnboarding, profileCompletion, profileSetupChecklist } from '@/lib/profileCompletion';
 import { hasEventEnded } from '@/lib/eventCountdown';
 import { levelProgress } from '@/lib/scoreRules';
 import { useMyCard } from '@/hooks/useFounderCard';
@@ -189,12 +189,8 @@ const AttendeeDashboard = () => {
   });
 
   /* checklist items */
-  const checklistItems = [
-    { done: hasUploadedAvatar(profile?.avatar), label: 'Add a profile photo', action: 'Upload', to: '/profile' },
-    { done: !!(profile?.bio && profile.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
-    { done: !!(profile?.position || profile?.company), label: 'Add your role & company', action: 'Add', to: '/profile' },
-    { done: (profile?.skills?.length ?? 0) >= 3, label: 'Add at least 3 skills', action: 'Add skills', to: '/profile' },
-  ];
+  // Shared with the organizer Dashboard so both show the same 4 tasks.
+  const checklistItems = profileSetupChecklist(profile);
   const completedSteps = checklistItems.filter((i) => i.done).length;
   const nextStep = checklistItems.find((i) => !i.done);
 

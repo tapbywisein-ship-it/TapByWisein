@@ -47,3 +47,17 @@ export function profileNeedsOnboarding(p: ProfileLike | null | undefined): boole
   if (!p) return true;
   return (p.skills?.length ?? 0) === 0 && (p.interests?.length ?? 0) === 0;
 }
+
+/**
+ * The "Profile Setup" tasks, shared by the attendee and organizer Dashboards
+ * so both show the same 4 steps with the same rules (each check matches its
+ * label: e.g. "at least 3 skills" really needs 3).
+ */
+export function profileSetupChecklist(p: ProfileLike | null | undefined) {
+  return [
+    { done: hasUploadedAvatar(p?.avatar), label: 'Add a profile photo', action: 'Upload', to: '/profile' },
+    { done: !!(p?.bio && p.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
+    { done: !!(p?.position || p?.company), label: 'Add your role & company', action: 'Add', to: '/profile' },
+    { done: (p?.skills?.length ?? 0) >= 3, label: 'Add at least 3 skills', action: 'Add skills', to: '/profile' },
+  ];
+}
