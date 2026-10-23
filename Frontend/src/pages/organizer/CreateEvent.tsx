@@ -210,7 +210,8 @@ const CreateEventPage = () => {
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [locationExpanded, setLocationExpanded] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
+  // Open by default: description is required, so it shouldn't look optional.
+  const [descExpanded, setDescExpanded] = useState(true);
 
   const [form, setForm] = useState<FormState>({
     title: '',
@@ -706,8 +707,8 @@ const CreateEventPage = () => {
           {/* ── Two-column grid ────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-[340px,1fr] gap-8 items-start">
 
-            {/* ── LEFT: Cover picker + Theme ───────────────────────────────── */}
-            <div className="space-y-4">
+            {/* ── LEFT: Cover picker + Theme (sticky on wide screens, so it stays in view) */}
+            <div className="space-y-4 lg:sticky lg:top-6">
 
               {/* Cover image preview & picker — square container with rounded corners */}
               <div
@@ -872,149 +873,6 @@ const CreateEventPage = () => {
             {/* ── RIGHT: Event Details ─────────────────────────────────────── */}
             <div className="space-y-4">
 
-              {/* Top row: Calendar dropdown + Visibility toggle */}
-              <div className="flex items-center justify-between gap-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
-                    >
-                      <Calendar className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                      <span>
-                        {form.communityId && myCommunities?.find((c) => c.id === form.communityId)
-                          ? `${myCommunities.find((c) => c.id === form.communityId)?.name} Calendar`
-                          : 'Personal Calendar'}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className={`w-64 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
-                      isDark
-                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
-                        : 'border border-neutral-200 bg-white text-neutral-900'
-                    }`}
-                  >
-                    <div className={`text-[11px] font-semibold px-2 py-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                      Select Calendar
-                    </div>
-                    <DropdownMenuItem
-                      onClick={() => set('communityId', '')}
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                        !form.communityId
-                          ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
-                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Calendar className="w-3.5 h-3.5 shrink-0 opacity-70" />
-                        <span className="text-xs truncate">Personal Calendar</span>
-                      </div>
-                      {!form.communityId && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                    </DropdownMenuItem>
-
-                    {(myCommunities ?? []).length > 0 && (
-                      <>
-                        <div className={`text-[10px] font-semibold px-2 pt-2 pb-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                          Communities
-                        </div>
-                        {myCommunities!.map((c) => {
-                          const isActive = form.communityId === c.id;
-                          return (
-                            <DropdownMenuItem
-                              key={c.id}
-                              onClick={() => set('communityId', c.id)}
-                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                                isActive
-                                  ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
-                                  : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Building2 className="w-3.5 h-3.5 shrink-0 opacity-70" />
-                                <span className="text-xs truncate">{c.name} Calendar</span>
-                              </div>
-                              {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
-                    >
-                      {form.visibility === 'PRIVATE' ? (
-                        <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                      ) : (
-                        <Globe className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                      )}
-                      <span>{form.visibility === 'PRIVATE' ? 'Private' : 'Public'}</span>
-                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className={`w-72 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
-                      isDark
-                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
-                        : 'border border-neutral-200 bg-white text-neutral-900'
-                    }`}
-                  >
-                    <DropdownMenuItem
-                      onClick={() => set('visibility', 'PUBLIC')}
-                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
-                        form.visibility === 'PUBLIC'
-                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
-                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
-                      }`}
-                    >
-                      <Globe className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
-                      <div className="flex-1 min-w-0 pr-1">
-                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Public</p>
-                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                          Shown on your calendar and discoverable by anyone.
-                        </p>
-                      </div>
-                      {form.visibility === 'PUBLIC' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      onClick={() => set('visibility', 'PRIVATE')}
-                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer mt-1 transition-colors ${
-                        form.visibility === 'PRIVATE'
-                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
-                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
-                      }`}
-                    >
-                      <Sparkles className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
-                      <div className="flex-1 min-w-0 pr-1">
-                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Private</p>
-                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                          Unlisted. Only people with the link can register.
-                        </p>
-                      </div>
-                      {form.visibility === 'PRIVATE' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
               {/* Event Name Card */}
               <div
                 className={`p-4 rounded-[14px] transition-colors ${
@@ -1037,49 +895,10 @@ const CreateEventPage = () => {
                 />
               </div>
 
-              {/* Community Card (optional) */}
-              {(myCommunities?.length ?? 0) > 0 && (
-                <div
-                  className={`p-4 rounded-[14px] space-y-1.5 transition-colors ${
-                    isDark
-                      ? 'border border-white/10'
-                      : 'border border-neutral-200'
-                  }`}
-                >
-                  <label htmlFor="event-community" className={`block text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                    Community (optional)
-                  </label>
-                  <Select
-                    value={form.communityId || 'none'}
-                    onValueChange={(val) => set('communityId', val === 'none' ? '' : val)}
-                  >
-                    <SelectTrigger
-                      id="event-community"
-                      className={`w-full h-10 px-3 text-sm rounded-xl focus:ring-1 focus:ring-primary ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-200'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                      }`}
-                    >
-                      <SelectValue placeholder="No community" />
-                    </SelectTrigger>
-                    <SelectContent
-                      className={`rounded-xl shadow-2xl backdrop-blur-xl ${
-                        isDark
-                          ? 'border border-white/15 bg-[#252528] text-neutral-100'
-                          : 'border border-neutral-200 bg-white text-neutral-900'
-                      }`}
-                    >
-                      <SelectItem value="none">No community</SelectItem>
-                      {myCommunities!.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* ── When ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                When
+              </p>
 
               {/* Date & Time Card */}
               <div
@@ -1177,6 +996,11 @@ const CreateEventPage = () => {
                   </select>
                 </div>
               </div>
+
+              {/* ── Where ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Where
+              </p>
 
               {/* Location — expandable card */}
               <div
@@ -1356,6 +1180,11 @@ const CreateEventPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* ── About ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                About
+              </p>
 
               {/* Description — expandable card */}
               <div
@@ -1756,6 +1585,198 @@ const CreateEventPage = () => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* ── Visibility & sharing ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Visibility & sharing
+              </p>
+
+              {/* Top row: Calendar dropdown + Visibility toggle */}
+              <div className="flex items-center justify-between gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
+                        isDark
+                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
+                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
+                      }`}
+                    >
+                      <Calendar className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      <span>
+                        {form.communityId && myCommunities?.find((c) => c.id === form.communityId)
+                          ? `${myCommunities.find((c) => c.id === form.communityId)?.name} Calendar`
+                          : 'Personal Calendar'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className={`w-64 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    <div className={`text-[11px] font-semibold px-2 py-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                      Select Calendar
+                    </div>
+                    <DropdownMenuItem
+                      onClick={() => set('communityId', '')}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                        !form.communityId
+                          ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                        <span className="text-xs truncate">Personal Calendar</span>
+                      </div>
+                      {!form.communityId && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    </DropdownMenuItem>
+
+                    {(myCommunities ?? []).length > 0 && (
+                      <>
+                        <div className={`text-[10px] font-semibold px-2 pt-2 pb-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Communities
+                        </div>
+                        {myCommunities!.map((c) => {
+                          const isActive = form.communityId === c.id;
+                          return (
+                            <DropdownMenuItem
+                              key={c.id}
+                              onClick={() => set('communityId', c.id)}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                                isActive
+                                  ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                                  : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Building2 className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                                <span className="text-xs truncate">{c.name} Calendar</span>
+                              </div>
+                              {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
+                        isDark
+                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
+                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
+                      }`}
+                    >
+                      {form.visibility === 'PRIVATE' ? (
+                        <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      ) : (
+                        <Globe className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      )}
+                      <span>{form.visibility === 'PRIVATE' ? 'Private' : 'Public'}</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className={`w-72 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PUBLIC')}
+                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
+                        form.visibility === 'PUBLIC'
+                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <Globe className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Public</p>
+                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Shown on your calendar and discoverable by anyone.
+                        </p>
+                      </div>
+                      {form.visibility === 'PUBLIC' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PRIVATE')}
+                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer mt-1 transition-colors ${
+                        form.visibility === 'PRIVATE'
+                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Private</p>
+                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Unlisted. Only people with the link can register.
+                        </p>
+                      </div>
+                      {form.visibility === 'PRIVATE' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Community Card (optional) */}
+              {(myCommunities?.length ?? 0) > 0 && (
+                <div
+                  className={`p-4 rounded-[14px] space-y-1.5 transition-colors ${
+                    isDark
+                      ? 'border border-white/10'
+                      : 'border border-neutral-200'
+                  }`}
+                >
+                  <label htmlFor="event-community" className={`block text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                    Community (optional)
+                  </label>
+                  <Select
+                    value={form.communityId || 'none'}
+                    onValueChange={(val) => set('communityId', val === 'none' ? '' : val)}
+                  >
+                    <SelectTrigger
+                      id="event-community"
+                      className={`w-full h-10 px-3 text-sm rounded-xl focus:ring-1 focus:ring-primary ${
+                        isDark
+                          ? 'bg-black/20 border border-white/10 text-neutral-200'
+                          : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
+                      }`}
+                    >
+                      <SelectValue placeholder="No community" />
+                    </SelectTrigger>
+                    <SelectContent
+                      className={`rounded-xl shadow-2xl backdrop-blur-xl ${
+                        isDark
+                          ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                          : 'border border-neutral-200 bg-white text-neutral-900'
+                      }`}
+                    >
+                      <SelectItem value="none">No community</SelectItem>
+                      {myCommunities!.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
