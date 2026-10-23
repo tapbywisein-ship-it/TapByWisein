@@ -868,11 +868,8 @@ const CreateEventPage = () => {
                 </div>
               </div>
 
-            </div>
 
-            {/* ── RIGHT: Event Details ─────────────────────────────────────── */}
-            <div className="space-y-4">
-
+              {/* Event name and category sit under the theme, next to the cover */}
               {/* Event Name Card */}
               <div
                 className={`p-4 rounded-[14px] transition-colors ${
@@ -894,6 +891,54 @@ const CreateEventPage = () => {
                   }`}
                 />
               </div>
+
+              {/* Category Card */}
+              <div
+                className={`p-4 rounded-[14px] transition-colors ${
+                  isDark
+                    ? 'border border-white/10'
+                    : 'border border-neutral-200'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
+                  <span className="text-xs text-red-500">*</span>
+                </div>
+                <Select
+                  value={form.category}
+                  onValueChange={(val) => set('category', val)}
+                >
+                  <SelectTrigger
+                    className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
+                      isDark
+                        ? 'bg-black/20 border border-white/10 text-neutral-200'
+                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
+                    }`}
+                  >
+                    <SelectValue placeholder="Select a category…" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className={`rounded-xl shadow-2xl backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    {EVENT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.id} value={c.label}>
+                        <div className="flex items-center gap-2">
+                          <c.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span>{c.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* ── RIGHT: Event Details ─────────────────────────────────────── */}
+            <div className="space-y-4">
 
               {/* ── When ── */}
               <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
@@ -1217,50 +1262,6 @@ const CreateEventPage = () => {
                     }`}
                   />
                 )}
-              </div>
-
-              {/* Category Card */}
-              <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
-                  <span className="text-xs text-red-500">*</span>
-                </div>
-                <Select
-                  value={form.category}
-                  onValueChange={(val) => set('category', val)}
-                >
-                  <SelectTrigger
-                    className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                    }`}
-                  >
-                    <SelectValue placeholder="Select a category…" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className={`rounded-xl shadow-2xl backdrop-blur-xl ${
-                      isDark
-                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
-                        : 'border border-neutral-200 bg-white text-neutral-900'
-                    }`}
-                  >
-                    {EVENT_CATEGORIES.map((c) => (
-                      <SelectItem key={c.id} value={c.label}>
-                        <div className="flex items-center gap-2">
-                          <c.icon className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span>{c.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Event Options Card */}
