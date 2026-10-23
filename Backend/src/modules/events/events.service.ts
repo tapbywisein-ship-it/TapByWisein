@@ -26,6 +26,18 @@ const PUBLIC_ORGANIZER_SELECT = {
   },
 } as const;
 
+// Same idea for the event row itself: checkInToken is the secret behind the
+// venue's check-in poster QR, so it must never be sent on public endpoints
+// (anyone holding it can self check-in remotely). Organizers get it from
+// getOrCreateCheckInToken, which checks they own the event.
+function withoutPrivateEventFields<T extends { checkInToken: string | null; checkInTokenExpiresAt: Date | null }>(
+  event: T
+) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { checkInToken, checkInTokenExpiresAt, ...publicEvent } = event;
+  return publicEvent;
+}
+
 // Maps a Prisma User (with profile / founderCard / gamification eager-loaded)
 // to the shape /auth/login returns. Used by guest RSVP auto-sign-in.
 function buildAuthUser(
@@ -328,7 +340,7 @@ export class EventsService {
     for (const t of tierCounts) if (t.ticketTierId) soldByTier[t.ticketTierId] = t._count._all;
 
     return {
-      ...event,
+      ...withoutPrivateEventFields(event),
       registeredCount: event._count.registrations,
       registrationStatus,
       soldByTier,
@@ -353,7 +365,10 @@ export class EventsService {
       visibility: 'PUBLIC',
     };
 
-    if (dto.status) where.status = dto.status;
+    // Never list drafts publicly, even if the caller leaves `status` out (the
+    // homepage does) or asks for DRAFT. Organizers see their own drafts in the
+    // organizer dashboard. Same rule the community page uses.
+    where.status = dto.status && dto.status !== 'DRAFT' ? dto.status : { not: 'DRAFT' };
     if (dto.type) where.locationType = dto.type;
     if (dto.category) where.category = { contains: dto.category, mode: 'insensitive' };
     if (dto.city) where.city = { contains: dto.city, mode: 'insensitive' };
@@ -437,7 +452,7 @@ export class EventsService {
 
     return {
       events: events.map((e) => ({
-        ...e,
+        ...withoutPrivateEventFields(e),
         registeredCount: e._count.registrations,
         spotsLeft: Math.max(0, e.capacity - e._count.registrations),
         registrationStatus: regByEvent.get(e.id) ?? null,
