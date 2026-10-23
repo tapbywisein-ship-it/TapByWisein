@@ -391,7 +391,8 @@ export const EventBrowser = ({
 
       {/* 3. CATEGORIES - Fixed spacing: mt-[22px] */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.10 }} className="mt-[22px] w-full overflow-hidden z-10 px-1">
-        <div className="flex gap-[14px] overflow-x-auto pb-4 hide-scroll snap-x">
+        {/* Phones: one row you swipe. Wider screens: wrap onto more lines so no chip is cut off. */}
+        <div className="flex gap-[14px] overflow-x-auto pt-1 pb-4 hide-scroll snap-x md:flex-wrap md:overflow-visible">
           {CATEGORIES.map((cat) => {
             const active = selectedCategory === cat.id;
             return (
