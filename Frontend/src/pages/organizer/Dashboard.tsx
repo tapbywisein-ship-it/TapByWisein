@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useMyProfile } from '@/hooks/useProfile';
-import { hasUploadedAvatar } from '@/lib/profileCompletion';
+import { profileSetupChecklist } from '@/lib/profileCompletion';
 import { useAppStore } from '@/store/appStore';
-import { formatINR } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 
 /* ── status pill ─────────────────────────────────────────────────────── */
 const statusPill = (status: string) => {
@@ -38,61 +38,15 @@ const OrganizerDashboard = () => {
   const trend  = stats?.registrationTrend ?? [];
   const profile = profileData?.profile;
 
-  const checklistItems = [
-    {
-      done: hasUploadedAvatar(profile?.avatar ?? user?.avatar) || !!(profile?.avatar ?? user?.avatar),
-      label: 'Add a profile photo',
-      action: 'Upload',
-      to: '/profile',
-    },
-    {
-      done: !!((profile?.bio ?? user?.bio)?.trim()),
-      label: 'Write a short bio',
-      action: 'Add bio',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.position || profile?.company || user?.designation || user?.company),
-      label: 'Add your role & company',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.skills ?? user?.skills)?.length ?? 0) >= 1,
-      label: 'Add at least 3 skills',
-      action: 'Add skills',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.interests ?? user?.interests)?.length ?? 0) >= 1,
-      label: 'Add interests',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.lookingFor ?? user?.lookingFor)?.length ?? 0) >= 1,
-      label: 'Add what you\'re looking for',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.linkedin || profile?.twitter || profile?.website || user?.linkedin || user?.twitter || user?.website),
-      label: 'Link a social profile',
-      action: 'Connect',
-      to: '/profile',
-    },
-    {
-      done: events.length > 0 || (stats?.totalEvents ?? 0) > 0,
-      label: 'Create your first event',
-      action: 'Create',
-      to: '/organizer/events/create',
-    },
-  ];
+  // Same 4 Profile Setup tasks and rules as the attendee Dashboard.
+  const checklistItems = profileSetupChecklist(profile);
 
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
-  const pendingItems = checklistItems.filter((i) => !i.done);
-  const isProfileIncomplete = pendingItems.length > 0;
+  const allDone = completedCount === totalCount;
+  // Wait for the profile to load: before it arrives every task looks undone,
+  // which flashed "0/4". Once loaded the card always stays (4/4 when done).
+  const showProfileSetup = !!profile;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 10 },
@@ -132,7 +86,7 @@ const OrganizerDashboard = () => {
             { label: 'Total Events',   value: stats?.totalEvents   ?? 0, icon: Calendar,     fmt: (v: number) => String(v) },
             { label: 'Upcoming',       value: stats?.upcomingEvents ?? 0, icon: Zap,          fmt: (v: number) => String(v) },
             { label: 'Attendees',      value: stats?.totalAttendees ?? 0, icon: Users,        fmt: (v: number) => String(v) },
-            { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatINR(v) },
+            { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatAmount(v) },
             { label: 'Check-in Rate',  value: stats?.checkInRate    ?? 0, icon: CheckCircle2, fmt: (v: number) => `${v}%` },
             { label: 'Leads',          value: stats?.totalLeads     ?? 0, icon: BarChart3,    fmt: (v: number) => String(v) },
           ] as const).map(({ label, value, icon: Icon, fmt }) => (
@@ -149,8 +103,8 @@ const OrganizerDashboard = () => {
         </motion.div>
 
         {/* Top Row: Profile Setup & Quick Actions Side-by-Side */}
-        <div className={`grid grid-cols-1 ${isProfileIncomplete ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
-          {isProfileIncomplete && (
+        <div className={`grid grid-cols-1 ${showProfileSetup ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
+          {showProfileSetup && (
             <motion.div {...fade(0.02)} className="h-full">
               <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
                 <div>
@@ -167,22 +121,26 @@ const OrganizerDashboard = () => {
                   </div>
                   <div className="h-px bg-border/60 mb-3" />
 
-                  {/* Scrollable list of pending unentered items only */}
+                  {/* All 4 tasks, done ones ticked, like the attendee Dashboard */}
                   <div className="max-h-40 overflow-y-auto pr-1 space-y-3">
-                    {pendingItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-3 text-sm">
+                    {checklistItems.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                          <span className="truncate text-sm text-foreground font-medium">
+                          {item.done
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                            : <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />}
+                          <span className={`truncate text-sm font-medium ${item.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                             {item.label}
                           </span>
                         </div>
-                        <Link
-                          to={item.to}
-                          className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
-                        >
-                          {item.action}
-                        </Link>
+                        {!item.done && (
+                          <Link
+                            to={item.to}
+                            className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
+                          >
+                            {item.action}
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -190,7 +148,7 @@ const OrganizerDashboard = () => {
 
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full py-2.5 shadow-sm mt-3">
                   <Link to="/profile" className="flex items-center justify-center gap-2">
-                    Complete profile <ArrowRight className="w-4 h-4" />
+                    {allDone ? 'View profile' : 'Complete profile'} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </Surface>

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdmin';
 import { useAppStore } from '@/store/appStore';
-import { formatINR } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 10 },
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
             { label: 'Total Events',   value: stats?.totalEvents,        icon: Calendar,     fmt: (v: number) => v.toLocaleString() },
             { label: 'Connections',    value: stats?.totalConnections,   icon: Zap,          fmt: (v: number) => v.toLocaleString() },
             { label: 'Tap Cards',      value: stats?.activeFounderCards, icon: CreditCard,   fmt: (v: number) => v.toLocaleString() },
-            { label: 'Revenue',        value: stats?.totalRevenue,       icon: IndianRupee,  fmt: (v: number) => formatINR(v) },
+            { label: 'Revenue',        value: stats?.totalRevenue,       icon: IndianRupee,  fmt: (v: number) => formatAmount(v) },
           ] as const).map(({ label, value, icon: Icon, fmt }) => (
             <Surface key={label} padding="md" className="text-center">
               <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-2" />

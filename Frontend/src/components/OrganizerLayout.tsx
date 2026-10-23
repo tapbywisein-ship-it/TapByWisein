@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X, CalendarDays, Search,
+  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X, CalendarDays, Search, MessageCircle, Trophy,
 } from 'lucide-react';
 
 const navItems = [
@@ -36,10 +36,18 @@ const navItems = [
   { label: 'Payouts',      icon: Wallet,           path: '/organizer/payouts' },
   { label: 'Connect',      icon: Scan,             path: '/connect' },
   { label: 'Connections',  icon: Network,          path: '/connections' },
+  // Messages and FK Score already work for organizers; they just weren't linked.
+  { label: 'Messages',     icon: MessageCircle,    path: '/messages' },
   { label: 'Browse Events', icon: Compass,         path: '/discover' },
   { label: 'My Tickets',   icon: Ticket,           path: '/my-tickets' },
+  { label: 'FK Score',     icon: Trophy,           path: '/gamification' },
   { label: 'Tap Card',     icon: QrCode,           path: '/apply-card' },
 ];
+
+// Active on the item's page and its sub-pages (e.g. /messages/123), but not on
+// a different page that merely starts with the same letters.
+const isActivePath = (pathname: string, path: string) =>
+  pathname === path || pathname.startsWith(path + '/');
 
 /* Four primary tabs for mobile bottom navigation */
 const mobileNav = [
@@ -120,7 +128,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Organizer">
           {navItems.map((item) => {
-            const active = location.pathname === item.path;
+            const active = isActivePath(location.pathname, item.path);
             return (
               <Link
                 key={item.path}
@@ -183,7 +191,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border flex items-center justify-around px-2 pb-safe" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}>
         {mobileNav.map((item) => {
-          const active = location.pathname === item.path;
+          const active = isActivePath(location.pathname, item.path);
           const isNew = item.label === 'New';
           return (
             <Link
@@ -247,7 +255,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
                 <span className="text-[11px] font-medium leading-tight">Search</span>
               </button>
               {navItems.map((item) => {
-                const active = location.pathname === item.path;
+                const active = isActivePath(location.pathname, item.path);
                 return (
                   <Link
                     key={item.path}
