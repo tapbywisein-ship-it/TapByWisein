@@ -241,6 +241,8 @@ const EventDetailUnified = () => {
   // The organizer's "registration closes" date (if set) has passed.
   const registrationClosed =
     !!event.registrationDeadline && new Date(event.registrationDeadline) < new Date();
+  // The signed-in user organizes this event: they manage it instead of registering.
+  const isHost = isAuthenticated && !!user?.id && user.id === event.organizerId;
 
   const monthLabel = startDate
     .toLocaleString('en-US', { month: 'short' })
@@ -578,7 +580,7 @@ const EventDetailUnified = () => {
           )}
 
           {/* Paid events: selectable ticket tiers (with per-tier sold-out) */}
-          {requiresPayment && payableTiers.length > 0 && !isRegistered && !isPast && !isPendingApproval && !registrationClosed && (
+          {requiresPayment && payableTiers.length > 0 && !isRegistered && !isPast && !isPendingApproval && !registrationClosed && !isHost && (
             <div className="space-y-2 mb-3">
               {payableTiers.map((t) => {
                 const sold = event.soldByTier?.[t.id] ?? 0;
@@ -653,7 +655,17 @@ const EventDetailUnified = () => {
           </div>
 
           {/* Status / action button */}
-          {isPast ? (
+          {isHost ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 py-3 rounded-md bg-primary/10 border border-primary/30">
+                <Users className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">You're hosting this event</span>
+              </div>
+              <Button asChild className="w-full" size="lg">
+                <Link to={`/organizer/events/${event.id}`}>Manage event</Link>
+              </Button>
+            </div>
+          ) : isPast ? (
             <Surface padding="sm">
               <p className="text-sm font-medium text-foreground inline-flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" /> Past event
