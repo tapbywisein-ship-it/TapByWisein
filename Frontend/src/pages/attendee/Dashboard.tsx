@@ -13,6 +13,7 @@ import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
 import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar, BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
+import { hasEventEnded } from '@/lib/eventCountdown';
 import { useMyCard } from '@/hooks/useFounderCard';
 import { toast } from 'sonner';
 import {
@@ -152,6 +153,7 @@ const AttendeeDashboard = () => {
   const myEvents = registrations?.registrations ?? [];
   const upcomingEvents = myEvents
     .filter((r) => r.status === 'REGISTERED' || r.status === 'WAITLISTED')
+    .filter((r) => !hasEventEnded(r.event))
     .slice(0, 3);
   const { data: scoreRules = [] } = useScoreRules();
 
