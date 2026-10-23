@@ -14,6 +14,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
 import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar, BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
 import { hasEventEnded } from '@/lib/eventCountdown';
+import { levelProgress } from '@/lib/scoreRules';
 import { useMyCard } from '@/hooks/useFounderCard';
 import { toast } from 'sonner';
 import {
@@ -151,10 +152,15 @@ const AttendeeDashboard = () => {
   const score = gamification?.fkScore ?? 0;
   const level = gamification?.level ?? 1;
   const myEvents = registrations?.registrations ?? [];
-  const upcomingEvents = myEvents
+  // Bookings arrive newest-booked first, so sort by when the event starts:
+  // the box should show the next 3 events, not the 3 most recently booked.
+  const eventStart = (r: (typeof myEvents)[number]) =>
+    r.event ? new Date(r.event.startDate).getTime() : Infinity;
+  const allUpcoming = myEvents
     .filter((r) => r.status === 'REGISTERED' || r.status === 'WAITLISTED')
     .filter((r) => !hasEventEnded(r.event))
-    .slice(0, 3);
+    .sort((a, b) => eventStart(a) - eventStart(b));
+  const upcomingEvents = allUpcoming.slice(0, 3);
   const { data: scoreRules = [] } = useScoreRules();
 
   const profile = profileData?.profile;
@@ -229,7 +235,7 @@ const AttendeeDashboard = () => {
             { label: 'Registered', value: myEvents.length, sub: 'Events', icon: Calendar },
             { label: 'FK Score', value: score, sub: `Level ${level}`, icon: Trophy, gold: true },
             { label: 'Connections', value: connectionCount, sub: 'People', icon: Users },
-            { label: 'Upcoming', value: upcomingEvents.length, sub: 'Events', icon: Sparkles },
+            { label: 'Upcoming', value: allUpcoming.length, sub: 'Events', icon: Sparkles },
           ].map(({ label, value, sub, icon: Icon, gold }) => (
             <Surface key={label} padding="md" className="text-center">
               <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-3" />
@@ -302,7 +308,7 @@ const AttendeeDashboard = () => {
                       stroke="hsl(var(--gold-primary, var(--primary)))"
                       strokeWidth="3" strokeLinecap="round"
                       strokeDasharray="0 100.5"
-                      animate={{ strokeDasharray: `${Math.min(score, 100) * 1.005} 100.5` }}
+                      animate={{ strokeDasharray: `${levelProgress(score).percent * 1.005} 100.5` }}
                       transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
                     />
                   </svg>
