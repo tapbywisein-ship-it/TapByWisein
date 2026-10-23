@@ -879,7 +879,7 @@ const CreateEventPage = () => {
                 }`}
               >
                 <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                  Event Name <span className="text-red-500">*</span>
+                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                 </label>
                 {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
                 <input
@@ -905,7 +905,7 @@ const CreateEventPage = () => {
               >
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
-                  <span className="text-xs text-red-500">*</span>
+                  <span className={`text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                 </div>
                 <Select
                   value={form.category}
@@ -960,7 +960,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Date <span className="text-red-500">*</span>
+                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="date"
@@ -975,7 +975,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Time <span className="text-red-500">*</span>
+                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="time"
@@ -994,7 +994,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Date <span className="text-red-500">*</span>
+                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="date"
@@ -1009,7 +1009,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Time <span className="text-red-500">*</span>
+                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="time"
