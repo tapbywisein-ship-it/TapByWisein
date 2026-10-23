@@ -44,7 +44,9 @@ const OrganizerDashboard = () => {
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
   const pendingItems = checklistItems.filter((i) => !i.done);
-  const isProfileIncomplete = pendingItems.length > 0;
+  // Wait for the profile to load: before it arrives every task looks undone,
+  // which flashed "0/4" and then hid the card a few seconds later.
+  const isProfileIncomplete = !!profile && pendingItems.length > 0;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 10 },

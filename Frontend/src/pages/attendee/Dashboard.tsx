@@ -248,7 +248,8 @@ const AttendeeDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {/* ── Profile Checklist ── */}
-          {pct < 100 && (
+          {/* Only once the profile has loaded, so it doesn't flash 0/4 first. */}
+          {profile && pct < 100 && (
             <motion.div {...fade(0.08)} className="lg:col-span-1">
               <Surface className="h-full">
                 <div className="flex items-center justify-between mb-3">
