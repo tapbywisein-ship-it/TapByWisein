@@ -19,7 +19,7 @@ import {
 } from '@/hooks/useCommunities';
 import type { CommunityPost, CommunityPostComment, PostAuthor } from '@/services/communities.service';
 import {
-  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2, ChevronDown, ChevronUp,
+  MessagesSquare, Megaphone, Pin, Trash2, MessageCircle, Send, Loader2, ChevronDown,
   Heart, Edit3, Check, X,
 } from 'lucide-react';
 
@@ -405,33 +405,59 @@ export const CommunityFeed = ({
   const { data: posts, isLoading } = useCommunityPosts(communityId);
   const createPost = useCreateCommunityPost(communityId);
 
+  // Announcements (and other pinned posts) stay at the top, as before. The
+  // rest read like a chat: oldest first, newest at the bottom next to the
+  // composer. The API returns pinned first, then newest first, so reverse the rest.
+  const pinnedPosts = (posts ?? []).filter((p) => p.pinned);
+  const chatPosts = (posts ?? []).filter((p) => !p.pinned).reverse();
+
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // True while the user is at (or near) the latest post. When they have
+  // scrolled up to read older posts, new posts don't yank them back down.
+  const followLatestRef = useRef(true);
+
   const submit = () => {
     const trimmed = body.trim();
     if (!trimmed) return;
     createPost.mutate(
       { body: trimmed, announce: isOwner && asAnnouncement },
-      { onSuccess: () => { setBody(''); setAsAnnouncement(false); } }
+      {
+        onSuccess: () => {
+          setBody('');
+          setAsAnnouncement(false);
+          // Your own post should always come into view.
+          followLatestRef.current = true;
+        },
+      }
     );
   };
 
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollToTop = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }
+  const scrollToLatest = () => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   };
 
   const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop } = scrollRef.current;
-    // Show arrow if user has scrolled down more than 120px
-    setShowScrollTop(scrollTop > 120);
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromLatest = el.scrollHeight - el.scrollTop - el.clientHeight;
+    followLatestRef.current = distanceFromLatest < 120;
+    // Show the arrow once the user is more than 120px above the latest post.
+    setShowJumpToLatest(distanceFromLatest > 120);
   };
+
+  // Each community opens at its latest post, like a chat app.
+  useEffect(() => {
+    followLatestRef.current = true;
+  }, [communityId]);
+
+  // Scroll down when posts load or a new one arrives, if following the latest.
+  const chatPostCount = chatPosts.length;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && followLatestRef.current) el.scrollTop = el.scrollHeight;
+  }, [chatPostCount, communityId]);
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
@@ -457,22 +483,22 @@ export const CommunityFeed = ({
             </p>
           </Surface>
         ) : (
-          (posts ?? []).map((post) => (
+          [...pinnedPosts, ...chatPosts].map((post) => (
             <PostCard key={post.id} post={post} communityId={communityId} canModerate={isOwner} />
           ))
         )}
       </div>
 
-      {/* Floating scroll to top button */}
-      {showScrollTop && (
+      {/* Floating "jump to latest" button, shown after scrolling up */}
+      {showJumpToLatest && (
         <button
           type="button"
-          onClick={scrollToTop}
-          aria-label="Scroll to top of feed"
+          onClick={scrollToLatest}
+          aria-label="Jump to latest post"
           className="absolute right-6 bottom-48 md:bottom-44 z-20 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-          title="Scroll to top"
+          title="Jump to latest"
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       )}
 
