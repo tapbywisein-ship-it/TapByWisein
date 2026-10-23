@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom';
 import { Calendar, Compass, Plus, AlertCircle } from 'lucide-react';
 import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { OrganizerEventRow } from '@/components/OrganizerEventRow';
+import { EventBrowser } from '@/components/EventBrowser';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { useMyOrgEvents } from '@/hooks/useOrganizer';
 
 /**
- * The organizer's one "Events" menu item: create an event, browse everyone's
- * events, and see the events they host. Replaces the separate "Create Event"
- * and "Browse Events" menu items.
+ * The organizer's one "Events" menu item: create an event, see the events they
+ * host, and browse everyone's events below. Replaces the separate "Create
+ * Event" and "Browse Events" menu items.
  */
 const OrganizerEventsPage = () => {
   const { data, isLoading, isError, refetch } = useMyOrgEvents(1, 50);
@@ -24,10 +25,12 @@ const OrganizerEventsPage = () => {
             <p className="text-sm text-muted-foreground mt-0.5">Create events, manage the ones you host, or browse others.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link to="/events">
-                <Compass className="w-4 h-4 mr-1.5" /> Browse events
-              </Link>
+            {/* Browsing is on this page (below Hosting), so just scroll to it. */}
+            <Button
+              variant="outline"
+              onClick={() => document.getElementById('browse')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              <Compass className="w-4 h-4 mr-1.5" /> Browse events
             </Button>
             <Button asChild>
               <Link to="/organizer/events/create">
@@ -83,6 +86,9 @@ const OrganizerEventsPage = () => {
             </div>
           )}
         </Surface>
+
+        {/* Everyone's events, with the Discover search and filters. */}
+        <EventBrowser id="browse" />
       </div>
     </OrganizerLayout>
   );
