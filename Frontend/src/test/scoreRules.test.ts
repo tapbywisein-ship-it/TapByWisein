@@ -1,5 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { SCORE_RULES } from "@/lib/scoreRules";
+import { SCORE_RULES, levelProgress } from "@/lib/scoreRules";
+
+describe("levelProgress", () => {
+  it("starts at 0% with 0 points, aiming for Level 2 at 100", () => {
+    expect(levelProgress(0)).toEqual({ nextLevel: 2, nextLevelScore: 100, percent: 0 });
+  });
+
+  it("measures progress within the current level, not from 0", () => {
+    // 120 pts = Level 2 (starts at 100); Level 3 starts at 250.
+    const p = levelProgress(120);
+    expect(p.nextLevel).toBe(3);
+    expect(p.nextLevelScore).toBe(250);
+    expect(p.percent).toBeCloseTo(13.33, 1);
+  });
+
+  it("resets to 0% exactly when a new level is reached", () => {
+    expect(levelProgress(250)).toEqual({ nextLevel: 4, nextLevelScore: 500, percent: 0 });
+  });
+
+  it("is full with no next level at the top level", () => {
+    expect(levelProgress(12000)).toEqual({ nextLevel: null, nextLevelScore: null, percent: 100 });
+  });
+});
 
 describe("Score Rules Consistency", () => {
   it("should have matching point values for all actions", () => {

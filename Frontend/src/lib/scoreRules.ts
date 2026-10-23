@@ -26,3 +26,27 @@ export const LEVEL_THRESHOLDS = [
   { level: 9, minScore: 6000, label: 'Pioneer' },
   { level: 10, minScore: 10000, label: 'Legend' },
 ] as const;
+
+/**
+ * How far a score is between its level and the next one, using the real
+ * LEVEL_THRESHOLDS above (same table as the backend). The FK Score page and
+ * the Dashboard ring both use this so they always agree.
+ * Example: 120 pts is Level 2 (starts at 100); Level 3 starts at 250, so
+ * progress is (120 - 100) / (250 - 100) = 13%.
+ */
+export function levelProgress(score: number) {
+  // The highest level whose starting score has been reached.
+  const current =
+    [...LEVEL_THRESHOLDS].reverse().find((t) => score >= t.minScore) ?? LEVEL_THRESHOLDS[0];
+  const next = LEVEL_THRESHOLDS.find((t) => t.level === current.level + 1);
+
+  // Already at the top level: nothing left to reach.
+  if (!next) return { nextLevel: null, nextLevelScore: null, percent: 100 };
+
+  const percent = ((score - current.minScore) / (next.minScore - current.minScore)) * 100;
+  return {
+    nextLevel: next.level,
+    nextLevelScore: next.minScore,
+    percent: Math.max(0, Math.min(100, percent)),
+  };
+}
