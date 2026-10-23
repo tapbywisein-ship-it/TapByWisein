@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { useEvents, useSavedEvents } from '@/hooks/useEvents';
+import { useEvents, useSavedEvents, useMyRegistrations } from '@/hooks/useEvents';
 import { useAppStore } from '@/store/appStore';
 import { SaveEventButton } from '@/components/SaveEventButton';
 import { QuickRegisterModal } from '@/components/QuickRegisterModal';
 import { getTheme } from '@/lib/eventThemes';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
-import { registrationCountdown } from '@/lib/eventCountdown';
+import { registrationCountdown, hasEventEnded } from '@/lib/eventCountdown';
 import type { Event } from '@/services/events.service';
 import { Calendar, MapPin, Search, AlertCircle, CheckCircle2, Clock, Users, Ticket, Bookmark } from 'lucide-react';
 import { EVENT_CATEGORIES } from '@/constants/categories';
@@ -88,6 +88,15 @@ export const EventBrowser = ({
   // Saved events need a login, so only ask for them when signed in.
   const { data: savedData } = useSavedEvents(1, 100, isAuthenticated);
   const savedIds = new Set(savedData?.events.map((e) => e.id) ?? []);
+
+  // "Your events": upcoming events I've joined, soonest first. Same page size
+  // as My Tickets and My Calendar, so they share one cached request.
+  const { data: myRegs } = useMyRegistrations(1, 100, isAuthenticated);
+  // Check the login here too: a switched-off query still returns old cached
+  // data, which could be the last signed-in user's after a logout.
+  const joined = (isAuthenticated ? myRegs?.registrations ?? [] : [])
+    .filter((r) => r.status !== 'CANCELLED' && r.event && !hasEventEnded(r.event))
+    .sort((a, b) => new Date(a.event!.startDate).getTime() - new Date(b.event!.startDate).getTime());
 
   const allEvents = data?.events ?? [];
   const events = savedOnly ? allEvents.filter((e) => savedIds.has(e.id)) : allEvents;
@@ -403,6 +412,56 @@ export const EventBrowser = ({
           })}
         </div>
       </motion.div>
+
+      {/* 3b. YOUR EVENTS - upcoming events I joined, only when signed in */}
+      {joined.length > 0 && (
+        <div className="mt-[30px] relative z-10">
+          <div className="flex items-center gap-4 mb-[14px] px-1">
+            <h2 className="text-[12px] font-[700] text-[color:var(--eb-ink-800)] tracking-[0.14em] uppercase whitespace-nowrap">
+              Your events
+              <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">({joined.length})</span>
+            </h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-[color:var(--eb-line-soft)] to-transparent" />
+            <Link to="/my-tickets" className="text-[12px] font-[600] text-[#2563EB] hover:text-[#1D4ED8] tracking-[0.05em] uppercase whitespace-nowrap">
+              My tickets
+            </Link>
+          </div>
+          <div className="flex gap-[14px] overflow-x-auto pb-2 hide-scroll snap-x">
+            {joined.map((r) => {
+              const ev = r.event!;
+              const label =
+                r.status === 'WAITLISTED' ? 'Waitlisted'
+                : r.status === 'PENDING_APPROVAL' ? 'Awaiting approval'
+                : r.status === 'ATTENDED' ? 'Checked in'
+                : 'Going';
+              const labelColour = r.status === 'REGISTERED' || r.status === 'ATTENDED' ? 'text-[#10B981]' : 'text-[#F59E0B]';
+              return (
+                <Link
+                  key={r.id}
+                  to={`/event/${r.eventId}`}
+                  className="premium-glass-card snap-start shrink-0 w-[260px] flex items-center gap-3 p-[10px] rounded-[16px]"
+                >
+                  <div className="w-[56px] h-[56px] rounded-[12px] overflow-hidden shrink-0 bg-[color:var(--eb-muted-bg)]">
+                    {ev.coverImage ? (
+                      <img src={ev.coverImage} alt="" loading="lazy" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full" style={{ background: getTheme(ev.theme).gradient }} aria-hidden />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-[10px] font-[700] tracking-[0.08em] uppercase ${labelColour}`}>{label}</p>
+                    <p className="text-[14px] font-[700] text-[color:var(--eb-ink-900)] truncate">{ev.title}</p>
+                    <p className="text-[12px] font-[500] text-[color:var(--eb-ink-500)] truncate">
+                      {new Date(ev.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {ev.city ? ` · ${ev.city}` : ''}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 4. EVENTS SECTION - Fixed spacing: mt-[34px] */}
       <div className="mt-[34px] relative z-10">
