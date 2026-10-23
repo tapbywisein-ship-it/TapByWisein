@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Bell, Compass, Calendar, Scan, User as UserIcon,
+  Bell, Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
   Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
 } from 'lucide-react';
@@ -42,7 +42,6 @@ import { toast } from 'sonner';
 // Left-sidebar nav (desktop). `badge` keys map to the live unread/pending counts.
 const navItems = [
   { label: 'Dashboard',     icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Discover',      icon: Compass,         path: '/discover' },
   { label: 'Events',        icon: Calendar,        path: '/events' },
   { label: 'My Calendars',  icon: CalendarDays,    path: '/my-calendar' },
   { label: 'Connect',       icon: Scan,            path: '/connect',        badge: 'connect' as const },
@@ -62,8 +61,9 @@ const navItems = [
 // Four primary tabs; everything else lives in the "More" sheet (same navItems
 // as the desktop sidebar), so 6+ tabs never overflow the bar again.
 const bottomNav = [
-  { label: 'Discover', icon: Compass, path: '/discover' },
   { label: 'Events', icon: Calendar, path: '/events' },
+  // My Tickets holds the QR ticket shown at the door, so keep it one tap away on phones.
+  { label: 'My Tickets', icon: Ticket, path: '/my-tickets' },
   { label: 'Community', icon: Boxes, path: '/communities' },
   { label: 'Connect', icon: Scan, path: '/connect' },
 ];

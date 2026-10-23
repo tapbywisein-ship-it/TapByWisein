@@ -30,13 +30,25 @@ import {
 
 const CATEGORIES = ['All', ...EVENT_CATEGORIES.map((c) => c.label)];
 
+// Turn ?category=tech (or the category's id) into the label the pills use.
+const categoryFromUrl = (value: string | null) => {
+  const v = (value ?? '').toLowerCase();
+  if (!v) return 'All';
+  const match = EVENT_CATEGORIES.find((c) => c.id.toLowerCase() === v || c.label.toLowerCase() === v);
+  return match?.label ?? 'All';
+};
+
 const EventsPage = () => {
   const user = useAppStore((s) => s.user);
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [savedOnly, setSavedOnly] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState('');
+  // ?category=tech still works for links that used to point at /discover.
+  const [category, setCategory] = useState(() => categoryFromUrl(searchParams.get('category')));
+  const [savedOnly, setSavedOnly] = useState(false);
+  // Location and Free/Paid filters, moved here from the old Discover page.
+  const [city, setCity] = useState('');
+  const [priceFilter, setPriceFilter] = useState<'' | 'free' | 'paid'>('');
   const withUser = searchParams.get('withUser') ?? undefined;
   const navigate = useNavigate();
   const [registerModal, setRegisterModal] = useState<Event | null>(null);
@@ -46,10 +58,19 @@ const EventsPage = () => {
   const { data, isLoading, isError, refetch } = useEvents({
     q: search || undefined,
     category: category !== 'All' ? category : undefined,
+    city: city.trim() || undefined,
+    price: priceFilter || undefined,
     status: 'PUBLISHED',
     limit: 50,
     withUser,
   });
+  const hasFilters = Boolean(search || category !== 'All' || city.trim() || priceFilter);
+  const clearFilters = () => {
+    setSearch('');
+    setCategory('All');
+    setCity('');
+    setPriceFilter('');
+  };
 
   // Auth-only queries — skip for logged-out visitors browsing publicly.
   const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
@@ -187,6 +208,41 @@ const EventsPage = () => {
           </div>
         </div>
 
+        {/* Free / Paid and Location (moved here from the old Discover page) */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {([['', 'All'], ['free', 'Free'], ['paid', 'Paid']] as const).map(([value, label]) => (
+            <button
+              key={label}
+              onClick={() => setPriceFilter(value)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                priceFilter === value
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground hover:border-border/80'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <div className="relative flex-1 min-w-[160px] md:flex-initial">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Location"
+              aria-label="Filter by city"
+              className="pl-9 h-9 text-sm w-full md:w-48 rounded-xl border-border/80 bg-card shadow-sm focus:border-primary"
+            />
+          </div>
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
         {/* Category Pills */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
           {CATEGORIES.map((cat) => {
@@ -233,9 +289,8 @@ const EventsPage = () => {
           <div className="text-center py-16">
             <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-muted-foreground">No events found.</p>
-            {search || category !== 'All' ? (
-              <Button variant="ghost" size="sm" className="mt-3 rounded-full"
-                onClick={() => { setSearch(''); setCategory('All'); }}>
+            {hasFilters ? (
+              <Button variant="ghost" size="sm" className="mt-3 rounded-full" onClick={clearFilters}>
                 Clear filters
               </Button>
             ) : null}

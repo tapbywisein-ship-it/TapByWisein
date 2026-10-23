@@ -23,12 +23,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X, CalendarDays, Search, MessageCircle, Trophy,
+  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Network, Menu, X, CalendarDays, Search, MessageCircle, Trophy,
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard',    icon: LayoutDashboard, path: '/organizer/dashboard' },
-  { label: 'Create Event', icon: Calendar,         path: '/organizer/events/create' },
+  // One Events item: create, host and browse events (was Create Event + Browse Events).
+  { label: 'Events',       icon: Calendar,         path: '/organizer/events' },
   { label: 'My Calendars', icon: CalendarDays,     path: '/my-calendar' },
   { label: 'Communities',  icon: Boxes,            path: '/organizer/communities' },
   { label: 'Attendees',    icon: Users,            path: '/organizer/attendees' },
@@ -38,7 +39,6 @@ const navItems = [
   { label: 'Connections',  icon: Network,          path: '/connections' },
   // Messages and FK Score already work for organizers; they just weren't linked.
   { label: 'Messages',     icon: MessageCircle,    path: '/messages' },
-  { label: 'Browse Events', icon: Compass,         path: '/discover' },
   { label: 'My Tickets',   icon: Ticket,           path: '/my-tickets' },
   { label: 'FK Score',     icon: Trophy,           path: '/gamification' },
   { label: 'Tap Card',     icon: QrCode,           path: '/apply-card' },
