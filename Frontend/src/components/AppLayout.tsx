@@ -8,7 +8,6 @@ import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadMessageCount } from '@/hooks/useMessages';
 import { useRequestOrganizer } from '@/hooks/useOrganizer';
 import { VerifyEmailBanner } from '@/components/VerifyEmailBanner';
-import { QuickShareButton } from '@/components/QuickShareButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
@@ -383,9 +382,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           {children}
         </main>
       </div>
-
-      {/* ── Quick-share own card (floating) ───────────────── */}
-      <QuickShareButton />
 
       {/* ── Install prompt (PWA) ──────────────────────────── */}
       <InstallPrompt />
