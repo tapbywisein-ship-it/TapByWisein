@@ -22,7 +22,7 @@ import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
 } from 'lucide-react';
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
@@ -80,15 +80,23 @@ const ShareSheet = ({ cardUrl, onClose }: { cardUrl: string; onClose: () => void
 };
 
 /* ─── onboarding checklist ──────────────────────────────────────────── */
+// `loading`: the profile hasn't arrived yet, so show a spinner instead of
+// "not done"; once it loads, finished steps tick off with a small pop.
 const ChecklistItem = ({
-  done, label, action, to,
-}: { done: boolean; label: string; action: string; to: string }) => (
-  <Link to={done ? '#' : to} className={`flex items-center gap-3 py-2 ${done ? 'pointer-events-none' : 'hover:opacity-80'}`}>
-    {done
-      ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-      : <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-    <span className={`text-sm flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{label}</span>
-    {!done && <span className="text-[11px] text-primary font-medium">{action}</span>}
+  done, label, action, to, loading = false,
+}: { done: boolean; label: string; action: string; to: string; loading?: boolean }) => (
+  <Link to={done || loading ? '#' : to} className={`flex items-center gap-3 py-2 ${done || loading ? 'pointer-events-none' : 'hover:opacity-80'}`}>
+    {loading ? (
+      <Loader2 className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 animate-spin" />
+    ) : done ? (
+      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }} className="flex-shrink-0">
+        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+      </motion.span>
+    ) : (
+      <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+    )}
+    <span className={`text-sm flex-1 ${done && !loading ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{label}</span>
+    {!done && !loading && <span className="text-[11px] text-primary font-medium">{action}</span>}
   </Link>
 );
 
@@ -229,9 +237,9 @@ const AttendeeDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {/* ── Profile Checklist ── */}
-          {/* Shown once the profile has loaded (so it doesn't flash 0/4 first),
-              and kept at 4/4 when everything is done. */}
-          {profile && (
+          {/* Always shown: steps spin until the profile loads, then tick off.
+              Kept at 4/4 when everything is done. */}
+          {(
             <motion.div {...fade(0.08)} className="lg:col-span-1">
               <Surface className="h-full">
                 <div className="flex items-center justify-between mb-3">
@@ -239,7 +247,7 @@ const AttendeeDashboard = () => {
                     <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
                     <span className="section-label">Profile Setup</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{completedSteps}/{checklistItems.length}</span>
+                  <span className="text-xs text-muted-foreground">{profile ? `${completedSteps}/${checklistItems.length}` : 'Checking…'}</span>
                 </div>
 
                 {/* progress bar */}
@@ -247,18 +255,18 @@ const AttendeeDashboard = () => {
                   <motion.div
                     className="progress-fill"
                     initial={{ width: 0 }}
-                    animate={{ width: `${(completedSteps / checklistItems.length) * 100}%` }}
+                    animate={{ width: `${profile ? (completedSteps / checklistItems.length) * 100 : 0}%` }}
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
 
                 <div className="divide-y divide-border">
                   {checklistItems.map((item) => (
-                    <ChecklistItem key={item.label} {...item} />
+                    <ChecklistItem key={item.label} {...item} loading={!profile} />
                   ))}
                 </div>
 
-                {nextStep && (
+                {profile && nextStep && (
                   <Button size="sm" className="w-full mt-3" asChild>
                     <Link to={nextStep.to}>{nextStep.action} →</Link>
                   </Button>

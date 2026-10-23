@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar, Users, Zap, BarChart3, Plus, ChevronRight,
-  AlertCircle, IndianRupee, CheckCircle2, Circle, TrendingUp,
+  AlertCircle, IndianRupee, CheckCircle2, Circle, TrendingUp, Loader2,
   MapPin, Clock, ArrowRight, Compass, Globe, Lock,
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
@@ -45,9 +45,9 @@ const OrganizerDashboard = () => {
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
   const allDone = completedCount === totalCount;
-  // Wait for the profile to load: before it arrives every task looks undone,
-  // which flashed "0/4". Once loaded the card always stays (4/4 when done).
-  const showProfileSetup = !!profile;
+  // The card always shows. Until the profile loads, steps show a spinner
+  // (not "undone"), then the finished ones get ticked off.
+  const profileLoaded = !!profile;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 10 },
@@ -103,57 +103,62 @@ const OrganizerDashboard = () => {
         </motion.div>
 
         {/* Top Row: Profile Setup & Quick Actions Side-by-Side */}
-        <div className={`grid grid-cols-1 ${showProfileSetup ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
-          {showProfileSetup && (
-            <motion.div {...fade(0.02)} className="h-full">
-              <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Profile Setup
-                      </span>
-                    </div>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                      {completedCount}/{totalCount} Completed
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4`}>
+          <motion.div {...fade(0.02)} className="h-full">
+            <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Profile Setup
                     </span>
                   </div>
-                  <div className="h-px bg-border/60 mb-3" />
-
-                  {/* All 4 tasks, done ones ticked, like the attendee Dashboard */}
-                  <div className="max-h-40 overflow-y-auto pr-1 space-y-3">
-                    {checklistItems.map((item) => (
-                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {item.done
-                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                            : <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />}
-                          <span className={`truncate text-sm font-medium ${item.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                            {item.label}
-                          </span>
-                        </div>
-                        {!item.done && (
-                          <Link
-                            to={item.to}
-                            className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
-                          >
-                            {item.action}
-                          </Link>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {profileLoaded ? `${completedCount}/${totalCount} Completed` : 'Checking…'}
+                  </span>
                 </div>
+                <div className="h-px bg-border/60 mb-3" />
 
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full py-2.5 shadow-sm mt-3">
-                  <Link to="/profile" className="flex items-center justify-center gap-2">
-                    {allDone ? 'View profile' : 'Complete profile'} <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </Button>
-              </Surface>
-            </motion.div>
-          )}
+                {/* All 4 tasks, done ones ticked, like the attendee Dashboard */}
+                <div className="max-h-40 overflow-y-auto pr-1 space-y-3">
+                  {checklistItems.map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {!profileLoaded ? (
+                          <Loader2 className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 animate-spin" />
+                        ) : item.done ? (
+                          // Pops in when the profile arrives, so steps visibly tick off.
+                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }} className="flex-shrink-0">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          </motion.span>
+                        ) : (
+                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                        )}
+                        <span className={`truncate text-sm font-medium ${profileLoaded && item.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                      {profileLoaded && !item.done && (
+                        <Link
+                          to={item.to}
+                          className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
+                        >
+                          {item.action}
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full py-2.5 shadow-sm mt-3">
+                <Link to="/profile" className="flex items-center justify-center gap-2">
+                  {profileLoaded && allDone ? 'View profile' : 'Complete profile'} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+            </Surface>
+          </motion.div>
 
           <motion.div {...fade(0.04)} className="h-full">
             <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
