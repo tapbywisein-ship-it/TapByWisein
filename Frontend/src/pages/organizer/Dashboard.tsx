@@ -1,4 +1,5 @@
 import { OrganizerLayout } from '@/components/OrganizerLayout';
+import { PeopleYouMayKnow } from '@/components/PeopleYouMayKnow';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -381,6 +382,11 @@ const OrganizerDashboard = () => {
               </div>
             )}
           </Surface>
+        </motion.div>
+
+        {/* Organizers network too: same suggestions as the attendee Dashboard. */}
+        <motion.div {...fade(0.12)}>
+          <PeopleYouMayKnow />
         </motion.div>
 
       </div>
