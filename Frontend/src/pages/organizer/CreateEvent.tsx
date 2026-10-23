@@ -878,16 +878,19 @@ const CreateEventPage = () => {
                     : 'border border-neutral-200'
                 }`}
               >
-                <label htmlFor="event-title" className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                   Event Name <span className="text-red-500">*</span>
                 </label>
+                {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
                 <input
                   id="event-title"
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder="Enter event name..."
-                  className={`w-full bg-transparent text-xl font-semibold placeholder:opacity-50 focus:outline-none border-b border-transparent focus:border-primary/40 pb-1 transition-colors ${
-                    isDark ? 'text-white placeholder:text-neutral-500' : 'text-neutral-900 placeholder:text-neutral-400'
+                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                    isDark
+                      ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
+                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
                   }`}
                 />
               </div>
