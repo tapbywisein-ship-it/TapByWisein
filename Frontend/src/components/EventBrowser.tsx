@@ -5,6 +5,7 @@ import { useEvents, useSavedEvents, useMyRegistrations } from '@/hooks/useEvents
 import { useAppStore } from '@/store/appStore';
 import { SaveEventButton } from '@/components/SaveEventButton';
 import { QuickRegisterModal } from '@/components/QuickRegisterModal';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { getTheme } from '@/lib/eventThemes';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
 import { registrationCountdown, hasEventEnded } from '@/lib/eventCountdown';
@@ -419,7 +420,7 @@ export const EventBrowser = ({
           <div className="flex items-center gap-4 mb-[14px] px-1">
             <h2 className="text-[12px] font-[700] text-[color:var(--eb-ink-800)] tracking-[0.14em] uppercase whitespace-nowrap">
               Your events
-              <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">({joined.length})</span>
+              <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">(<AnimatedCounter value={joined.length} />)</span>
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-[color:var(--eb-line-soft)] to-transparent" />
             <Link to="/my-tickets" className="text-[12px] font-[600] text-[#2563EB] hover:text-[#1D4ED8] tracking-[0.05em] uppercase whitespace-nowrap">
@@ -468,7 +469,7 @@ export const EventBrowser = ({
         <div className="flex items-center gap-4 mb-[18px] px-1">
           <h2 className="text-[12px] font-[700] text-[color:var(--eb-ink-800)] tracking-[0.14em] uppercase whitespace-nowrap flex items-center">
             {selectedCategory ? `${CATEGORIES.find((c) => c.id === selectedCategory)?.label ?? selectedCategory} Events` : 'All Events'}
-            <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">({events.length})</span>
+            <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">(<AnimatedCounter value={isLoading ? undefined : events.length} />)</span>
           </h2>
           <div className="h-px flex-1 bg-gradient-to-r from-[color:var(--eb-line-soft)] to-transparent" />
           {isAuthenticated && (
@@ -604,7 +605,7 @@ export const EventBrowser = ({
                         {/* Guests + days left to register */}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-[12px] text-[12px] font-[500] text-[color:var(--eb-ink-500)] whitespace-nowrap">
                           <span className="flex items-center gap-[5px]">
-                            <Users className="w-[13px] h-[13px]" /> {e.registeredCount ?? 0}/{e.capacity} attending
+                            <Users className="w-[13px] h-[13px]" /> <span><AnimatedCounter value={e.registeredCount ?? 0} />/{e.capacity} attending</span>
                           </span>
                           <span className={`ml-auto flex items-center gap-[5px] ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
                             <Clock className="w-[13px] h-[13px]" /> {daysLeftLabel}
