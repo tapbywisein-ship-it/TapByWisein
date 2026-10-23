@@ -12,3 +12,13 @@ export function registrationCountdown(startDate: string, registrationDeadline?: 
   const urgent = days >= 0 && days <= 3;
   return { days, closed, label, urgent };
 }
+
+/**
+ * True once an event is over. Uses the end date (falling back to the start
+ * date), the same rule My Calendar uses, so a booked event stops counting as
+ * "upcoming" after it finishes even if the attendee was never checked in.
+ */
+export function hasEventEnded(event?: { startDate: string; endDate?: string | null } | null) {
+  if (!event) return false;
+  return new Date(event.endDate || event.startDate).getTime() < Date.now();
+}
