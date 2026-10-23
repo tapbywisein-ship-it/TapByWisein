@@ -178,10 +178,11 @@ export const EventBrowser = ({ id }: { id?: string }) => {
           BYWISEIN
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
-          <h1 className="text-[24px] font-[700] tracking-[-0.02em] leading-[1.2] text-[#495057] flex items-center gap-2">
-            Discover
+          {/* h2: the page around it already has its own h1 ("Events"). */}
+          <h2 className="text-[24px] font-[700] tracking-[-0.02em] leading-[1.2] text-[#495057] flex items-center gap-2">
+            Browse Events
             <PremiumSearchIcon />
-          </h1>
+          </h2>
           {/* Fixed spacing: mt-[10px] */}
           <p className="mt-[6px] text-[15px] font-[450] text-[#6C757D] leading-[1.5] max-w-xl">
             Find events, communities and people worth meeting.
