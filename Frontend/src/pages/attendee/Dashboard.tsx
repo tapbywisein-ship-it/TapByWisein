@@ -216,11 +216,12 @@ const AttendeeDashboard = () => {
 
         {/* Stats row */}
         <motion.div {...fade(0.06)} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* undefined = still loading, so the counter rolls digits instead of showing 0. */}
           {[
-            { label: 'Registered', value: myEvents.length, sub: 'Events', icon: Calendar },
-            { label: 'FK Score', value: score, sub: `Level ${level}`, icon: Trophy, gold: true },
-            { label: 'Connections', value: connectionCount, sub: 'People', icon: Users },
-            { label: 'Upcoming', value: allUpcoming.length, sub: 'Events', icon: Sparkles },
+            { label: 'Registered', value: registrations ? myEvents.length : undefined, sub: 'Events', icon: Calendar },
+            { label: 'FK Score', value: gamification ? score : undefined, sub: `Level ${level}`, icon: Trophy, gold: true },
+            { label: 'Connections', value: connData ? connectionCount : undefined, sub: 'People', icon: Users },
+            { label: 'Upcoming', value: registrations ? allUpcoming.length : undefined, sub: 'Events', icon: Sparkles },
           ].map(({ label, value, sub, icon: Icon, gold }) => (
             <Surface key={label} padding="md" className="text-center">
               <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-3" />
