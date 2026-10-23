@@ -118,7 +118,7 @@ const GamificationPage = () => {
                 className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 border border-border"
               >
                 <span className="flex items-center gap-2 text-sm text-foreground">
-                  <span className="text-base">{rule.icon}</span>
+                  <rule.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                   {rule.action}
                 </span>
                 <span className="text-sm font-semibold text-primary">+{rule.points}</span>

@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { apiFetch } from './api';
 import { SCORE_RULES as LOCAL_SCORE_RULES } from '@/lib/scoreRules';
 
@@ -13,7 +14,7 @@ export interface GamificationData {
 export interface ScoreRule {
   action: string;
   points: number;
-  icon: string;
+  icon: LucideIcon;
 }
 
 export interface Badge {
