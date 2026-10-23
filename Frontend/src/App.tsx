@@ -133,6 +133,10 @@ const RouterMounted = () => {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      // A 401 means "your session ended" only for someone who was signed in.
+      // A logged-out visitor on a public page (e.g. a shared event link) must
+      // stay where they are instead of being bounced to /login.
+      if (!useAppStore.getState().isAuthenticated) return;
       logout();
       navigate('/login', { replace: true });
     });

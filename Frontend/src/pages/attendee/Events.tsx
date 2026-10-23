@@ -100,7 +100,7 @@ const EventsPage = () => {
       : e.ticketPrice != null && Number(e.ticketPrice) > 0;
   };
   const openModal = (e: Event) => {
-    if (isPaidEvent(e)) { navigate(`/event/${e.id}`); return; }
+    if (isPaidEvent(e)) { navigate(`/e/${e.id}`); return; }
     setRegisterModal(e); setRegStep('confirm'); setRegistrationId(null);
   };
   const closeModal = () => setRegisterModal(null);
@@ -281,7 +281,7 @@ const EventsPage = () => {
                   >
                     <Surface className="h-full flex flex-col overflow-hidden p-0 rounded-2xl border border-border/80 group-hover:border-primary/40 group-hover:shadow-xl group-hover:shadow-primary/5 transition-all duration-300 bg-card">
                       {/* Cover image (falls back to theme gradient) */}
-                      <Link to={`/event/${e.id}`} className="relative block overflow-hidden">
+                      <Link to={`/e/${e.id}`} className="relative block overflow-hidden">
                         {e.coverImage ? (
                           <img
                             src={e.coverImage}
@@ -315,7 +315,7 @@ const EventsPage = () => {
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-lg font-bold text-foreground leading-snug flex-1 min-w-0">
-                            <Link to={`/event/${e.id}`} className="group-hover:text-primary transition-colors line-clamp-2">
+                            <Link to={`/e/${e.id}`} className="group-hover:text-primary transition-colors line-clamp-2">
                               {e.title}
                             </Link>
                           </h3>
@@ -357,7 +357,7 @@ const EventsPage = () => {
                           </span>
                           {isRegistered ? (
                             <Button variant="outline" size="sm" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-full" asChild>
-                              <Link to={`/event/${e.id}`}>
+                              <Link to={`/e/${e.id}`}>
                                 <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Registered
                               </Link>
                             </Button>

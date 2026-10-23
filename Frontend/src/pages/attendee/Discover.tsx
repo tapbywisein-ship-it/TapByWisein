@@ -391,7 +391,7 @@ const DiscoverPage = () => { console.log('Discover Page Re-rendered!');
 
               return (
                 <motion.div key={e.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 + (i % 9) * 0.05, ease: "easeOut" }}>
-                  <Link to={`/event/${e.id}`} className="block group h-full">
+                  <Link to={`/e/${e.id}`} className="block group h-full">
                     <div className="premium-glass-card rounded-[20px] flex flex-col h-full p-0 overflow-hidden">
                       
                       {/* Image Area */}
