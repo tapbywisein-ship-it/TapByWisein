@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { useEvents } from '@/hooks/useEvents';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEvents, useSavedEvents } from '@/hooks/useEvents';
+import { useAppStore } from '@/store/appStore';
+import { SaveEventButton } from '@/components/SaveEventButton';
+import { QuickRegisterModal } from '@/components/QuickRegisterModal';
 import { getTheme } from '@/lib/eventThemes';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
-import { Calendar, MapPin, Search, AlertCircle, CheckCircle2, Clock, Users } from 'lucide-react';
+import { registrationCountdown } from '@/lib/eventCountdown';
+import type { Event } from '@/services/events.service';
+import { Calendar, MapPin, Search, AlertCircle, CheckCircle2, Clock, Users, Ticket, Bookmark } from 'lucide-react';
 import { EVENT_CATEGORIES } from '@/constants/categories';
 
 const CATEGORIES = EVENT_CATEGORIES;
@@ -20,20 +25,53 @@ const PremiumSearchIcon = () => (
   </motion.div>
 );
 
+// Paid events (any enabled ticket tier with a price) go to the event page to buy.
+const isPaidEvent = (e: Event) => {
+  const enabled = (e.ticketTypes ?? []).filter((t) => t.isEnabled ?? true);
+  return enabled.length > 0
+    ? enabled.some((t) => (Number(t.price) || 0) > 0)
+    : e.ticketPrice != null && Number(e.ticketPrice) > 0;
+};
+
+// Turn ?category=tech (or the category's label) into the chip id.
+const categoryIdFrom = (value?: string | null) => {
+  const v = (value ?? '').toLowerCase();
+  return CATEGORIES.find((c) => c.id.toLowerCase() === v || c.label.toLowerCase() === v)?.id ?? '';
+};
+
 /**
  * The event browser from the old Discover page (search, location, date,
- * free/paid, categories and the event cards), as a component so it can sit
- * on a page, e.g. under Hosting on the organizer Events page.
+ * free/paid, categories and the event cards), as a component so both Events
+ * pages use it: the attendee page on its own, the organizer page under Hosting.
+ * Signed-in people also get a Saved filter, a save button and a quick Register
+ * button on each card (paid events and logged-out visitors go to the event page).
  * It draws its own light panel: the design uses fixed light colours, so it
  * stays readable in dark mode. The old page's global nav/header style
  * override is left out on purpose, so it doesn't restyle the page around it.
  */
-export const EventBrowser = ({ id }: { id?: string }) => {
-  const [selectedCategory, setSelectedCategory] = useState('');
+export const EventBrowser = ({
+  id,
+  isPageTitle = false,
+  initialCategory,
+  withUser,
+}: {
+  id?: string;
+  /** True when this is the whole page, so the title is the page's h1. */
+  isPageTitle?: boolean;
+  /** A category from the URL (?category=tech) to start with. */
+  initialCategory?: string | null;
+  /** Only events this user and I are both registered for. */
+  withUser?: string;
+}) => {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState(() => categoryIdFrom(initialCategory));
   const [search, setSearch] = useState('');
   const [city, setCity] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [priceFilter, setPriceFilter] = useState<'' | 'free' | 'paid'>('');
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [registerFor, setRegisterFor] = useState<Event | null>(null);
 
   const { data, isLoading, isError, refetch } = useEvents({
     q: search || undefined,
@@ -42,20 +80,37 @@ export const EventBrowser = ({ id }: { id?: string }) => {
     price: priceFilter || undefined,
     startDate: dateFrom ? new Date(dateFrom).toISOString() : undefined,
     status: 'PUBLISHED',
-    limit: 30,
+    limit: 50,
     orderBy: 'startDate',
     orderDir: 'asc',
+    withUser,
   });
+  // Saved events need a login, so only ask for them when signed in.
+  const { data: savedData } = useSavedEvents(1, 100, isAuthenticated);
+  const savedIds = new Set(savedData?.events.map((e) => e.id) ?? []);
 
-  const events = data?.events ?? [];
-  const hasFilters = Boolean(selectedCategory || search || city || dateFrom || priceFilter);
+  const allEvents = data?.events ?? [];
+  const events = savedOnly ? allEvents.filter((e) => savedIds.has(e.id)) : allEvents;
+  const hasFilters = Boolean(selectedCategory || search || city || dateFrom || priceFilter || savedOnly);
   const clearAll = () => {
     setSelectedCategory('');
     setSearch('');
     setCity('');
     setDateFrom('');
     setPriceFilter('');
+    setSavedOnly(false);
   };
+
+  const startRegister = (e: Event) => {
+    // Logged-out visitors use the guest RSVP form on the event page;
+    // paid events need the ticket picker there too.
+    if (!isAuthenticated || isPaidEvent(e)) {
+      navigate(`/e/${e.id}`);
+      return;
+    }
+    setRegisterFor(e);
+  };
+  const TitleTag = isPageTitle ? 'h1' : 'h2';
 
   return (
     <section
@@ -178,11 +233,11 @@ export const EventBrowser = ({ id }: { id?: string }) => {
           BYWISEIN
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
-          {/* h2: the page around it already has its own h1 ("Events"). */}
-          <h2 className="text-[24px] font-[700] tracking-[-0.02em] leading-[1.2] text-[#495057] flex items-center gap-2">
+          {/* h1 when this is the whole page; h2 under the organizer page's own h1. */}
+          <TitleTag className="text-[24px] font-[700] tracking-[-0.02em] leading-[1.2] text-[#495057] flex items-center gap-2">
             Browse Events
             <PremiumSearchIcon />
-          </h2>
+          </TitleTag>
           {/* Fixed spacing: mt-[10px] */}
           <p className="mt-[6px] text-[15px] font-[450] text-[#6C757D] leading-[1.5] max-w-xl">
             Find events, communities and people worth meeting.
@@ -289,6 +344,18 @@ export const EventBrowser = ({ id }: { id?: string }) => {
             <span className="text-[#ADB5BD] ml-[6px] font-[600]">({events.length})</span>
           </h2>
           <div className="h-px flex-1 bg-gradient-to-r from-[#CED4DA]/60 to-transparent" />
+          {isAuthenticated && (
+            <button
+              onClick={() => setSavedOnly((s) => !s)}
+              aria-pressed={savedOnly}
+              className={`premium-glass-chip flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-[600] whitespace-nowrap ${
+                savedOnly ? 'text-[#2563EB] border-[#3B82F6]/40' : 'text-[#495057]'
+              }`}
+            >
+              <Bookmark className={`w-[13px] h-[13px] ${savedOnly ? 'fill-current' : ''}`} />
+              Saved
+            </button>
+          )}
           {hasFilters && (
             <button onClick={clearAll} className="text-[12px] font-[600] text-[#2563EB] hover:text-[#1D4ED8] tracking-[0.05em] uppercase transition-colors whitespace-nowrap">
               Clear filters
@@ -343,16 +410,21 @@ export const EventBrowser = ({ id }: { id?: string }) => {
               const { topLabel: price } = getRegistrationPricing(e);
               const org = e.organizer;
               const organizerName = org?.profile?.company || (org?.profile ? `${org.profile.firstName ?? ''} ${org.profile.lastName ?? ''}`.trim() : org?.username) || null;
+              // The list sends my registration status when I'm signed in.
               const isRegistered = e.registrationStatus === 'REGISTERED' || e.registrationStatus === 'ATTENDED';
               const isWaitlisted = e.registrationStatus === 'WAITLISTED';
+              const isPending = e.registrationStatus === 'PENDING_APPROVAL';
+              const isFull = e.registeredCount !== undefined && e.registeredCount >= e.capacity;
+              const { closed, label: daysLeftLabel, urgent } = registrationCountdown(e.startDate, e.registrationDeadline);
+              const quietPill = 'px-[14px] py-[7px] rounded-full text-[12px] font-[600] bg-white/60 text-[#ADB5BD] border border-[#DEE2E6]';
 
               return (
                 <motion.div key={e.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 + (i % 9) * 0.05, ease: "easeOut" }}>
-                  <Link to={`/e/${e.id}`} className="block group h-full">
+                  <div className="group h-full">
                     <div className="premium-glass-card rounded-[20px] flex flex-col h-full p-0 overflow-hidden">
-                      
+
                       {/* Image Area */}
-                      <div className="relative aspect-[4/3] w-full rounded-t-[20px] overflow-hidden bg-[#F8F9FA] border-b border-[#DEE2E6]/50 shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20">
+                      <Link to={`/e/${e.id}`} className="block relative aspect-[4/3] w-full rounded-t-[20px] overflow-hidden bg-[#F8F9FA] border-b border-[#DEE2E6]/50 shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20">
                         {e.coverImage ? (
                           <img src={e.coverImage} alt={e.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]" />
                         ) : (
@@ -376,14 +448,19 @@ export const EventBrowser = ({ id }: { id?: string }) => {
                             </span>
                           )}
                         </div>
-                      </div>
+                      </Link>
 
                       {/* Content Area */}
                       <div className="p-5 flex flex-col flex-1 bg-transparent z-20">
-                        <h3 className="text-[18px] font-[700] text-[#212529] leading-[1.3] line-clamp-2 group-hover:text-[#2563EB] transition-colors">
-                          {e.title}
-                        </h3>
-                        
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="flex-1 min-w-0 text-[18px] font-[700] text-[#212529] leading-[1.3]">
+                            <Link to={`/e/${e.id}`} className="line-clamp-2 group-hover:text-[#2563EB] transition-colors">
+                              {e.title}
+                            </Link>
+                          </h3>
+                          {isAuthenticated && <SaveEventButton eventId={e.id} initialSaved={savedIds.has(e.id)} className="-mr-1.5 -mt-1 shrink-0" />}
+                        </div>
+
                         <div className="mt-[12px] space-y-[6px]">
                           <p className="text-[13px] font-[500] text-[#495057] flex items-center gap-[6px]">
                             <Clock className="w-[14px] h-[14px] text-[#6C757D]" />
@@ -397,8 +474,18 @@ export const EventBrowser = ({ id }: { id?: string }) => {
                           )}
                         </div>
 
-                        <div className="flex items-center justify-between pt-[16px] mt-auto border-t border-[#CED4DA]/40">
-                          <div className="flex items-center gap-[8px]">
+                        {/* Guests + days left to register */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-[12px] text-[12px] font-[500] text-[#6C757D] whitespace-nowrap">
+                          <span className="flex items-center gap-[5px]">
+                            <Users className="w-[13px] h-[13px]" /> {e.registeredCount ?? 0}/{e.capacity} attending
+                          </span>
+                          <span className={`ml-auto flex items-center gap-[5px] ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
+                            <Clock className="w-[13px] h-[13px]" /> {daysLeftLabel}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-[14px] mt-[14px] border-t border-[#CED4DA]/40">
+                          <div className="flex items-center gap-[8px] min-w-0">
                             <div className="w-[22px] h-[22px] rounded-full bg-white/70 border border-[#DEE2E6] flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                               {organizerName ? <span className="text-[10px] font-[700] text-[#495057]">{organizerName.charAt(0).toUpperCase()}</span> : <Users className="w-[12px] h-[12px] text-[#ADB5BD]" />}
                             </div>
@@ -406,20 +493,51 @@ export const EventBrowser = ({ id }: { id?: string }) => {
                               {organizerName || 'Organizer'}
                             </span>
                           </div>
-                          
+
                           <span className="text-[14px] font-[700] text-[#212529]">
                             {price}
                           </span>
                         </div>
+
+                        {/* Register / status, pinned to the bottom so cards line up */}
+                        <div className="mt-auto pt-[14px] flex justify-end">
+                          {isRegistered ? (
+                            <Link to={`/e/${e.id}`} className="flex items-center gap-1 px-[14px] py-[7px] rounded-full text-[12px] font-[600] text-[#059669] bg-[#10B981]/10 border border-[#10B981]/40 hover:bg-[#10B981]/15 transition-colors">
+                              <CheckCircle2 className="w-[13px] h-[13px]" /> Registered
+                            </Link>
+                          ) : isWaitlisted ? (
+                            <span className={quietPill}>Waitlisted</span>
+                          ) : isPending ? (
+                            <span className={quietPill}>Awaiting approval</span>
+                          ) : closed ? (
+                            <span className={quietPill}>Closed</span>
+                          ) : isFull && !e.waitlistEnabled ? (
+                            <span className={quietPill}>Full</span>
+                          ) : (
+                            <button
+                              onClick={() => startRegister(e)}
+                              className="flex items-center gap-1 px-[16px] py-[7px] rounded-full text-[12px] font-[600] text-white bg-gradient-to-b from-[#3B82F6] to-[#2563EB] border border-[#1D4ED8] shadow-[0_2px_8px_rgba(37,99,235,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:brightness-110 transition-all"
+                            >
+                              <Ticket className="w-[13px] h-[13px]" />
+                              {isFull ? 'Join waitlist' : isPaidEvent(e) ? 'Get tickets' : 'Register'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               );
             })}
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {registerFor && (
+          <QuickRegisterModal key={registerFor.id} event={registerFor} onClose={() => setRegisterFor(null)} />
+        )}
+      </AnimatePresence>
     </section>
   );
 };
