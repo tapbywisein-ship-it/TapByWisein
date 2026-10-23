@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { AppLayout } from '@/components/AppLayout';
+// PortalLayout picks the menu by role, so organizers opening "See more"
+// keep the organizer menu instead of switching to the attendee one.
+import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +32,7 @@ const PeopleDirectory = () => {
   });
 
   return (
-    <AppLayout>
+    <PortalLayout>
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-muted-foreground" />
@@ -99,7 +101,7 @@ const PeopleDirectory = () => {
           )}
         </Surface>
       </div>
-    </AppLayout>
+    </PortalLayout>
   );
 };
 
