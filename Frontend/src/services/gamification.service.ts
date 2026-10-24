@@ -67,7 +67,8 @@ export const gamificationService = {
   },
 
   async getScoreHistory(page = 1, limit = 20) {
-    return apiFetch<{ data: { history: ScoreHistoryEntry[]; pagination: unknown } }>(
+    // A paginated response: `data` is the list itself (sendPaginated).
+    return apiFetch<{ data: ScoreHistoryEntry[]; pagination: unknown }>(
       `/gamification/history?page=${page}&limit=${limit}`
     );
   },

@@ -29,7 +29,8 @@ const GamificationPage = () => {
   // doubles as the unlock condition.
   const lockedBadges = (allBadges ?? []).filter((b) => !earnedIds.has(b.id));
   const leaderboard = leaderboardData?.leaderboard ?? [];
-  const history = historyData?.history ?? [];
+  // useScoreHistory returns the list itself; reading `.history` made it always empty.
+  const history = historyData ?? [];
   const myRank = leaderboard.findIndex((e) => e.userId === user?.id);
   const myRankDisplay = myRank >= 0 ? myRank + 1 : null;
 
