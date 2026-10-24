@@ -5,7 +5,7 @@ import { useEvents, useSavedEvents, useMyRegistrations } from '@/hooks/useEvents
 import { useAppStore } from '@/store/appStore';
 import { SaveEventButton } from '@/components/SaveEventButton';
 import { QuickRegisterModal } from '@/components/QuickRegisterModal';
-import { AnimatedCounter } from '@/components/AnimatedCounter';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { getTheme } from '@/lib/eventThemes';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
 import { registrationCountdown, hasEventEnded } from '@/lib/eventCountdown';
@@ -74,8 +74,11 @@ export const EventBrowser = ({
   const [savedOnly, setSavedOnly] = useState(false);
   const [registerFor, setRegisterFor] = useState<Event | null>(null);
 
-  const { data, isLoading, isError, refetch } = useEvents({
-    q: search || undefined,
+  // Search once typing pauses, not on every key. Each new search used to swap
+  // the grid for skeletons and fade every card in again, which flickered.
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const { data, isLoading, isError, refetch, isPlaceholderData } = useEvents({
+    q: debouncedSearch || undefined,
     category: (CATEGORIES.find((c) => c.id === selectedCategory)?.label || selectedCategory) || undefined,
     city: city || undefined,
     price: priceFilter || undefined,
@@ -85,7 +88,7 @@ export const EventBrowser = ({
     orderBy: 'startDate',
     orderDir: 'asc',
     withUser,
-  });
+  }, { keepPrevious: true });
   // Saved events need a login, so only ask for them when signed in.
   const { data: savedData } = useSavedEvents(1, 100, isAuthenticated);
   const savedIds = new Set(savedData?.events.map((e) => e.id) ?? []);
@@ -421,7 +424,7 @@ export const EventBrowser = ({
           <div className="flex items-center gap-4 mb-[14px] px-1">
             <h2 className="text-[12px] font-[700] text-[color:var(--eb-ink-800)] tracking-[0.14em] uppercase whitespace-nowrap">
               Your events
-              <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">(<AnimatedCounter value={joined.length} />)</span>
+              <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">({joined.length})</span>
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-[color:var(--eb-line-soft)] to-transparent" />
             <Link to="/my-tickets" className="text-[12px] font-[600] text-[#2563EB] hover:text-[#1D4ED8] tracking-[0.05em] uppercase whitespace-nowrap">
@@ -470,7 +473,7 @@ export const EventBrowser = ({
         <div className="flex items-center gap-4 mb-[18px] px-1">
           <h2 className="text-[12px] font-[700] text-[color:var(--eb-ink-800)] tracking-[0.14em] uppercase whitespace-nowrap flex items-center">
             {selectedCategory ? `${CATEGORIES.find((c) => c.id === selectedCategory)?.label ?? selectedCategory} Events` : 'All Events'}
-            <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">(<AnimatedCounter value={isLoading ? undefined : events.length} />)</span>
+            <span className="text-[color:var(--eb-ink-400)] ml-[6px] font-[600]">{isLoading ? null : `(${events.length})`}</span>
           </h2>
           <div className="h-px flex-1 bg-gradient-to-r from-[color:var(--eb-line-soft)] to-transparent" />
           {isAuthenticated && (
@@ -533,7 +536,13 @@ export const EventBrowser = ({
 
         {/* Event Glass Grid */}
         {!isLoading && !isError && events.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[24px]">
+          // While a new filter loads, the last results stay, slightly faded.
+          <div
+            aria-busy={isPlaceholderData || undefined}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[24px] transition-opacity duration-200 ${
+              isPlaceholderData ? 'opacity-60' : ''
+            }`}
+          >
             {events.map((e, i) => {
               const theme = getTheme(e.theme);
               const { topLabel: price } = getRegistrationPricing(e);
@@ -606,7 +615,7 @@ export const EventBrowser = ({
                         {/* Guests + days left to register */}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-[12px] text-[12px] font-[500] text-[color:var(--eb-ink-500)] whitespace-nowrap">
                           <span className="flex items-center gap-[5px]">
-                            <Users className="w-[13px] h-[13px]" /> <span><AnimatedCounter value={e.registeredCount ?? 0} />/{e.capacity} attending</span>
+                            <Users className="w-[13px] h-[13px]" /> <span>{e.registeredCount ?? 0}/{e.capacity} attending</span>
                           </span>
                           <span className={`ml-auto flex items-center gap-[5px] ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
                             <Clock className="w-[13px] h-[13px]" /> {daysLeftLabel}

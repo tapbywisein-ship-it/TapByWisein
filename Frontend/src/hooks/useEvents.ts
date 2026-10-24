@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { eventsService, SearchEventsParams } from '@/services/events.service';
 import { toast } from 'sonner';
 import { trackEventJoin } from '@/lib/analytics';
@@ -57,13 +57,18 @@ export function useEventSuggestions(eventId: string, enabled = true) {
   });
 }
 
-export function useEvents(params: SearchEventsParams = {}) {
+/**
+ * `keepPrevious`: while a new search or filter loads, keep returning the last
+ * list (`isPlaceholderData` is true meanwhile) instead of going back to loading.
+ */
+export function useEvents(params: SearchEventsParams = {}, { keepPrevious = false } = {}) {
   return useQuery({
     queryKey: eventKeys.list(params),
     queryFn: () => eventsService.listEvents(params),
     select: (res) => ({ events: res.data, pagination: res.pagination }),
     staleTime: 30_000,
     refetchInterval: 60_000,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 }
 

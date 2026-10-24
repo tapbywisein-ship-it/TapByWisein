@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   MapPin, Linkedin, Twitter, Globe, Mail, Edit3, Check, X, Camera,
-  Calendar, BadgeCheck, Loader2, Phone, AtSign, Eye,
+  Calendar, BadgeCheck, Loader2, Phone, AtSign, Eye, Building2, AlertTriangle,
 } from 'lucide-react';
+import { BecomeOrganizerDialog } from '@/components/BecomeOrganizerDialog';
 import { PortalLayout } from '@/components/PortalLayout';
 import { CardBlocksEditor } from '@/components/CardBlocksEditor';
 import { Surface } from '@/components/Surface';
@@ -70,6 +71,7 @@ const ProfilePage = () => {
   const { data: hostedData } = useMyOrgEvents(1, 5, isOrganizer);
 
   const [editing, setEditing] = useState(false);
+  const [orgDialogOpen, setOrgDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -880,6 +882,28 @@ const ProfilePage = () => {
             </ul>
           )}
         </Surface>
+
+        {/* Become an organizer: only offered here, with the warning up front. */}
+        {user?.role === 'attendee' && (
+          <Surface>
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-muted-foreground" /> Host your own events
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Become an organizer to create events, sell tickets and manage attendees.
+            </p>
+            <div className="flex gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 mt-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+              <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                Once you become an organizer, you <strong>can’t become an attendee again</strong>.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => setOrgDialogOpen(true)}>
+              Become an organizer
+            </Button>
+            <BecomeOrganizerDialog open={orgDialogOpen} onOpenChange={setOrgDialogOpen} />
+          </Surface>
+        )}
       </div>
     </PortalLayout>
   );
