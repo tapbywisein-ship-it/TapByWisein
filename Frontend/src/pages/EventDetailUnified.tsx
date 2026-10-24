@@ -66,11 +66,14 @@ const EventDetailUnified = () => {
   }, [isAuthenticated, id, navigate]);
 
   const { data: event, isLoading } = useEvent(id!);
-  const { data: myRegsData } = useMyRegistrations();
+  // Both of these need a signed-in user. Calling them for a logged-out visitor
+  // got a 401, which logged them out and sent them to /login, so shared event
+  // links and guest RSVP never worked.
+  const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
   const registerMutation = useRegisterForEvent();
   const cancelMutation = useCancelRegistration();
   const queryClient = useQueryClient();
-  const { data: attendeesData } = useEventAttendees(id ?? '', !!id);
+  const { data: attendeesData } = useEventAttendees(id ?? '', !!id && isAuthenticated);
 
   const myRegistration = (myRegsData?.registrations ?? []).find(
     (r) => r.eventId === id
@@ -229,6 +232,17 @@ const EventDetailUnified = () => {
   const isWaitlisted =
     event.registrationStatus === 'WAITLISTED' ||
     (event.registrationStatus == null && myRegistration?.status === 'WAITLISTED');
+  // Events that need the organizer's approval save the request as
+  // PENDING_APPROVAL. Without this, the page showed "Register" again and a
+  // second click failed with "already registered".
+  const isPendingApproval =
+    event.registrationStatus === 'PENDING_APPROVAL' ||
+    (event.registrationStatus == null && myRegistration?.status === 'PENDING_APPROVAL');
+  // The organizer's "registration closes" date (if set) has passed.
+  const registrationClosed =
+    !!event.registrationDeadline && new Date(event.registrationDeadline) < new Date();
+  // The signed-in user organizes this event: they manage it instead of registering.
+  const isHost = isAuthenticated && !!user?.id && user.id === event.organizerId;
 
   const monthLabel = startDate
     .toLocaleString('en-US', { month: 'short' })
@@ -566,7 +580,7 @@ const EventDetailUnified = () => {
           )}
 
           {/* Paid events: selectable ticket tiers (with per-tier sold-out) */}
-          {requiresPayment && payableTiers.length > 0 && !isRegistered && !isPast && (
+          {requiresPayment && payableTiers.length > 0 && !isRegistered && !isPast && !isPendingApproval && !registrationClosed && !isHost && (
             <div className="space-y-2 mb-3">
               {payableTiers.map((t) => {
                 const sold = event.soldByTier?.[t.id] ?? 0;
@@ -641,7 +655,17 @@ const EventDetailUnified = () => {
           </div>
 
           {/* Status / action button */}
-          {isPast ? (
+          {isHost ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 py-3 rounded-md bg-primary/10 border border-primary/30">
+                <Users className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">You're hosting this event</span>
+              </div>
+              <Button asChild className="w-full" size="lg">
+                <Link to={`/organizer/events/${event.id}`}>Manage event</Link>
+              </Button>
+            </div>
+          ) : isPast ? (
             <Surface padding="sm">
               <p className="text-sm font-medium text-foreground inline-flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" /> Past event
@@ -693,19 +717,35 @@ const EventDetailUnified = () => {
                 You're on the waitlist
               </span>
             </div>
+          ) : isPendingApproval ? (
+            <div className="space-y-1 py-3 px-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Request sent
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The organizer approves who can attend. You'll be notified when they respond.
+              </p>
+            </div>
+          ) : registrationClosed ? (
+            <Button className="w-full" size="lg" disabled>
+              Registration closed
+            </Button>
           ) : isFull && !event.waitlistEnabled ? (
             <Button className="w-full" size="lg" disabled>
               Event full
             </Button>
           ) : !isAuthenticated ? (
+            // Free events open the no-account RSVP form; only paid tickets need sign-in.
             <Button className="w-full" size="lg" onClick={handleRegister}>
-              Sign in to register
+              {requiresPayment ? 'Sign in to buy a ticket' : 'Register'}
             </Button>
-          ) : user?.role !== 'attendee' ? (
-            <p className="text-xs text-muted-foreground text-center py-3">
-              Sign in as an Attendee to register for events.
-            </p>
           ) : requiresPayment ? (
+            // Anyone signed in can join, whatever their role. This page used to
+            // block organizers ("Sign in as an Attendee"), while the backend and
+            // the Events list already let them register.
             <div className="space-y-2">
               {/* Coupon */}
               {couponApplied ? (

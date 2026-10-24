@@ -79,7 +79,7 @@ export function useEvent(id: string) {
 
 export function useMyRegistrations(page = 1, limit = 20, enabled = true) {
   return useQuery({
-    queryKey: eventKeys.myRegistrations(),
+    queryKey: [...eventKeys.myRegistrations(), page, limit],
     queryFn: () => eventsService.getMyRegistrations(page, limit),
     select: (res) => ({ registrations: res.data, pagination: res.pagination }),
     // Auth-only endpoint — skip for logged-out visitors browsing publicly.

@@ -46,8 +46,14 @@ const ProfilePage = lazy(() => import("./pages/attendee/Profile"));
 const ConnectPage = lazy(() => import("./pages/attendee/Connect"));
 const ConnectionsPage = lazy(() => import("./pages/attendee/Connections"));
 const PeopleDirectoryPage = lazy(() => import("./pages/attendee/People"));
-const DiscoverPage = lazy(() => import("./pages/attendee/Discover"));
 const BrowseCommunitiesPage = lazy(() => import("./pages/attendee/Communities"));
+
+// /discover now lives at /events. Keep the query string so links like
+// /discover?category=tech land on the same filtered list.
+const DiscoverRedirect = () => {
+  const { search } = useLocation();
+  return <Navigate to={`/events${search}`} replace />;
+};
 const AmbassadorsPage = lazy(() => import("./pages/Ambassadors"));
 const GamificationPage = lazy(() => import("./pages/attendee/Gamification"));
 const NotificationsPage = lazy(() => import("./pages/attendee/Notifications"));
@@ -66,6 +72,7 @@ const NetworkSearchPage = lazy(() => import("./pages/attendee/NetworkSearch"));
 
 const OrganizerDashboard = lazy(() => import("./pages/organizer/Dashboard"));
 const CreateEventPage = lazy(() => import("./pages/organizer/CreateEvent"));
+const OrganizerEventsPage = lazy(() => import("./pages/organizer/Events"));
 const OrgEventDetail = lazy(() => import("./pages/organizer/OrgEventDetail"));
 const LeadsPage = lazy(() => import("./pages/organizer/Leads"));
 const PayoutsPage = lazy(() => import("./pages/organizer/Payouts"));
@@ -133,6 +140,10 @@ const RouterMounted = () => {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      // A 401 means "your session ended" only for someone who was signed in.
+      // A logged-out visitor on a public page (e.g. a shared event link) must
+      // stay where they are instead of being bounced to /login.
+      if (!useAppStore.getState().isAuthenticated) return;
       logout();
       navigate('/login', { replace: true });
     });
@@ -157,7 +168,6 @@ const TITLE_BY_PREFIX: [string, string][] = [
   ["/reset-password", "Reset password"],
   ["/verify-email", "Verify email"],
   ["/dashboard", "Dashboard"],
-  ["/discover", "Discover"],
   ["/events", "Events"],
   ["/connect", "Connect"],
   ["/connections", "Connections"],
@@ -243,7 +253,8 @@ const App = () => (
           <Route path="/my-tickets" element={<ProtectedRoute><MyTicketsPage /></ProtectedRoute>} />
           <Route path="/my-calendar" element={<ProtectedRoute><MyCalendarPage /></ProtectedRoute>} />
           {/* Public browsing: anyone can discover/browse events + communities; joining gates to /login. */}
-          <Route path="/discover" element={<DiscoverPage />} />
+          {/* Discover was merged into Events; old links (and ?category=) still work. */}
+          <Route path="/discover" element={<DiscoverRedirect />} />
           <Route path="/communities" element={<BrowseCommunitiesPage />} />
           <Route path="/ambassadors" element={<AmbassadorsPage />} />
           <Route path="/gamification" element={<ProtectedRoute><GamificationPage /></ProtectedRoute>} />
@@ -267,6 +278,7 @@ const App = () => (
           {/* Luma-style: page renders for anyone — even signed-out guests.
               The CreateEventPage shows an overlay sign-in popup itself when
               the user isn't authenticated, and the form submit is gated. */}
+          <Route path="/organizer/events" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><OrganizerEventsPage /></ProtectedRoute>} />
           <Route path="/organizer/events/create" element={<CreateEventPage />} />
           <Route path="/organizer/attendees" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><AttendeeDirectoryPage /></ProtectedRoute>} />
           <Route path="/organizer/communities" element={<ProtectedRoute allowedRoles={['organizer', 'admin']}><CommunitiesPage /></ProtectedRoute>} />

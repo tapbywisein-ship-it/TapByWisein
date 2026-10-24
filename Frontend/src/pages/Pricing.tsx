@@ -167,7 +167,6 @@ const TIERS: Tier[] = [
 ];
 
 const Pricing = () => {
-  console.log("===== NEW PRICING.TSX LOADED =====");
 
   const [demoOpen, setDemoOpen] = useState(false);
 
@@ -224,7 +223,6 @@ const Pricing = () => {
    *   }
    * };
    */
-console.log("NEW PRICING PAGE LOADED");
   const body = (
     <>
       <motion.div {...fadeUp()} className="text-center mb-12">

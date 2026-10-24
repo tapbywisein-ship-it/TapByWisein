@@ -80,7 +80,10 @@ export function useOrgDashboard() {
 
 export function useMyOrgEvents(page = 1, limit = 20, enabled = true) {
   return useQuery({
-    queryKey: orgKeys.events(),
+    // page/limit are part of the key: the Dashboard (5), Profile (5) and My
+    // Calendar (100) used to share one cache entry and show each other's lists.
+    // Invalidating orgKeys.events() still refreshes all of them (prefix match).
+    queryKey: [...orgKeys.events(), page, limit],
     queryFn: () => organizerService.getMyEvents(page, limit),
     enabled,
     select: (res) => ({

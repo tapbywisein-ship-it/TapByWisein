@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Search, IndianRupee, Download, ChevronLeft, ChevronRight, AlertCircle, Truck, X, Package, CheckCircle2 } from 'lucide-react';
 import { useAdminRevenue, useAdminDashboard, useDispatchOrder, useMarkOrderDelivered } from '@/hooks/useAdmin';
-import { formatINR } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { toast } from 'sonner';
 
 interface ShippingAddress {
@@ -152,13 +152,13 @@ const AdminRevenuePage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Surface padding="md" className="text-center">
             <IndianRupee className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{stats?.totalRevenue !== undefined ? formatINR(stats.totalRevenue) : '-'}</p>
+            <p className="text-2xl font-bold text-foreground">{stats?.totalRevenue !== undefined ? formatAmount(stats.totalRevenue) : '-'}</p>
             <p className="text-[11px] text-muted-foreground">Total Collected</p>
           </Surface>
           <Surface padding="md" className="text-center">
             <IndianRupee className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
             <p className="text-2xl font-bold text-foreground">
-              {formatINR(items.filter((i) => i.status === 'PAID').reduce((s, i) => s + Number(i.amount), 0))}
+              {formatAmount(items.filter((i) => i.status === 'PAID').reduce((s, i) => s + Number(i.amount), 0))}
             </p>
             <p className="text-[11px] text-muted-foreground">This page (PAID)</p>
           </Surface>
@@ -227,7 +227,7 @@ const AdminRevenuePage = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-xs text-muted-foreground">{r.user.email}</td>
-                    <td className="py-3 px-4 text-sm font-semibold text-foreground">{formatINR(r.amount)}</td>
+                    <td className="py-3 px-4 text-sm font-semibold text-foreground">{formatAmount(r.amount)}</td>
                     <td className="py-3 px-4">
                       <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[r.status] ?? STATUS_COLORS.PENDING}`}>
                         {r.status.toLowerCase()}
