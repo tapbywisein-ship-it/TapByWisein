@@ -216,7 +216,19 @@ const AttendeeDashboard = () => {
             </h1>
           </div>
           <div className="self-start sm:self-auto shrink-0 flex items-center gap-2">
-            {/* Phones already have this bell in the top bar, so only show it here on wider screens. */}
+            {/* Phones already have profile and the bell in the top bar, so only show them here on wider screens. */}
+            <Link
+              to="/profile"
+              aria-label="My profile"
+              title="My profile"
+              className="hidden md:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-border overflow-hidden bg-muted text-foreground text-sm font-semibold hover:border-primary/50 transition-colors"
+            >
+              {user?.photoUrl || user?.avatar ? (
+                <img src={user.photoUrl || user.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (user?.name?.[0] ?? 'U').toUpperCase()
+              )}
+            </Link>
             <NotificationBell className="hidden md:inline-flex rounded-xl border border-border" />
             <Button
               size="sm"
@@ -559,33 +571,6 @@ const AttendeeDashboard = () => {
               </Surface>
             </motion.div>
           )}
-
-          {/* ── Discover ── */}
-          <motion.div {...fade(0.18)}>
-            <Surface hover className="h-full">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                  <span className="section-label">Discover</span>
-                </div>
-                <Link to="/discover" className="flex items-center gap-0.5 text-[11px] text-primary font-medium hover:underline">
-                  Explore <ArrowUpRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">Events tailored to your interests.</p>
-              <div className="grid grid-cols-2 gap-2">
-                {['Tech', 'Business', 'Design', 'Startup'].map((label) => (
-                  <Link
-                    key={label}
-                    to={`/discover?category=${label.toLowerCase()}`}
-                    className="py-3 rounded-xl bg-muted/40 hover:bg-secondary transition-colors text-center"
-                  >
-                    <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                  </Link>
-                ))}
-              </div>
-            </Surface>
-          </motion.div>
 
         </div>
       </div>
