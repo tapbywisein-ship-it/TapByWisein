@@ -28,6 +28,7 @@ const EventsPage = () => {
     );
 
   return wrap(
+    <>
     <div className="space-y-6 pb-24 md:pb-8">
       {withUser && (
         <Surface className="flex items-center gap-2 border-primary/30 bg-primary/5 py-2.5">
@@ -296,7 +297,7 @@ const EventsPage = () => {
         )}
       </div>
 
-            )      {/* Registration Modal */}
+       {/* Registration Modal */}
       <AnimatePresence>
         {registerModal && (
           <motion.div
