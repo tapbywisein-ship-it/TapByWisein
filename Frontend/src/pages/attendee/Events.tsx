@@ -296,7 +296,7 @@ const EventsPage = () => {
         )}
       </div>
 
-      {/* Registration Modal */}
+            )      {/* Registration Modal */}
       <AnimatePresence>
         {registerModal && (
           <motion.div
