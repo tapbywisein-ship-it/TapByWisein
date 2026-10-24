@@ -26,17 +26,33 @@ export interface Badge {
   earnedAt?: string;
 }
 
+// Matches what GET /gamification/leaderboard sends: the person's public
+// details are nested under `user`, with their name in `user.profile`.
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
   fkScore: number;
   level: number;
-  profile?: {
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-    company?: string;
+  levelLabel?: string;
+  user?: {
+    id: string;
+    username?: string | null;
+    profile?: {
+      firstName: string;
+      lastName: string;
+      avatar?: string | null;
+      company?: string | null;
+    } | null;
   };
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 export interface ScoreHistoryEntry {
@@ -53,7 +69,8 @@ export const gamificationService = {
   },
 
   async getLeaderboard(page = 1, limit = 20) {
-    return apiFetch<{ data: { leaderboard: LeaderboardEntry[]; pagination: unknown } }>(
+    // A paginated response: `data` is the list itself, next to `pagination`.
+    return apiFetch<{ data: LeaderboardEntry[]; pagination: PaginationMeta }>(
       `/gamification/leaderboard?page=${page}&limit=${limit}`
     );
   },
