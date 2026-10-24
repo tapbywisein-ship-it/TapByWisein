@@ -16,6 +16,8 @@ describe('events.validation', () => {
         description: 'This is a valid event description.',
         startDate,
         endDate,
+        // Required by the schema; without it every case fails, whatever the type.
+        category: 'Tech',
         type: 'VIRTUAL',
       });
 
@@ -28,6 +30,8 @@ describe('events.validation', () => {
         description: 'This is a valid event description.',
         startDate,
         endDate,
+        // Required by the schema; without it every case fails, whatever the type.
+        category: 'Tech',
         type: 'HYBRID',
       });
 
@@ -40,6 +44,8 @@ describe('events.validation', () => {
         description: 'This is a valid event description.',
         startDate,
         endDate,
+        // Required by the schema; without it every case fails, whatever the type.
+        category: 'Tech',
         type: 'IN_PERSON',
       });
 

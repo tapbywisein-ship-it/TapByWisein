@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
@@ -47,6 +48,9 @@ vi.mock('@/hooks/useOrganizer', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  // Added to the page after this test was written.
+  useUpdateEvent: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRequestOrganizer: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('sonner', () => ({
@@ -59,6 +63,17 @@ vi.mock('sonner', () => ({
 // Import after mocks so the module under test picks them up.
 import CreateEventPage from './CreateEvent';
 
+// The page reads data with TanStack Query (e.g. your communities), so it needs a
+// QueryClient. Without one every render threw "No QueryClient set".
+const renderPage = () =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>
+        <CreateEventPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('CreateEvent - Event Type UI', () => {
@@ -67,11 +82,7 @@ describe('CreateEvent - Event Type UI', () => {
   });
 
   it('shows only "In Person" (no "Virtual" or "Hybrid")', () => {
-    render(
-      <MemoryRouter>
-        <CreateEventPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     // Single-page form — location section is visible without any step navigation.
     // Click the location expandable to reveal the "In Person" label.
@@ -85,11 +96,7 @@ describe('CreateEvent - Event Type UI', () => {
   });
 
   it('allocates seats by capacity (10/30/60) for multiple tiers', () => {
-    render(
-      <MemoryRouter>
-        <CreateEventPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     // The capacity input starts at 100 (the default). Find and confirm it.
     // No step navigation needed — all fields are on one page.

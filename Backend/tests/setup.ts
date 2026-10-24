@@ -18,6 +18,11 @@ process.env.FRONTEND_URL = 'http://localhost:3000';
 process.env.ALLOWED_ORIGINS = 'http://localhost:3000';
 process.env.LOG_LEVEL = 'error';
 process.env.PORT = '3001';
+// Required by the env schema since auth moved to Supabase. Dummy values: unit
+// tests mock their calls and never reach Supabase.
+process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
 // Mock email service to prevent actual emails in tests
 jest.mock('../src/utils/email', () => ({
