@@ -210,7 +210,8 @@ const CreateEventPage = () => {
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [locationExpanded, setLocationExpanded] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
+  // Open by default: description is required, so it shouldn't look optional.
+  const [descExpanded, setDescExpanded] = useState(true);
 
   const [form, setForm] = useState<FormState>({
     title: '',
@@ -706,8 +707,8 @@ const CreateEventPage = () => {
           {/* ── Two-column grid ────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-[340px,1fr] gap-8 items-start">
 
-            {/* ── LEFT: Cover picker + Theme ───────────────────────────────── */}
-            <div className="space-y-4">
+            {/* ── LEFT: Cover picker + Theme (sticky on wide screens, so it stays in view) */}
+            <div className="space-y-4 lg:sticky lg:top-6">
 
               {/* Cover image preview & picker — square container with rounded corners */}
               <div
@@ -999,16 +1000,19 @@ const CreateEventPage = () => {
               <div
                 className="p-4 rounded-[14px] premium-glass-card"
               >
-                <label htmlFor="event-title" className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                  Event Name <span className="text-red-500">*</span>
+                <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                 </label>
+                {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
                 <input
                   id="event-title"
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder="Enter event name..."
-                  className={`w-full bg-transparent text-xl font-semibold placeholder:opacity-50 focus:outline-none border-b border-transparent focus:border-primary/40 pb-1 transition-colors ${
-                    isDark ? 'text-white placeholder:text-neutral-500' : 'text-neutral-900 placeholder:text-neutral-400'
+                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                    isDark
+                      ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
+                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
                   }`}
                 />
               </div>
@@ -1061,7 +1065,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Date <span className="text-red-500">*</span>
+                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="date"
@@ -1072,7 +1076,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Time <span className="text-red-500">*</span>
+                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="time"
@@ -1087,7 +1091,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Date <span className="text-red-500">*</span>
+                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="date"
@@ -1098,7 +1102,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Time <span className="text-red-500">*</span>
+                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
                     </span>
                     <input
                       type="time"
@@ -1131,6 +1135,11 @@ const CreateEventPage = () => {
                   </div>
                 </div>
               </div>
+
+              {/* ── Where ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Where
+              </p>
 
               {/* Location — expandable card */}
               <div
@@ -1295,6 +1304,11 @@ const CreateEventPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* ── About ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                About
+              </p>
 
               {/* Description — expandable card */}
               <div

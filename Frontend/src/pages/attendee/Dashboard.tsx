@@ -4,42 +4,26 @@ import { AppLayout } from '@/components/AppLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
-import { useMyScore, useScoreHistory } from '@/hooks/useGamification';
+import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
 import { useMyRegistrations } from '@/hooks/useEvents';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConnectionSuggestions, useSendConnectionRequest, useConnections } from '@/hooks/useConnections';
-import { profileNeedsOnboarding, profileCompletion, hasUploadedAvatar, BIO_MIN_LENGTH_EXCLUSIVE } from '@/lib/profileCompletion';
+import { profileNeedsOnboarding, profileSetupChecklist } from '@/lib/profileCompletion';
+import { hasEventEnded } from '@/lib/eventCountdown';
+import { levelProgress } from '@/lib/scoreRules';
 import { useMyCard } from '@/hooks/useFounderCard';
 import { toast } from 'sonner';
 import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
 } from 'lucide-react';
-
-/* ─── animated counter ─────────────────────────────────────────────── */
-const Counter = ({ to, delay = 0 }: { to: number; delay?: number }) => {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      let cur = 0;
-      const step = Math.max(1, to / 50);
-      const id = setInterval(() => {
-        cur += step;
-        if (cur >= to) { setVal(to); clearInterval(id); }
-        else setVal(Math.floor(cur));
-      }, 20);
-      return () => clearInterval(id);
-    }, delay);
-    return () => clearTimeout(t);
-  }, [to, delay]);
-  return <>{val}</>;
-};
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
 const ShareSheet = ({ cardUrl, onClose }: { cardUrl: string; onClose: () => void }) => {
@@ -96,15 +80,23 @@ const ShareSheet = ({ cardUrl, onClose }: { cardUrl: string; onClose: () => void
 };
 
 /* ─── onboarding checklist ──────────────────────────────────────────── */
+// `loading`: the profile hasn't arrived yet, so show a spinner instead of
+// "not done"; once it loads, finished steps tick off with a small pop.
 const ChecklistItem = ({
-  done, label, action, to,
-}: { done: boolean; label: string; action: string; to: string }) => (
-  <Link to={done ? '#' : to} className={`flex items-center gap-3 py-2 ${done ? 'pointer-events-none' : 'hover:opacity-80'}`}>
-    {done
-      ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-      : <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-    <span className={`text-sm flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{label}</span>
-    {!done && <span className="text-[11px] text-primary font-medium">{action}</span>}
+  done, label, action, to, loading = false,
+}: { done: boolean; label: string; action: string; to: string; loading?: boolean }) => (
+  <Link to={done || loading ? '#' : to} className={`flex items-center gap-3 py-2 ${done || loading ? 'pointer-events-none' : 'hover:opacity-80'}`}>
+    {loading ? (
+      <Loader2 className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 animate-spin" />
+    ) : done ? (
+      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }} className="flex-shrink-0">
+        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+      </motion.span>
+    ) : (
+      <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+    )}
+    <span className={`text-sm flex-1 ${done && !loading ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{label}</span>
+    {!done && !loading && <span className="text-[11px] text-primary font-medium">{action}</span>}
   </Link>
 );
 
@@ -150,12 +142,18 @@ const AttendeeDashboard = () => {
   const score = gamification?.fkScore ?? 0;
   const level = gamification?.level ?? 1;
   const myEvents = registrations?.registrations ?? [];
-  const upcomingEvents = myEvents
+  // Bookings arrive newest-booked first, so sort by when the event starts:
+  // the box should show the next 3 events, not the 3 most recently booked.
+  const eventStart = (r: (typeof myEvents)[number]) =>
+    r.event ? new Date(r.event.startDate).getTime() : Infinity;
+  const allUpcoming = myEvents
     .filter((r) => r.status === 'REGISTERED' || r.status === 'WAITLISTED')
-    .slice(0, 3);
+    .filter((r) => !hasEventEnded(r.event))
+    .sort((a, b) => eventStart(a) - eventStart(b));
+  const upcomingEvents = allUpcoming.slice(0, 3);
+  const { data: scoreRules = [] } = useScoreRules();
 
   const profile = profileData?.profile;
-  const pct = profileCompletion(profile);
 
   // Accepted connections — total count (exact, from the paginated meta) + the
   // most recent few for the Dashboard widget.
@@ -180,16 +178,8 @@ const AttendeeDashboard = () => {
   });
 
   /* checklist items */
-  const checklistItems = [
-    { done: hasUploadedAvatar(profile?.avatar), label: 'Add a profile photo', action: 'Upload', to: '/profile' },
-    { done: !!(profile?.bio && profile.bio.trim().length > BIO_MIN_LENGTH_EXCLUSIVE), label: 'Write a short bio', action: 'Add bio', to: '/profile' },
-    { done: !!(profile?.position || profile?.company), label: 'Add your role & company', action: 'Add', to: '/profile' },
-    { done: (profile?.skills?.length ?? 0) >= 3, label: 'Add at least 3 skills', action: 'Add skills', to: '/profile' },
-    { done: (profile?.interests?.length ?? 0) >= 2, label: 'Add interests', action: 'Add', to: '/profile' },
-    { done: (profile?.lookingFor?.length ?? 0) >= 1, label: 'Add what you\'re looking for', action: 'Add', to: '/profile' },
-    { done: !!(profile?.linkedin || profile?.twitter || profile?.website), label: 'Link a social profile', action: 'Connect', to: '/profile' },
-    { done: myEvents.length > 0, label: 'Register for an event', action: 'Browse', to: '/events' },
-  ];
+  // Shared with the organizer Dashboard so both show the same 4 tasks.
+  const checklistItems = profileSetupChecklist(profile);
   const completedSteps = checklistItems.filter((i) => i.done).length;
   const nextStep = checklistItems.find((i) => !i.done);
 
@@ -235,10 +225,10 @@ const AttendeeDashboard = () => {
         {/* Stats row */}
         <motion.div {...fade(0.06)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {[
-            { label: 'Registered', value: myEvents.length, sub: 'Events', icon: Calendar },
-            { label: 'FK Score', value: score, sub: `Level ${level}`, icon: Trophy, gold: true },
-            { label: 'Connections', value: connectionCount, sub: 'People', icon: Users },
-            { label: 'Upcoming', value: upcomingEvents.length, sub: 'Events', icon: Sparkles },
+            { label: 'Registered', value: registrations ? myEvents.length : undefined, sub: 'Events', icon: Calendar },
+            { label: 'FK Score', value: gamification ? score : undefined, sub: `Level ${level}`, icon: Trophy, gold: true },
+            { label: 'Connections', value: connData ? connectionCount : undefined, sub: 'People', icon: Users },
+            { label: 'Upcoming', value: registrations ? allUpcoming.length : undefined, sub: 'Events', icon: Sparkles },
           ].map(({ label, value, sub, icon: Icon, gold }) => (
             <Surface key={label} padding="none" className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center">
               <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1.5 sm:mb-2" />
@@ -255,7 +245,9 @@ const AttendeeDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {/* ── Profile Checklist ── */}
-          {pct < 100 && (
+          {/* Always shown: steps spin until the profile loads, then tick off.
+              Kept at 4/4 when everything is done. */}
+          {(
             <motion.div {...fade(0.08)} className="lg:col-span-1">
               <Surface className="h-full">
                 <div className="flex items-center justify-between mb-3">
@@ -263,7 +255,7 @@ const AttendeeDashboard = () => {
                     <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
                     <span className="section-label">Profile Setup</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{completedSteps}/{checklistItems.length}</span>
+                  <span className="text-xs text-muted-foreground">{profile ? `${completedSteps}/${checklistItems.length}` : 'Checking…'}</span>
                 </div>
 
                 {/* progress bar */}
@@ -271,18 +263,18 @@ const AttendeeDashboard = () => {
                   <motion.div
                     className="progress-fill"
                     initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
+                    animate={{ width: `${profile ? (completedSteps / checklistItems.length) * 100 : 0}%` }}
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
 
                 <div className="divide-y divide-border">
-                  {checklistItems.slice(0, 4).map((item) => (
-                    <ChecklistItem key={item.label} {...item} />
+                  {checklistItems.map((item) => (
+                    <ChecklistItem key={item.label} {...item} loading={!profile} />
                   ))}
                 </div>
 
-                {nextStep && (
+                {profile && nextStep && (
                   <Button size="sm" className="w-full mt-3" asChild>
                     <Link to={nextStep.to}>{nextStep.action} →</Link>
                   </Button>
@@ -311,7 +303,7 @@ const AttendeeDashboard = () => {
                       stroke="hsl(var(--gold-primary, var(--primary)))"
                       strokeWidth="3" strokeLinecap="round"
                       strokeDasharray="0 100.5"
-                      animate={{ strokeDasharray: `${Math.min(score, 100) * 1.005} 100.5` }}
+                      animate={{ strokeDasharray: `${levelProgress(score).percent * 1.005} 100.5` }}
                       transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
                     />
                   </svg>
@@ -325,8 +317,8 @@ const AttendeeDashboard = () => {
                   <p className="text-xs text-muted-foreground">FK Score</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {[
-                      { label: '+50 Attend event', done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
-                      { label: '+20 Connect', done: false },
+                      { label: `+${scoreRules.find(r => r.action === 'Attend an event (check-in)')?.points} Attend event`, done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
+                      { label: `+${scoreRules.find(r => r.action === 'Make a connection')?.points} Connect`, done: false },
                     ].map((hint) => (
                       <span key={hint.label} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${hint.done ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-muted/40 border-border text-muted-foreground'}`}>
                         {hint.done ? '✓' : ''} {hint.label}
@@ -527,30 +519,33 @@ const AttendeeDashboard = () => {
                     const sent = sentIds.has(s.id);
                     return (
                       <div key={s.id} className="flex flex-col items-center text-center p-4 rounded-xl bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
-                        {p?.avatar ? (
-                          <img src={p.avatar} alt={name} loading="lazy" className="w-12 h-12 rounded-full object-cover mb-2" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold mb-2">
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
-                        {(p?.position || p?.company) && (
-                          <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
-                            {[p?.position, p?.company].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                        {p?.skills && p.skills.length > 0 && (
-                          <div className="flex flex-wrap gap-1 justify-center mb-2">
-                            {p.skills.slice(0, 2).map((sk) => (
-                              <span key={sk} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{sk}</span>
-                            ))}
-                          </div>
-                        )}
+                        {/* Clicking the person opens their card, like the Connections widget does. */}
+                        <Link to={`/card/${s.id}`} className="flex flex-col items-center w-full">
+                          {p?.avatar ? (
+                            <img src={p.avatar} alt={name} loading="lazy" className="w-12 h-12 rounded-full object-cover mb-2" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold mb-2">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                          {(p?.position || p?.company) && (
+                            <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
+                              {[p?.position, p?.company].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                          {p?.skills && p.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 justify-center mb-2">
+                              {p.skills.slice(0, 2).map((sk) => (
+                                <span key={sk} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{sk}</span>
+                              ))}
+                            </div>
+                          )}
+                        </Link>
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7"
+                          className="w-full text-xs h-7 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >

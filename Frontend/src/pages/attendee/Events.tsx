@@ -1,113 +1,21 @@
-import { type ReactNode, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PortalLayout } from '@/components/PortalLayout';
 import { PublicNav } from '@/components/PublicNav';
 import { Surface } from '@/components/Surface';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { EventBrowser } from '@/components/EventBrowser';
 import { useAppStore } from '@/store/appStore';
-import { useEvents, useRegisterForEvent, useMyRegistrations, useSavedEvents, useEventQuestions } from '@/hooks/useEvents';
-import { SaveEventButton } from '@/components/SaveEventButton';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select as UiSelect,
-  SelectContent as UiSelectContent,
-  SelectItem as UiSelectItem,
-  SelectTrigger as UiSelectTrigger,
-  SelectValue as UiSelectValue,
-} from '@/components/ui/select';
-import { getTheme } from '@/lib/eventThemes';
-import { getRegistrationPricing } from '@/lib/ticketPricing';
-import { registrationCountdown } from '@/lib/eventCountdown';
-import { QRCodeSVG } from 'qrcode.react';
-import type { Event } from '@/services/events.service';
-import { EVENT_CATEGORIES } from '@/constants/categories';
-import {
-  Calendar, Users, MapPin, CheckCircle2, X,
-  Clock, Tag, Ticket, Search, AlertCircle,
-} from 'lucide-react';
 
-const CATEGORIES = ['All', ...EVENT_CATEGORIES.map((c) => c.label)];
-
+/**
+ * The attendee Events page. It uses the same event browser as the organizer
+ * Events page (search, filters, cards, quick register), so both look the same.
+ * Logged-out visitors can browse too, with the public nav instead of the sidebar.
+ */
 const EventsPage = () => {
-  const user = useAppStore((s) => s.user);
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [savedOnly, setSavedOnly] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  // ?withUser=<id> comes from a profile's "events in common" link.
   const withUser = searchParams.get('withUser') ?? undefined;
-  const navigate = useNavigate();
-  const [registerModal, setRegisterModal] = useState<Event | null>(null);
-  const [regStep, setRegStep] = useState<'confirm' | 'success'>('confirm');
-  const [registrationId, setRegistrationId] = useState<string | null>(null);
-
-  const { data, isLoading, isError, refetch } = useEvents({
-    q: search || undefined,
-    category: category !== 'All' ? category : undefined,
-    status: 'PUBLISHED',
-    limit: 50,
-    withUser,
-  });
-
-  // Auth-only queries — skip for logged-out visitors browsing publicly.
-  const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
-  const { data: savedData } = useSavedEvents(1, 100, isAuthenticated);
-  const savedIdSet = new Set(savedData?.events.map((e) => e.id) ?? []);
-
-  const registerMutation = useRegisterForEvent();
-  const allEvents = data?.events ?? [];
-  const events = savedOnly ? allEvents.filter((e) => savedIdSet.has(e.id)) : allEvents;
-
-  // Build a set of registered event IDs from the user's registrations
-  const registeredEventIds = new Set(
-    (myRegsData?.registrations ?? [])
-      .filter((r) => r.status === 'REGISTERED' || r.status === 'ATTENDED' || r.status === 'WAITLISTED')
-      .map((r) => r.eventId)
-  );
-  const waitlistedEventIds = new Set(
-    (myRegsData?.registrations ?? [])
-      .filter((r) => r.status === 'WAITLISTED')
-      .map((r) => r.eventId)
-  );
-
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const { data: modalQuestions } = useEventQuestions(
-    registerModal?.id ?? '',
-    !!registerModal
-  );
-
-  const handleRegister = async () => {
-    if (!registerModal) return;
-    const answerArr = Object.entries(answers)
-      .filter(([, v]) => v.trim())
-      .map(([questionId, answer]) => ({ questionId, answer }));
-    const res = await registerMutation.mutateAsync({
-      eventId: registerModal.id,
-      answers: answerArr.length > 0 ? answerArr : undefined,
-    });
-    const regId = (res as { data?: { registration?: { id?: string } } })?.data?.registration?.id ?? null;
-    setRegistrationId(regId);
-    setAnswers({});
-    setRegStep('success');
-  };
-
-  const isPaidEvent = (e: Event) => {
-    const enabled = (e.ticketTypes ?? []).filter((t) => t.isEnabled ?? true);
-    return enabled.length > 0
-      ? enabled.some((t) => (Number(t.price) || 0) > 0)
-      : e.ticketPrice != null && Number(e.ticketPrice) > 0;
-  };
-  const openModal = (e: Event) => {
-    if (isPaidEvent(e)) { navigate(`/event/${e.id}`); return; }
-    setRegisterModal(e); setRegStep('confirm'); setRegistrationId(null);
-  };
-  const closeModal = () => setRegisterModal(null);
-
-  const qrValue = registrationId
-    ? `tapbywisein://registration/${registrationId}`
-    : `tapbywisein://event/${registerModal?.id}/user/${user?.id}`;
 
   const wrap = (children: ReactNode) =>
     isAuthenticated ? (
@@ -120,26 +28,25 @@ const EventsPage = () => {
     );
 
   return wrap(
-    <>
-      <div className="space-y-6 pb-24 md:pb-8">
-        {withUser && (
-          <Surface className="flex items-center gap-2 border-primary/30 bg-primary/5 py-2.5">
-            <span className="text-xs text-foreground">
-              Showing events you and this person are{' '}
-              <span className="font-semibold">both registered for</span>.
-            </span>
-            <button
-              onClick={() => {
-                const next = new URLSearchParams(searchParams);
-                next.delete('withUser');
-                setSearchParams(next, { replace: true });
-              }}
-              className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              Clear filter
-            </button>
-          </Surface>
-        )}
+    <div className="space-y-6 pb-24 md:pb-8">
+      {withUser && (
+        <Surface className="flex items-center gap-2 border-primary/30 bg-primary/5 py-2.5">
+          <span className="text-xs text-foreground">
+            Showing events you and this person are{' '}
+            <span className="font-semibold">both registered for</span>.
+          </span>
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete('withUser');
+              setSearchParams(next, { replace: true });
+            }}
+            className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Clear filter
+          </button>
+        </Surface>
+      )}
 
         {/* Hero Header & Quick Search Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">

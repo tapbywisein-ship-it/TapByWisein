@@ -1,3 +1,4 @@
+
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
 import { useLeaderboard, useMyScore } from '@/hooks/useGamification';

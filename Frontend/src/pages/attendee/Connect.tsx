@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -63,7 +63,7 @@ const ConnectPage = () => {
           {([
             { key: 'show', label: 'My QR', icon: QrCode },
             { key: 'scan', label: 'Scan', icon: Scan },
-            { key: 'nfc', label: 'NFC', icon: Nfc },
+            { key: 'nfc', label: 'Tap', icon: Nfc },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -130,7 +130,7 @@ const ConnectPage = () => {
 
             {card?.status === 'ACTIVE' && (
               <div className="mt-6 border-t border-border pt-4 text-left">
-                <p className="mb-2 text-sm font-semibold text-foreground">Provision an NFC sticker</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">Provision a Tap Card sticker</p>
                 <NfcProvisioner cardUrl={cardUrl} />
               </div>
             )}
@@ -219,3 +219,4 @@ const ConnectPage = () => {
 };
 
 export default ConnectPage;
+

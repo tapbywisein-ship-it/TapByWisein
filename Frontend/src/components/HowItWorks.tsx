@@ -1,10 +1,10 @@
-import { Nfc, IdCard, Handshake } from 'lucide-react';
+﻿import { Nfc, IdCard, Handshake } from 'lucide-react';
 
 const STEPS = [
   {
     icon: Nfc,
     title: 'Tap or scan',
-    body: "Tap an NFC card or scan a QR code to open a founder's digital card instantly. No app install, no typing.",
+    body: "Tap a Tap Card or scan a QR code to open a founder's digital card instantly. No app install, no typing.",
   },
   {
     icon: IdCard,
@@ -42,3 +42,4 @@ export const HowItWorks = ({ compact = false }: { compact?: boolean }) => (
     ))}
   </div>
 );
+

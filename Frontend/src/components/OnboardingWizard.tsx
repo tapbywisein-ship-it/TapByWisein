@@ -154,8 +154,15 @@ export const OnboardingWizard = ({ open, onOpenChange }: OnboardingWizardProps) 
     onOpenChange(false);
   };
 
+  // Closing with X, Esc or a click outside also counts as "seen", the same as
+  // Skip. Before, only Skip/Finish saved it, so the popup came back every visit.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) localStorage.setItem('fk:onboarded', '1');
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

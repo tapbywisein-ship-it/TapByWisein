@@ -5,6 +5,7 @@ import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
+import { SearchDialog } from '@/components/SearchDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +24,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Compass, Network, Menu, X, CalendarDays,
+  LayoutDashboard, Calendar, Users, Download, LogOut, Ticket, Wallet, UserCircle, Plus, QrCode, Boxes, Scan, Network, Menu, X, CalendarDays, Search, MessageCircle, Trophy,
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard',    icon: LayoutDashboard, path: '/organizer/dashboard' },
-  { label: 'Create Event', icon: Calendar,         path: '/organizer/events/create' },
+  // One Events item: create, host and browse events (was Create Event + Browse Events).
+  { label: 'Events',       icon: Calendar,         path: '/organizer/events' },
   { label: 'My Calendars', icon: CalendarDays,     path: '/my-calendar' },
   { label: 'Communities',  icon: Boxes,            path: '/organizer/communities' },
   { label: 'Attendees',    icon: Users,            path: '/organizer/attendees' },
@@ -36,10 +38,17 @@ const navItems = [
   { label: 'Payouts',      icon: Wallet,           path: '/organizer/payouts' },
   { label: 'Connect',      icon: Scan,             path: '/connect' },
   { label: 'Connections',  icon: Network,          path: '/connections' },
-  { label: 'Browse Events', icon: Compass,         path: '/discover' },
+  // Messages and FK Score already work for organizers; they just weren't linked.
+  { label: 'Messages',     icon: MessageCircle,    path: '/messages' },
   { label: 'My Tickets',   icon: Ticket,           path: '/my-tickets' },
+  { label: 'FK Score',     icon: Trophy,           path: '/gamification' },
   { label: 'Tap Card',     icon: QrCode,           path: '/apply-card' },
 ];
+
+// Active on the item's page and its sub-pages (e.g. /messages/123), but not on
+// a different page that merely starts with the same letters.
+const isActivePath = (pathname: string, path: string) =>
+  pathname === path || pathname.startsWith(path + '/');
 
 /* Four primary tabs for mobile bottom navigation */
 const mobileNav = [
@@ -92,6 +101,7 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
   const logout = useAppStore((s) => s.logout);
   const [moreOpen, setMoreOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'User';
 
   const handleSignOutConfirm = () => {
@@ -107,10 +117,20 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
       <aside className="group hidden md:flex flex-col w-16 hover:w-60 transition-[width] duration-200 ease-out overflow-hidden border-r border-border px-2 py-4 fixed h-full z-40 bg-background">
         <div className="mb-1 px-1"><Logo collapsible /></div>
         <p className="text-xs text-muted-foreground mb-6 px-3 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Organizer</p>
-        
+        {/* Same people & events search the attendee sidebar has */}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          title="Search"
+          className="flex items-center gap-3 px-3 py-2 mb-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Search className="w-5 h-5 flex-shrink-0" />
+          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Search</span>
+        </button>
+
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Organizer">
           {navItems.map((item) => {
-            const active = location.pathname === item.path;
+            const active = isActivePath(location.pathname, item.path);
             return (
               <Link
                 key={item.path}
@@ -246,8 +266,16 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
             </div>
             
             <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => { setMoreOpen(false); setSearchOpen(true); }}
+                className="flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-colors border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <Search className="w-5 h-5" />
+                <span className="text-[11px] font-medium leading-tight">Search</span>
+              </button>
               {navItems.map((item) => {
-                const active = location.pathname === item.path;
+                const active = isActivePath(location.pathname, item.path);
                 return (
                   <Link
                     key={item.path}
@@ -291,6 +319,9 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
       )}
+
+      {/* ── Global search (same dialog as the attendee layout) ── */}
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* ── Sign out confirmation dialog ───────────────────── */}
       <SignOutConfirmDialog

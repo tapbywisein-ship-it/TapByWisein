@@ -2,11 +2,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
-import { useMyScore, useMyBadges, useAllBadges, useLeaderboard, useScoreHistory } from '@/hooks/useGamification';
+import { useMyScore, useMyBadges, useAllBadges, useLeaderboard, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
 import { useAppStore } from '@/store/appStore';
 import { Trophy, Zap, Lock, Crown, Star, Users, Medal, ArrowUpRight, Info, AlertCircle, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { SCORE_RULES } from '@/lib/scoreRules';
+import { levelProgress } from '@/lib/scoreRules';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Users, Trophy, Star, Zap, Medal, Crown,
@@ -19,6 +19,7 @@ const GamificationPage = () => {
   const { data: allBadges } = useAllBadges();
   const { data: leaderboardData, isLoading: leaderboardLoading, isError: leaderboardError } = useLeaderboard(1, 10);
   const { data: historyData } = useScoreHistory(1, 10);
+  const { data: scoreRules = [] } = useScoreRules();
 
   const score = gamification?.fkScore ?? 0;
   const level = gamification?.level ?? 1;
@@ -47,8 +48,9 @@ const GamificationPage = () => {
     prevBadgeIdsRef.current = new Set(earnedBadges.map((b) => b.id));
   }, [earnedBadges]);
 
-  const nextLevelScore = level * 200;
-  const progressPct = Math.min(100, (score / nextLevelScore) * 100);
+  // Progress toward the next level from the real level table (was level * 200,
+  // which didn't match the levels: Level 2 starts at 100, Level 3 at 250, ...).
+  const { nextLevel, nextLevelScore, percent: progressPct } = levelProgress(score);
 
   return (
     <PortalLayout>
@@ -92,7 +94,11 @@ const GamificationPage = () => {
                 </div>
               </div>
               <p className="text-xl font-semibold text-foreground mb-1">Level {level}</p>
-              <p className="text-sm text-muted-foreground mb-3">{score} / {nextLevelScore} pts to Level {level + 1}</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                {nextLevel === null
+                  ? 'Top level reached'
+                  : `${score} / ${nextLevelScore} pts to Level ${nextLevel}`}
+              </p>
               <div className="h-2 rounded-full bg-muted/50 max-w-xs mx-auto">
                 <motion.div
                   className="h-full rounded-full bg-primary"
@@ -112,13 +118,13 @@ const GamificationPage = () => {
             <h2 className="text-lg font-semibold text-foreground">How to earn points</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {SCORE_RULES.map((rule) => (
+            {scoreRules.map((rule) => (
               <div
                 key={rule.action}
                 className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 border border-border"
               >
                 <span className="flex items-center gap-2 text-sm text-foreground">
-                  <span className="text-base">{rule.icon}</span>
+                  <rule.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                   {rule.action}
                 </span>
                 <span className="text-sm font-semibold text-primary">+{rule.points}</span>

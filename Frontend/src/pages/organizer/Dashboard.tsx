@@ -1,29 +1,21 @@
 import { OrganizerLayout } from '@/components/OrganizerLayout';
+import { PeopleYouMayKnow } from '@/components/PeopleYouMayKnow';
+import { OrganizerEventRow } from '@/components/OrganizerEventRow';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar, Users, Zap, BarChart3, Plus, ChevronRight,
-  AlertCircle, IndianRupee, CheckCircle2, Circle, TrendingUp,
-  MapPin, Clock, ArrowRight, Compass, Globe, Lock,
+  AlertCircle, IndianRupee, CheckCircle2, Circle, TrendingUp, Loader2,
+  ArrowRight,
 } from 'lucide-react';
 import { useOrgDashboard, useMyOrgEvents } from '@/hooks/useOrganizer';
 import { useMyProfile } from '@/hooks/useProfile';
-import { hasUploadedAvatar } from '@/lib/profileCompletion';
+import { profileSetupChecklist } from '@/lib/profileCompletion';
 import { useAppStore } from '@/store/appStore';
-import { formatINR } from '@/lib/currency';
-
-/* ── status pill ─────────────────────────────────────────────────────── */
-const statusPill = (status: string) => {
-  const map: Record<string, string> = {
-    PUBLISHED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    DRAFT:     'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    CANCELLED: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
-    COMPLETED: 'bg-muted text-muted-foreground border-border',
-  };
-  return map[status] ?? map.DRAFT;
-};
+import { formatAmount } from '@/lib/currency';
 
 /* ── dashboard ───────────────────────────────────────────────────────── */
 const OrganizerDashboard = () => {
@@ -37,61 +29,15 @@ const OrganizerDashboard = () => {
   const trend  = stats?.registrationTrend ?? [];
   const profile = profileData?.profile;
 
-  const checklistItems = [
-    {
-      done: hasUploadedAvatar(profile?.avatar ?? user?.avatar) || !!(profile?.avatar ?? user?.avatar),
-      label: 'Add a profile photo',
-      action: 'Upload',
-      to: '/profile',
-    },
-    {
-      done: !!((profile?.bio ?? user?.bio)?.trim()),
-      label: 'Write a short bio',
-      action: 'Add bio',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.position || profile?.company || user?.designation || user?.company),
-      label: 'Add your role & company',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.skills ?? user?.skills)?.length ?? 0) >= 1,
-      label: 'Add at least 3 skills',
-      action: 'Add skills',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.interests ?? user?.interests)?.length ?? 0) >= 1,
-      label: 'Add interests',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: ((profile?.lookingFor ?? user?.lookingFor)?.length ?? 0) >= 1,
-      label: 'Add what you\'re looking for',
-      action: 'Add',
-      to: '/profile',
-    },
-    {
-      done: !!(profile?.linkedin || profile?.twitter || profile?.website || user?.linkedin || user?.twitter || user?.website),
-      label: 'Link a social profile',
-      action: 'Connect',
-      to: '/profile',
-    },
-    {
-      done: events.length > 0 || (stats?.totalEvents ?? 0) > 0,
-      label: 'Create your first event',
-      action: 'Create',
-      to: '/organizer/events/create',
-    },
-  ];
+  // Same 4 Profile Setup tasks and rules as the attendee Dashboard.
+  const checklistItems = profileSetupChecklist(profile);
 
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
-  const pendingItems = checklistItems.filter((i) => !i.done);
-  const isProfileIncomplete = pendingItems.length > 0;
+  const allDone = completedCount === totalCount;
+  // The card always shows. Until the profile loads, steps show a spinner
+  // (not "undone"), then the finished ones get ticked off.
+  const profileLoaded = !!profile;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 10 },
@@ -182,10 +128,11 @@ const OrganizerDashboard = () => {
                         >
                           {item.action}
                         </Link>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
+              </div>
 
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-8 sm:h-10 text-xs sm:text-sm shadow-sm mt-1.5 sm:mt-3">
                   <Link to="/profile" className="flex items-center justify-center gap-1.5">
@@ -291,8 +238,8 @@ const OrganizerDashboard = () => {
                 <h2 className="text-base font-semibold text-foreground">Your Events</h2>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/discover">
-                  <Compass className="w-3.5 h-3.5 mr-1.5" /> Browse Events
+                <Link to="/organizer/events">
+                  View all <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Link>
               </Button>
             </div>
@@ -310,77 +257,27 @@ const OrganizerDashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">No events yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Discover events happening around you</p>
+                  <p className="text-xs text-muted-foreground mt-1">Create your first event to start getting registrations</p>
                 </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/discover">
-                    <Compass className="w-3.5 h-3.5 mr-1.5" /> Browse Events
+                <Button asChild size="sm">
+                  <Link to="/organizer/events/create">
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Create event
                   </Link>
                 </Button>
               </div>
             ) : (
               <div className="divide-y divide-border">
                 {events.map((e) => (
-                  <Link
-                    key={e.id}
-                    to={`/organizer/events/${e.id}`}
-                    className="flex items-center gap-4 py-3 hover:bg-muted/30 -mx-1 px-1 rounded-xl transition-colors group"
-                  >
-                    {e.coverImage ? (
-                      <img src={e.coverImage} alt={e.title} loading="lazy" className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-12 h-10 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-4 h-4 text-muted-foreground/40" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{e.title}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        {e.startDate && (
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(e.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
-                        )}
-                        {e.city && (
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {e.city}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right hidden sm:block w-16">
-                        <p className="text-sm font-semibold text-foreground">{e.registeredCount ?? 0}</p>
-                        <p className="text-[10px] text-muted-foreground">registered</p>
-                      </div>
-                      <span className={`w-[72px] justify-center text-[10px] font-medium tracking-wide py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
-                        e.visibility === 'PRIVATE'
-                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                      }`}>
-                        {e.visibility === 'PRIVATE' ? (
-                          <>
-                            <Lock className="w-2.5 h-2.5" />
-                            <span>Private</span>
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="w-2.5 h-2.5" />
-                            <span>Public</span>
-                          </>
-                        )}
-                      </span>
-                      <span className={`w-24 text-center text-[10px] uppercase tracking-wider py-0.5 rounded-full border shrink-0 ${statusPill(e.status)}`}>
-                        {e.status.toLowerCase()}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0" />
-                    </div>
-                  </Link>
+                  <OrganizerEventRow key={e.id} event={e} />
                 ))}
               </div>
             )}
           </Surface>
+        </motion.div>
+
+        {/* Organizers network too: same suggestions as the attendee Dashboard. */}
+        <motion.div {...fade(0.12)}>
+          <PeopleYouMayKnow />
         </motion.div>
 
       </div>

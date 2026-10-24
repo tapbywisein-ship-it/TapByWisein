@@ -27,10 +27,11 @@ import { useMyRegistrations, useCancelRegistration } from '@/hooks/useEvents';
 import type { EventRegistration } from '@/services/events.service';
 import { formatINR } from '@/lib/currency';
 import { downloadIcs } from '@/lib/calendar';
+import { hasEventEnded } from '@/lib/eventCountdown';
 import { openInvoice } from '@/services/payments.service';
 import { toast } from 'sonner';
 
-type Tab = 'upcoming' | 'attended' | 'cancelled';
+type Tab = 'upcoming' | 'past' | 'attended' | 'cancelled';
 
 const STATUS_LABEL: Record<string, { label: string; className: string }> = {
   REGISTERED: { label: 'Registered', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
@@ -55,20 +56,24 @@ const MyTickets = () => {
 
   const grouped = useMemo(() => {
     const upcoming: EventRegistration[] = [];
+    const past: EventRegistration[] = [];
     const attended: EventRegistration[] = [];
     const cancelled: EventRegistration[] = [];
     for (const r of registrations) {
       if (r.status === 'CANCELLED') cancelled.push(r);
       else if (r.status === 'ATTENDED' || r.checkedIn) attended.push(r);
+      // Event is over but you were never checked in: it is no longer upcoming.
+      else if (hasEventEnded(r.event)) past.push(r);
       else upcoming.push(r);
     }
-    return { upcoming, attended, cancelled };
+    return { upcoming, past, attended, cancelled };
   }, [registrations]);
 
   const list = grouped[tab];
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'upcoming', label: 'Upcoming', count: grouped.upcoming.length },
+    { key: 'past', label: 'Past', count: grouped.past.length },
     { key: 'attended', label: 'Attended', count: grouped.attended.length },
     { key: 'cancelled', label: 'Cancelled', count: grouped.cancelled.length },
   ];
@@ -96,12 +101,14 @@ const MyTickets = () => {
         )}
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 border-b border-border">
+        {/* overflow-x-auto: on narrow phones the 4 tabs scroll inside this row
+            instead of making the whole page scroll sideways. */}
+        <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
                 tab === t.key
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground'

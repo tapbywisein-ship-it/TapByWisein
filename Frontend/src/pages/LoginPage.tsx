@@ -272,8 +272,10 @@ const LoginPage = () => {
             </Link>
           </p>
 
-          <p className="text-center text-[11px] leading-relaxed text-muted-foreground px-4">
-            By continuing, you agree to our Terms and Privacy Policy.
+          <p className="text-center text-xs text-muted-foreground">
+            By continuing, you agree to our{' '}
+            <Link to="/terms" className="text-primary hover:underline">Terms</Link> and{' '}
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </main>
