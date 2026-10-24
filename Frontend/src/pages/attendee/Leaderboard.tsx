@@ -1,22 +1,32 @@
 
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
-import { useLeaderboard, useMyScore } from '@/hooks/useGamification';
+import { Button } from '@/components/ui/button';
+import { LeaderboardRow } from '@/components/LeaderboardRow';
+import { useFullLeaderboard, useMyScore } from '@/hooks/useGamification';
+import type { LeaderboardEntry } from '@/services/gamification.service';
 import { useAppStore } from '@/store/appStore';
-import { Trophy, Medal, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Trophy, Medal, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const LeaderboardPage = () => {
   const user = useAppStore((s) => s.user);
-  const { data: leaderboardData, isLoading, isError } = useLeaderboard(1, 50);
+  const {
+    data: leaderboardData,
+    isLoading,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useFullLeaderboard(50);
   const { data: myScoreData } = useMyScore();
 
   const leaderboard = leaderboardData?.leaderboard ?? [];
-  const myRank = leaderboard.findIndex((e) => e.userId === user?.id);
-  const myRankDisplay = myRank >= 0 ? myRank + 1 : null;
+  const total = leaderboardData?.total ?? 0;
+  const myEntry = leaderboard.find((e) => e.userId === user?.id);
 
   // When the leaderboard is empty, show the current user as the default entry
-  const displayList =
+  const displayList: LeaderboardEntry[] =
     leaderboard.length > 0
       ? leaderboard
       : user
@@ -26,11 +36,14 @@ const LeaderboardPage = () => {
             userId: user.id,
             fkScore: myScoreData?.fkScore ?? 0,
             level: myScoreData?.level ?? 1,
-            profile: {
-              firstName: user.name?.split(' ')[0] ?? 'You',
-              lastName: user.name?.split(' ').slice(1).join(' ') ?? '',
-              avatar: user.avatar,
-              company: user.company,
+            user: {
+              id: user.id,
+              profile: {
+                firstName: user.name?.split(' ')[0] ?? 'You',
+                lastName: user.name?.split(' ').slice(1).join(' ') ?? '',
+                avatar: user.avatar,
+                company: user.company,
+              },
             },
           },
         ]
@@ -48,7 +61,9 @@ const LeaderboardPage = () => {
           </Link>
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Leaderboard</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Top performers ranked by FK Score</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Everyone on TapByWisein, ranked by FK Score{total > 0 && ` · ${total} people`}
+            </p>
           </div>
         </div>
 
@@ -75,17 +90,15 @@ const LeaderboardPage = () => {
           ) : (
             <>
               {/* Your rank banner */}
-              {myRankDisplay !== null && (
+              {myEntry && (
                 <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 mb-4">
                   <div className="flex items-center gap-2">
                     <Medal className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">Your rank</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">
-                      {leaderboard[myRank]?.fkScore ?? 0} pts
-                    </span>
-                    <span className="text-lg font-bold text-primary">#{myRankDisplay}</span>
+                    <span className="text-xs text-muted-foreground">{myEntry.fkScore} pts</span>
+                    <span className="text-lg font-bold text-primary">#{myEntry.rank}</span>
                   </div>
                 </div>
               )}
@@ -101,52 +114,19 @@ const LeaderboardPage = () => {
               )}
 
               <div className="space-y-1.5">
-                {displayList.map((entry, i) => {
-                  const isMe = entry.userId === user?.id;
-                  const name = entry.profile
-                    ? `${entry.profile.firstName} ${entry.profile.lastName}`.trim()
-                    : 'User';
-                  return (
-                    <div
-                      key={entry.userId}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                        isMe
-                          ? 'bg-primary/10 border border-primary/20'
-                          : 'hover:bg-muted/40'
-                      }`}
-                    >
-                      <span
-                        className={`w-6 text-center text-sm font-bold ${
-                          i < 3 ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {i + 1}
-                      </span>
-                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground flex-shrink-0 overflow-hidden">
-                        {entry.profile?.avatar ? (
-                          <img src={entry.profile.avatar} alt={name} className="w-full h-full object-cover" />
-                        ) : (
-                          name[0]
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {name} {isMe && '(you)'}
-                        </p>
-                        {entry.profile?.company && (
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {entry.profile.company}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">{entry.fkScore}</p>
-                        <p className="text-[10px] text-muted-foreground">Lv.{entry.level}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                {displayList.map((entry) => (
+                  <LeaderboardRow key={entry.userId} entry={entry} isMe={entry.userId === user?.id} />
+                ))}
               </div>
+
+              {hasNextPage && (
+                <div className="flex justify-center pt-4">
+                  <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                    {isFetchingNextPage && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Show more ({leaderboard.length} of {total})
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </Surface>
