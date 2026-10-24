@@ -213,19 +213,19 @@ const AttendeeDashboard = () => {
         <LiveEventBanner />
 
         {/* Greeting */}
-        <motion.div {...fade(0)} className="pt-1 flex items-start justify-between">
+        <motion.div {...fade(0)} className="pt-1 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="text-4xl font-semibold text-foreground">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground tracking-tight">
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
           <Button
             size="sm"
             variant="outline"
-            className="mt-2 shrink-0 gap-1.5"
+            className="self-start sm:self-auto shrink-0 gap-1.5 rounded-xl h-9"
             onClick={() => setShareOpen(true)}
           >
             <Share2 className="w-3.5 h-3.5" /> Share Card
@@ -233,20 +233,20 @@ const AttendeeDashboard = () => {
         </motion.div>
 
         {/* Stats row */}
-        <motion.div {...fade(0.06)} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <motion.div {...fade(0.06)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {[
             { label: 'Registered', value: myEvents.length, sub: 'Events', icon: Calendar },
             { label: 'FK Score', value: score, sub: `Level ${level}`, icon: Trophy, gold: true },
             { label: 'Connections', value: connectionCount, sub: 'People', icon: Users },
             { label: 'Upcoming', value: upcomingEvents.length, sub: 'Events', icon: Sparkles },
           ].map(({ label, value, sub, icon: Icon, gold }) => (
-            <Surface key={label} padding="md" className="text-center">
-              <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-3" />
-              <p className={`text-3xl font-bold mb-0.5 ${gold ? 'text-primary' : 'text-foreground'}`}>
+            <Surface key={label} padding="none" className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1.5 sm:mb-2" />
+              <p className={`text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 tracking-tight ${gold ? 'text-primary' : 'text-foreground'}`}>
                 <Counter to={value} delay={150} />
               </p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</p>
+              <p className="text-[9px] sm:text-[11px] text-muted-foreground/60 mt-0.5">{sub}</p>
             </Surface>
           ))}
         </motion.div>

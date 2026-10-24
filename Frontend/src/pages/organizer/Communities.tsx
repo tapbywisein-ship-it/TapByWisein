@@ -257,19 +257,23 @@ const Header = ({
     </div>
 
     {/* Section Tabs */}
-    <div className="flex items-center gap-2 border-b border-border pb-1">
+    <div className="flex items-center gap-2 pb-1">
       <button
         type="button"
         onClick={() => onTabChange('my')}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
           tab === 'my'
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:text-foreground'
+            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+            : 'bg-white dark:bg-zinc-800 text-foreground border border-neutral-200/80 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-zinc-700/60'
         }`}
       >
         <Boxes className="w-4 h-4" />
         <span>Your Communities</span>
-        <span className="text-xs px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-semibold">
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+            tab === 'my' ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+          }`}
+        >
           {myCount}
         </span>
       </button>
@@ -277,10 +281,10 @@ const Header = ({
       <button
         type="button"
         onClick={() => onTabChange('explore')}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
           tab === 'explore'
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:text-foreground'
+            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+            : 'bg-white dark:bg-zinc-800 text-foreground border border-neutral-200/80 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-zinc-700/60'
         }`}
       >
         <Globe className="w-4 h-4" />

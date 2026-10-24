@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, Sparkles,
+  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, ChevronUp, Sparkles,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -778,11 +778,7 @@ const CreateEventPage = () => {
 
               {/* Theme selector card */}
               <div
-                className={`p-3.5 rounded-[14px] flex items-center justify-between gap-3 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-3.5 rounded-[14px] flex items-center justify-between gap-3 premium-glass-card"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
@@ -804,11 +800,7 @@ const CreateEventPage = () => {
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus:outline-none ${
-                          isDark
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200'
-                            : 'bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-neutral-700'
-                        }`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium premium-glass-chip focus:outline-none"
                       >
                         <span>Change</span>
                         <ChevronDown className="w-3.5 h-3.5 opacity-60" />
@@ -855,11 +847,7 @@ const CreateEventPage = () => {
                   <button
                     type="button"
                     onClick={randomizeTheme}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      isDark
-                        ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white'
-                        : 'bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-neutral-700 hover:text-neutral-900'
-                    }`}
+                    className="p-1.5 rounded-lg premium-glass-chip"
                     title="Randomize Theme"
                   >
                     <Shuffle className="w-3.5 h-3.5" />
@@ -878,11 +866,7 @@ const CreateEventPage = () => {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
                     >
                       <Calendar className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
                       <span>
@@ -953,11 +937,7 @@ const CreateEventPage = () => {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
                     >
                       {form.visibility === 'PRIVATE' ? (
                         <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
@@ -1017,11 +997,7 @@ const CreateEventPage = () => {
 
               {/* Event Name Card */}
               <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] premium-glass-card"
               >
                 <label htmlFor="event-title" className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                   Event Name <span className="text-red-500">*</span>
@@ -1040,11 +1016,7 @@ const CreateEventPage = () => {
               {/* Community Card (optional) */}
               {(myCommunities?.length ?? 0) > 0 && (
                 <div
-                  className={`p-4 rounded-[14px] space-y-1.5 transition-colors ${
-                    isDark
-                      ? 'border border-white/10'
-                      : 'border border-neutral-200'
-                  }`}
+                  className="p-4 rounded-[14px] space-y-1.5 premium-glass-card"
                 >
                   <label htmlFor="event-community" className={`block text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                     Community (optional)
@@ -1057,8 +1029,8 @@ const CreateEventPage = () => {
                       id="event-community"
                       className={`w-full h-10 px-3 text-sm rounded-xl focus:ring-1 focus:ring-primary ${
                         isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-200'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
+                          ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                          : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
                       }`}
                     >
                       <SelectValue placeholder="No community" />
@@ -1083,11 +1055,7 @@ const CreateEventPage = () => {
 
               {/* Date & Time Card */}
               <div
-                className={`p-4 rounded-[14px] space-y-3.5 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] space-y-3.5 premium-glass-card"
               >
                 {/* Start */}
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
@@ -1099,11 +1067,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.startDate}
                       onChange={(e) => set('startDate', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1114,11 +1078,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.startTime}
                       onChange={(e) => set('startTime', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1133,11 +1093,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.endDate}
                       onChange={(e) => set('endDate', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1148,11 +1104,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.endTime}
                       onChange={(e) => set('endTime', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1160,31 +1112,29 @@ const CreateEventPage = () => {
                 {/* Timezone */}
                 <div className="pt-1 flex items-center gap-2.5">
                   <Globe className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                  <select
-                    value={form.timezone}
-                    onChange={(e) => set('timezone', e.target.value)}
-                    className={`flex-1 h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                    }`}
-                  >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value} className={isDark ? 'bg-[#252528] text-white' : 'bg-white text-neutral-900'}>
-                        {tz.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex-1">
+                    <Select
+                      value={form.timezone}
+                      onValueChange={(val) => set('timezone', val)}
+                    >
+                      <SelectTrigger className="w-full h-9 px-3 text-xs rounded-xl">
+                        <SelectValue placeholder="Select timezone…" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value} className="text-xs">
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
               {/* Location — expandable card */}
               <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] premium-glass-card"
               >
                 <button
                   type="button"
@@ -1230,7 +1180,7 @@ const CreateEventPage = () => {
                     />
 
                     {form.placeId ? (
-                      <div className={`p-3 rounded-lg text-xs space-y-1 ${isDark ? 'bg-black/20 border border-white/10' : 'bg-neutral-50 border border-neutral-200'}`}>
+                      <div className={`p-3 rounded-lg text-xs space-y-1 ${isDark ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15' : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15'}`}>
                         <div className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>
                           {[form.city, form.state, form.country].filter(Boolean).join(', ') || 'Location selected'}
                         </div>
@@ -1256,71 +1206,68 @@ const CreateEventPage = () => {
                       <>
                         <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Or enter it manually:</p>
 
-                        <select
+                        <Select
                           value={form.country}
-                          onChange={(e) => {
-                            const country = e.target.value;
+                          onValueChange={(country) => {
                             setForm((prev) => ({ ...prev, country, state: '', city: '' }));
                           }}
-                          className={`w-full h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                          }`}
                         >
-                          <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select country…</option>
-                          {countryOptions.map((c) => (
-                            <option key={c.code} value={c.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{c.name}</option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                            <SelectValue placeholder="Select country…" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {countryOptions.map((c) => (
+                              <SelectItem key={c.code} value={c.code} className="text-xs">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
                         <div className="grid grid-cols-2 gap-2">
-                          <select
+                          <Select
                             value={form.state}
-                            onChange={(e) => {
-                              const state = e.target.value;
+                            onValueChange={(state) => {
                               setForm((prev) => ({ ...prev, state, city: '' }));
                             }}
                             disabled={!form.country}
-                            className={`h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                              isDark
-                                ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                            }`}
                           >
-                            <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select state…</option>
-                            {stateOptions.map((s) => (
-                              <option key={s.code} value={s.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{s.name}</option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                              <SelectValue placeholder="Select state…" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {stateOptions.map((s) => (
+                                <SelectItem key={s.code} value={s.code} className="text-xs">
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
 
                           {cityOptions.length > 0 ? (
-                            <select
+                            <Select
                               value={form.city}
-                              onChange={(e) => set('city', e.target.value)}
+                              onValueChange={(city) => set('city', city)}
                               disabled={!form.state}
-                              className={`h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                              }`}
                             >
-                              <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select city…</option>
-                              {cityOptions.map((c) => (
-                                <option key={c.code} value={c.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{c.name}</option>
-                              ))}
-                            </select>
+                              <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                                <SelectValue placeholder="Select city…" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {cityOptions.map((c) => (
+                                  <SelectItem key={c.code} value={c.code} className="text-xs">
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           ) : (
                             <input
                               value={form.city}
                               onChange={(e) => set('city', e.target.value)}
                               placeholder="City"
                               disabled={!form.state}
-                              className={`h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                              }`}
+                              className="h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
                             />
                           )}
                         </div>
@@ -1333,11 +1280,7 @@ const CreateEventPage = () => {
                           value={form.address}
                           onChange={(e) => set('address', e.target.value)}
                           placeholder="Venue / local address *"
-                          className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                          }`}
+                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                       <div>
@@ -1345,11 +1288,7 @@ const CreateEventPage = () => {
                           value={form.pincode}
                           onChange={(e) => set('pincode', e.target.value)}
                           placeholder="Pincode *"
-                          className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                          }`}
+                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                     </div>
@@ -1359,11 +1298,7 @@ const CreateEventPage = () => {
 
               {/* Description — expandable card */}
               <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] premium-glass-card"
               >
                 <button
                   type="button"
@@ -1383,8 +1318,8 @@ const CreateEventPage = () => {
                     rows={4}
                     className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
                       isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
                     }`}
                   />
                 )}
@@ -1392,11 +1327,7 @@ const CreateEventPage = () => {
 
               {/* Category Card */}
               <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] premium-glass-card"
               >
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
@@ -1409,8 +1340,8 @@ const CreateEventPage = () => {
                   <SelectTrigger
                     className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
                       isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
                     }`}
                   >
                     <SelectValue placeholder="Select a category…" />
@@ -1425,7 +1356,7 @@ const CreateEventPage = () => {
                     {EVENT_CATEGORIES.map((c) => (
                       <SelectItem key={c.id} value={c.label}>
                         <div className="flex items-center gap-2">
-                          <c.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          <c.icon className="w-3.5 h-3.5 transition-colors text-muted-foreground group-hover/item:text-primary group-focus/item:text-primary group-data-[highlighted]/item:text-primary" />
                           <span>{c.label}</span>
                         </div>
                       </SelectItem>
@@ -1436,11 +1367,7 @@ const CreateEventPage = () => {
 
               {/* Event Options Card */}
               <div
-                className={`p-4 rounded-[14px] space-y-4 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-4 rounded-[14px] space-y-4 premium-glass-card"
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
@@ -1469,24 +1396,27 @@ const CreateEventPage = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className={`text-xs font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>Tickets</span>
-                      <div className={`inline-flex rounded-lg p-0.5 ${isDark ? 'bg-black/20 border border-white/10' : 'bg-neutral-100 border border-neutral-200'}`}>
-                        {([false, true] as const).map((isPaid) => (
-                          <button
-                            key={String(isPaid)}
-                            type="button"
-                            onClick={() => {
-                              if (!isPaid) set('ticketPrice', '');
-                              set('isPaid', isPaid);
-                            }}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                              form.isPaid === isPaid
-                                ? (isDark ? 'bg-white text-black shadow-sm' : 'bg-white text-neutral-900 shadow-sm')
-                                : (isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-neutral-900')
-                            }`}
-                          >
-                            {isPaid ? 'Paid' : 'Free'}
-                          </button>
-                        ))}
+                      <div className="inline-flex rounded-full p-1 premium-glass-chip border border-border/80">
+                        {([false, true] as const).map((isPaid) => {
+                          const active = form.isPaid === isPaid;
+                          return (
+                            <button
+                              key={String(isPaid)}
+                              type="button"
+                              onClick={() => {
+                                if (!isPaid) set('ticketPrice', '');
+                                set('isPaid', isPaid);
+                              }}
+                              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                                active
+                                  ? 'bg-[#1981FE] text-white shadow-sm shadow-[#1981FE]/30'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              }`}
+                            >
+                              {isPaid ? 'Paid' : 'Free'}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     {form.isPaid && (
@@ -1498,8 +1428,8 @@ const CreateEventPage = () => {
                         placeholder="Price in ₹"
                         className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
                           isDark
-                            ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                            : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
+                            ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                            : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
                         }`}
                       />
                     )}
@@ -1535,29 +1465,65 @@ const CreateEventPage = () => {
                     <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Capacity</p>
                     <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Maximum attendees allowed</p>
                   </div>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.capacity === 0 ? '' : form.capacity}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                      set('capacity', cap);
-                      if (form.useTicketTypes) {
-                        setForm((prev) => ({
-                          ...prev,
-                          capacity: cap,
-                          ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
-                        }));
-                      }
-                    }}
-                    placeholder="Unlimited"
-                    className={`w-24 h-8 px-2.5 text-xs text-right rounded-lg focus:outline-none focus:border-primary/50 ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                    }`}
-                  />
+                  <div className="inline-flex items-center rounded-full premium-glass-chip px-1.5 py-0.5 border border-border/80 shadow-sm gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.capacity === 0 ? '' : form.capacity}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                        set('capacity', cap);
+                        if (form.useTicketTypes) {
+                          setForm((prev) => ({
+                            ...prev,
+                            capacity: cap,
+                            ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
+                          }));
+                        }
+                      }}
+                      placeholder="Unlimited"
+                      className="w-16 h-7 text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
+                    />
+                    <div className="flex flex-col -space-y-0.5 border-l border-border/60 pl-1 pr-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = (form.capacity || 0) + 1;
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Increase capacity"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = Math.max(0, (form.capacity || 0) - 1);
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Decrease capacity"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
@@ -1605,11 +1571,7 @@ const CreateEventPage = () => {
               {form.useTicketTypes && (
                 <div className="space-y-3">
                   <div
-                    className={`px-4 py-3 rounded-[14px] space-y-2 ${
-                      isDark
-                        ? 'border border-white/10'
-                        : 'border border-neutral-200'
-                    }`}
+                    className="px-4 py-3 rounded-[14px] space-y-2 premium-glass-card"
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className={isDark ? 'text-neutral-400' : 'text-neutral-500'}>
@@ -1640,11 +1602,7 @@ const CreateEventPage = () => {
                     return (
                       <div
                         key={ticket.id}
-                        className={`rounded-[14px] border p-3.5 space-y-3 transition-all ${
-                          isDark
-                            ? (ticket.isEnabled ? 'border-white/20' : 'border-white/5 opacity-50')
-                            : (ticket.isEnabled ? 'border-neutral-200' : 'border-neutral-200/60 opacity-60')
-                        }`}
+                        className={`rounded-[14px] p-3.5 space-y-3 transition-all premium-glass-card ${ticket.isEnabled ? '' : 'opacity-60'}`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -1695,8 +1653,8 @@ const CreateEventPage = () => {
                               }}
                               className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
                                 isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
                               }`}
                               placeholder="0 = free"
                             />
@@ -1714,8 +1672,8 @@ const CreateEventPage = () => {
                               }}
                               className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
                                 isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900'
                               } ${ticket.isEnabled && ticket.count > maxForThisTier ? 'border-red-400' : ''}`}
                             />
                           </div>
@@ -1741,8 +1699,8 @@ const CreateEventPage = () => {
                                   onChange={(e) => updateBenefit(ticket.id, idx, e.target.value)}
                                   className={`h-7 px-2 text-xs flex-1 rounded-md focus:outline-none focus:border-primary/50 ${
                                     isDark
-                                      ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
+                                      ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                      : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
                                   }`}
                                   placeholder="e.g. VIP seating"
                                 />
@@ -1759,10 +1717,15 @@ const CreateEventPage = () => {
                 </div>
               )}
 
-              {/* Submit button */}
+              {/* Submit button dynamically themed to selected event theme */}
               <button
                 type="button"
-                className="w-full h-11 rounded-[12px] font-semibold text-sm active:scale-[0.99] transition-all shadow-md shadow-[#1981FE]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center bg-[#1981FE] text-white hover:bg-[#1673e6]"
+                style={{
+                  background: activeTheme.gradient,
+                  boxShadow: `0 4px 14px -2px ${activeTheme.accent}55, inset 0 1px 1px rgba(255, 255, 255, 0.4)`,
+                  borderColor: activeTheme.accentHover,
+                }}
+                className="w-full h-11 rounded-xl font-semibold text-sm active:scale-[0.99] transition-all border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white hover:brightness-105"
                 onClick={handleSubmit}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >

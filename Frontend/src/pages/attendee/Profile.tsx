@@ -400,8 +400,8 @@ const ProfilePage = () => {
               </div>
             </div>
             <Link
-              to="/gamification"
-              className="text-sm text-primary hover:underline whitespace-nowrap"
+              to="/leaderboard"
+              className="text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
             >
               View leaderboard →
             </Link>
@@ -843,9 +843,7 @@ const ProfilePage = () => {
             <h2 className="text-sm font-semibold text-foreground">
               Events Attending
             </h2>
-            <Link to="/discover" className="text-xs text-primary hover:underline">
-              Browse events →
-            </Link>
+            <Link to="/discover" className="text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors">Browse Events →</Link>
           </div>
           {registrations.length === 0 ? (
             <p className="text-sm text-muted-foreground">

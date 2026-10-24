@@ -101,84 +101,84 @@ const OrganizerDashboard = () => {
 
   return (
     <OrganizerLayout>
-      <div className="space-y-6 pb-8">
+      <div className="space-y-3.5 sm:space-y-6 pb-4 sm:pb-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold text-foreground tracking-tight">
+        <div className="flex flex-row items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-foreground tracking-tight truncate">
               Welcome back, <span className="font-bold text-[#1981FE]">{displayName}</span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
+            <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">Your event performance at a glance</p>
           </div>
-          <Button asChild>
+          <Button asChild size="sm" className="h-8 sm:h-9 px-3 text-xs sm:text-sm rounded-lg sm:rounded-xl shrink-0 font-medium">
             <Link to="/organizer/events/create">
-              <Plus className="w-4 h-4 mr-1.5" /> New Event
+              <Plus className="w-3.5 h-3.5 mr-1" /> New Event
             </Link>
           </Button>
         </div>
 
         {isError && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-xs sm:text-sm text-destructive">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             Failed to load dashboard data. Check your connection and refresh.
           </div>
         )}
 
-        {/* Stats grid */}
-        <motion.div {...fade(0)} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Stats grid: 2 cols on mobile with compact padding and balanced heights */}
+        <motion.div {...fade(0)} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           {([
             { label: 'Total Events',   value: stats?.totalEvents   ?? 0, icon: Calendar,     fmt: (v: number) => String(v) },
             { label: 'Upcoming',       value: stats?.upcomingEvents ?? 0, icon: Zap,          fmt: (v: number) => String(v) },
             { label: 'Attendees',      value: stats?.totalAttendees ?? 0, icon: Users,        fmt: (v: number) => String(v) },
             { label: 'Revenue',        value: stats?.totalRevenue   ?? 0, icon: IndianRupee,  fmt: (v: number) => formatINR(v) },
-            { label: 'Check-in Rate',  value: stats?.checkInRate    ?? 0, icon: CheckCircle2, fmt: (v: number) => `${v}%` },
+            { label: 'Check-In Rate',  value: stats?.checkInRate    ?? 0, icon: CheckCircle2, fmt: (v: number) => `${v}%` },
             { label: 'Leads',          value: stats?.totalLeads     ?? 0, icon: BarChart3,    fmt: (v: number) => String(v) },
           ] as const).map(({ label, value, icon: Icon, fmt }) => (
-            <Surface key={label} padding="md" className="text-center">
-              <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
+            <Surface key={label} padding="none" className="text-center p-2.5 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center min-h-[76px] sm:min-h-[92px]">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1 sm:mb-1.5" />
               {isLoading ? (
-                <div className="h-7 bg-muted/50 rounded animate-pulse mb-1 mx-auto w-12" />
+                <div className="h-5 sm:h-7 bg-muted/50 rounded animate-pulse mb-1 mx-auto w-10 sm:w-12" />
               ) : (
-                <p className="text-2xl font-bold text-foreground mb-0.5">{fmt(value)}</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground mb-0.5 tracking-tight leading-none">{fmt(value)}</p>
               )}
-              <p className="text-[11px] text-muted-foreground">{label}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">{label}</p>
             </Surface>
           ))}
         </motion.div>
 
         {/* Top Row: Profile Setup & Quick Actions Side-by-Side */}
-        <div className={`grid grid-cols-1 ${isProfileIncomplete ? 'md:grid-cols-2' : 'max-w-md'} gap-4`}>
+        <div className={`grid grid-cols-1 ${isProfileIncomplete ? 'md:grid-cols-2' : 'max-w-md'} gap-2.5 sm:gap-4`}>
           {isProfileIncomplete && (
             <motion.div {...fade(0.02)} className="h-full">
-              <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
+              <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Profile Setup
                       </span>
                     </div>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                       {completedCount}/{totalCount} Completed
                     </span>
                   </div>
-                  <div className="h-px bg-border/60 mb-3" />
+                  <div className="h-px bg-border/60 mb-2 sm:mb-3" />
 
                   {/* Scrollable list of pending unentered items only */}
-                  <div className="max-h-40 overflow-y-auto pr-1 space-y-3">
+                  <div className="max-h-36 sm:max-h-40 overflow-y-auto pr-1 space-y-1.5 sm:space-y-2.5">
                     {pendingItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-3 text-sm">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                          <span className="truncate text-sm text-foreground font-medium">
+                      <div key={idx} className="flex items-center justify-between gap-2 text-xs py-0.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Circle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                          <span className="truncate text-xs sm:text-sm text-foreground font-medium">
                             {item.label}
                           </span>
                         </div>
                         <Link
                           to={item.to}
-                          className="text-xs font-semibold text-primary hover:underline flex-shrink-0"
+                          className="text-[11px] sm:text-xs font-semibold text-primary hover:underline flex-shrink-0"
                         >
                           {item.action}
                         </Link>
@@ -187,9 +187,9 @@ const OrganizerDashboard = () => {
                   </div>
                 </div>
 
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full py-2.5 shadow-sm mt-3">
-                  <Link to="/profile" className="flex items-center justify-center gap-2">
-                    Complete profile <ArrowRight className="w-4 h-4" />
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-8 sm:h-10 text-xs sm:text-sm shadow-sm mt-1.5 sm:mt-3">
+                  <Link to="/profile" className="flex items-center justify-center gap-1.5">
+                    Complete profile <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </Button>
               </Surface>
@@ -197,10 +197,10 @@ const OrganizerDashboard = () => {
           )}
 
           <motion.div {...fade(0.04)} className="h-full">
-            <Surface className="p-5 border border-border shadow-sm rounded-2xl space-y-4 bg-card h-full flex flex-col justify-between">
+            <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
               <div>
-                <span className="section-label block mb-3 font-semibold text-sm text-foreground">Quick Actions</span>
-                <div className="space-y-2">
+                <span className="section-label block mb-1.5 sm:mb-3 font-semibold text-xs sm:text-sm text-foreground">Quick Actions</span>
+                <div className="space-y-1 sm:space-y-2">
                   {([
                     { label: 'Create new event',   to: '/organizer/events/create', icon: Plus,        desc: 'Publish a new meetup or conference' },
                     { label: 'View attendees',      to: '/organizer/attendees',     icon: Users,       desc: 'Manage registrations & check-ins' },
@@ -210,16 +210,16 @@ const OrganizerDashboard = () => {
                     <Link
                       key={to}
                       to={to}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-all border border-transparent hover:border-border/60 group"
+                      className="flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-muted/60 transition-all border border-transparent hover:border-border/60 group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
-                        <Icon className="w-4 h-4" />
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors">{label}</p>
-                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{desc}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors">{label}</p>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">{desc}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0" />
                     </Link>
                   ))}
                 </div>

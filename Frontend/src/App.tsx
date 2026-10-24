@@ -49,6 +49,7 @@ const DiscoverPage = lazy(() => import("./pages/attendee/Discover"));
 const BrowseCommunitiesPage = lazy(() => import("./pages/attendee/Communities"));
 const AmbassadorsPage = lazy(() => import("./pages/Ambassadors"));
 const GamificationPage = lazy(() => import("./pages/attendee/Gamification"));
+const LeaderboardPage = lazy(() => import("./pages/attendee/Leaderboard"));
 const NotificationsPage = lazy(() => import("./pages/attendee/Notifications"));
 const EventsPage = lazy(() => import("./pages/attendee/Events"));
 const EventDetailPage = lazy(() => import("./pages/attendee/EventDetail"));
@@ -245,6 +246,7 @@ const App = () => (
           <Route path="/communities" element={<BrowseCommunitiesPage />} />
           <Route path="/ambassadors" element={<AmbassadorsPage />} />
           <Route path="/gamification" element={<ProtectedRoute><GamificationPage /></ProtectedRoute>} />
+          <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/event/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />

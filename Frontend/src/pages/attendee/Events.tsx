@@ -173,7 +173,7 @@ const EventsPage = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search events..."
-                className="pl-9 pr-8 h-9 text-sm w-full md:w-64 rounded-xl border-border/80 bg-card shadow-sm focus:border-primary"
+                className="pl-9 pr-8 h-9 text-sm w-full md:w-64 rounded-xl premium-glass-chip focus:border-primary text-foreground placeholder:text-muted-foreground"
               />
               {search && (
                 <button
@@ -279,7 +279,7 @@ const EventsPage = () => {
                     }}
                     className="perspective-1000 group h-full"
                   >
-                    <Surface className="h-full flex flex-col overflow-hidden p-0 rounded-2xl border border-border/80 group-hover:border-primary/40 group-hover:shadow-xl group-hover:shadow-primary/5 transition-all duration-300 bg-card">
+                    <Surface hover className="h-full flex flex-col overflow-hidden p-0 rounded-2xl shadow-sm">
                       {/* Cover image (falls back to theme gradient) */}
                       <Link to={`/event/${e.id}`} className="relative block overflow-hidden">
                         {e.coverImage ? (
