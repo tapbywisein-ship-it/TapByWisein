@@ -3,12 +3,14 @@ import { cn } from '@/lib/utils';
 
 interface SurfaceProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  /** Apply heavier shadow stack (Luma's full 5-layer card shadow) */
+  /** Apply heavier shadow stack or glass elevation */
   elevated?: boolean;
   /** Padding scale; default 'md' */
   padding?: 'none' | 'sm' | 'md' | 'lg';
   /** Add a subtle hover lift — used for clickable cards. */
   hover?: boolean;
+  /** Option to use the panel style instead of card */
+  variant?: 'card' | 'panel';
 }
 
 const paddingMap = {
@@ -19,20 +21,21 @@ const paddingMap = {
 };
 
 /**
- * Surface — a clean Luma-style card wrapper.
- *
- * Replaces the legacy GlassCard component. Uses the design tokens introduced
- * in Phase 1 (bg-card, border-border, rounded-card, shadow-card / shadow-card-xs).
- * The Phase 2 codemod rewrites `<GlassCard>` JSX tags to `<Surface>`.
+ * Surface — Premium Glassmorphic card & container wrapper.
+ * Directly matches the refined glass styling of the Discover page in both light and dark modes.
  */
 export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
-  ({ children, className, elevated = false, padding = 'md', hover = false, ...rest }, ref) => {
-    const base = elevated
-      ? 'bg-card border border-border rounded-card shadow-card'
-      : 'bg-card border border-border rounded-card shadow-card-xs';
+  ({ children, className, elevated = false, padding = 'md', hover = false, variant = 'card', ...rest }, ref) => {
+    const base = variant === 'panel'
+      ? 'premium-glass-panel rounded-2xl'
+      : elevated
+      ? 'premium-glass-card rounded-2xl shadow-lg'
+      : 'premium-glass-card rounded-2xl';
+
     const hoverCls = hover
-      ? 'transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-primary/30'
+      ? 'transition-all duration-300 hover:-translate-y-1 hover:border-primary/40'
       : '';
+
     return (
       <div ref={ref} className={cn(base, paddingMap[padding], hoverCls, className)} {...rest}>
         {children}

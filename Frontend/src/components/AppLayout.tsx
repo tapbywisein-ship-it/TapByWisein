@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadMessageCount } from '@/hooks/useMessages';
@@ -117,7 +118,8 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      <AppBackgroundGrid />
       {/* Desktop only — the mobile top bar below renders its own ThemeToggle */}
       <NavbarThemeToggle />
       {/* Skip to main content — keyboard/screen-reader bypass (WCAG 2.4.1) */}
@@ -241,7 +243,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       </aside>
 
       {/* ── Main column ───────────────────────────────────── */}
-      <div className="flex-1 md:ml-16 min-h-screen min-w-0 flex flex-col">
+      <div className="flex-1 md:ml-16 min-h-screen min-w-0 flex flex-col relative z-10">
         <VerifyEmailBanner />
 
         {/* ── Mobile top bar (md:hidden) ────────────────────── */}
@@ -353,9 +355,10 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       {/* ── Mobile bottom nav ─────────────────────────────── */}
       <nav
         aria-label="Primary"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)]"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 6px)' }}
       >
-        <div className="flex justify-around py-1.5">
+        <div className="flex items-center justify-around px-1 py-1 max-w-md mx-auto">
           {bottomNav.map((item) => {
             const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge = item.path === '/connect' && pendingRequests ? pendingRequests : 0;
@@ -363,11 +366,13 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className="flex flex-col items-center gap-0.5 py-1.5 px-3"
+                className={`flex flex-col items-center justify-center min-w-[56px] min-h-[48px] py-1 px-2 rounded-xl transition-all ${
+                  active ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground active:scale-95'
+                }`}
               >
                 <div className="relative">
                   <item.icon
-                    className={`w-5 h-5 transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`}
+                    className={`w-5 h-5 transition-transform ${active ? 'scale-110 text-primary' : 'text-muted-foreground'}`}
                   />
                   {badge > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
@@ -375,11 +380,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                     </span>
                   )}
                 </div>
-                <span
-                  className={`text-[10px] font-medium transition-colors ${
-                    active ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                >
+                <span className="text-[10px] mt-0.5 leading-none tracking-tight">
                   {item.label}
                 </span>
               </Link>
@@ -389,10 +390,10 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
             type="button"
             onClick={() => setMoreOpen(true)}
             aria-label="More navigation"
-            className="flex flex-col items-center gap-0.5 py-1.5 px-3 text-muted-foreground"
+            className="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] py-1 px-2 rounded-xl text-muted-foreground hover:text-foreground active:scale-95 transition-all"
           >
             <Menu className="w-5 h-5" />
-            <span className="text-[10px] font-medium">More</span>
+            <span className="text-[10px] mt-0.5 leading-none tracking-tight">More</span>
           </button>
         </div>
       </nav>

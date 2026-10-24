@@ -314,7 +314,7 @@ const MyCalendarPage = () => {
     <PortalLayout>
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 space-y-6 animate-fade-in">
         {/* ── Page Header ────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">My Calendars</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -435,14 +435,14 @@ const MyCalendarPage = () => {
             )}
           </div>
 
-          <div className="relative w-full md:w-64">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative w-full md:w-64 group">
+            <Search className="w-4 h-4 text-foreground/70 group-focus-within:text-primary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors z-10" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search title, location, community..."
-              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-card border border-border focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
@@ -450,7 +450,7 @@ const MyCalendarPage = () => {
         {/* ── Main Grid: Calendar & Day Agenda ───────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-6 items-start">
           {/* ── LEFT: Interactive Calendar Grid ──────────────────────── */}
-          <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm">
+          <div className="premium-glass-card rounded-2xl p-5 md:p-6 shadow-sm">
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -603,7 +603,7 @@ const MyCalendarPage = () => {
 
           {/* ── RIGHT: Selected Day Agenda ────────────────────────────── */}
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <div className="premium-glass-card rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-border/80">
                 <div>
                   <h3 className="font-semibold text-foreground text-sm">
@@ -748,7 +748,7 @@ const MyCalendarPage = () => {
             </div>
 
             {/* ── Upcoming Quick List ──────────────────────────────────── */}
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="premium-glass-card rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-foreground text-sm">Next Upcoming</h3>
                 <span className="text-[11px] text-muted-foreground font-medium">

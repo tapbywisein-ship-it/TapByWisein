@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { NavbarThemeToggle, ThemeToggle } from '@/components/ThemeToggle';
+import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
@@ -108,7 +109,8 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      <AppBackgroundGrid />
       <NavbarThemeToggle />
       <aside className="group hidden md:flex flex-col w-16 hover:w-60 transition-[width] duration-200 ease-out overflow-hidden border-r border-border px-2 py-4 fixed h-full z-40 bg-background">
         <div className="mb-1 px-1"><Logo collapsible /></div>
@@ -173,7 +175,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </aside>
 
-      <div className="flex-1 md:ml-16 min-h-screen min-w-0">
+      <div className="flex-1 md:ml-16 min-h-screen min-w-0 relative z-10">
         <main className="p-4 md:p-8 max-w-xwide mx-auto pb-24 md:pb-8">{children}</main>
       </div>
 

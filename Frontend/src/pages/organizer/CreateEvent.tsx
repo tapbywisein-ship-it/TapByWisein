@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, Sparkles,
+  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, ChevronUp, Sparkles,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -779,11 +779,7 @@ const CreateEventPage = () => {
 
               {/* Theme selector card */}
               <div
-                className={`p-3.5 rounded-[14px] flex items-center justify-between gap-3 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
+                className="p-3.5 rounded-[14px] flex items-center justify-between gap-3 premium-glass-card"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
@@ -805,11 +801,7 @@ const CreateEventPage = () => {
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus:outline-none ${
-                          isDark
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200'
-                            : 'bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-neutral-700'
-                        }`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium premium-glass-chip focus:outline-none"
                       >
                         <span>Change</span>
                         <ChevronDown className="w-3.5 h-3.5 opacity-60" />
@@ -856,11 +848,7 @@ const CreateEventPage = () => {
                   <button
                     type="button"
                     onClick={randomizeTheme}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      isDark
-                        ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white'
-                        : 'bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200 text-neutral-700 hover:text-neutral-900'
-                    }`}
+                    className="p-1.5 rounded-lg premium-glass-chip"
                     title="Randomize Theme"
                   >
                     <Shuffle className="w-3.5 h-3.5" />
@@ -868,734 +856,10 @@ const CreateEventPage = () => {
                 </div>
               </div>
 
-
-              {/* Event name and category sit under the theme, next to the cover */}
-              {/* Event Name Card */}
-              <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                </label>
-                {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
-                <input
-                  id="event-title"
-                  value={form.title}
-                  onChange={(e) => set('title', e.target.value)}
-                  placeholder="Enter event name..."
-                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
-                    isDark
-                      ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
-                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
-                  }`}
-                />
-              </div>
-
-              {/* Category Card */}
-              <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
-                  <span className={`text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                </div>
-                <Select
-                  value={form.category}
-                  onValueChange={(val) => set('category', val)}
-                >
-                  <SelectTrigger
-                    className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                    }`}
-                  >
-                    <SelectValue placeholder="Select a category…" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className={`rounded-xl shadow-2xl backdrop-blur-xl ${
-                      isDark
-                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
-                        : 'border border-neutral-200 bg-white text-neutral-900'
-                    }`}
-                  >
-                    {EVENT_CATEGORIES.map((c) => (
-                      <SelectItem key={c.id} value={c.label}>
-                        <div className="flex items-center gap-2">
-                          <c.icon className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span>{c.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             {/* ── RIGHT: Event Details ─────────────────────────────────────── */}
             <div className="space-y-4">
-
-              {/* ── When ── */}
-              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                When
-              </p>
-
-              {/* Date & Time Card */}
-              <div
-                className={`p-4 rounded-[14px] space-y-3.5 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                {/* Start */}
-                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                  <div className="flex-1">
-                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                    </span>
-                    <input
-                      type="date"
-                      value={form.startDate}
-                      onChange={(e) => set('startDate', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
-                    />
-                  </div>
-                  <div className="w-full sm:w-32">
-                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                    </span>
-                    <input
-                      type="time"
-                      value={form.startTime}
-                      onChange={(e) => set('startTime', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* End */}
-                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                  <div className="flex-1">
-                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                    </span>
-                    <input
-                      type="date"
-                      value={form.endDate}
-                      onChange={(e) => set('endDate', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
-                    />
-                  </div>
-                  <div className="w-full sm:w-32">
-                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
-                    </span>
-                    <input
-                      type="time"
-                      value={form.endTime}
-                      onChange={(e) => set('endTime', e.target.value)}
-                      className={`w-full h-9 px-3 rounded-lg text-sm focus:outline-none focus:border-primary/50 ${
-                        isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-100'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Timezone */}
-                <div className="pt-1 flex items-center gap-2.5">
-                  <Globe className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                  <select
-                    value={form.timezone}
-                    onChange={(e) => set('timezone', e.target.value)}
-                    className={`flex-1 h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                    }`}
-                  >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value} className={isDark ? 'bg-[#252528] text-white' : 'bg-white text-neutral-900'}>
-                        {tz.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* ── Where ── */}
-              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                Where
-              </p>
-
-              {/* Location — expandable card */}
-              <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setLocationExpanded((v) => !v)}
-                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
-                >
-                  <MapPin className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
-                  <span className={form.address ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
-                    {form.address ? form.address : 'Add Event Location - In Person'}
-                  </span>
-                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{locationExpanded ? '▲' : '▼'}</span>
-                </button>
-
-                {locationExpanded && (
-                  <div className={`mt-4 pt-3 space-y-3 ${isDark ? 'border-t border-white/10' : 'border-t border-neutral-150'}`}>
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs ${
-                        isDark ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-neutral-100 border border-neutral-200 text-neutral-700'
-                      }`}
-                    >
-                      <MapPin className="w-3.5 h-3.5 opacity-70" />
-                      <span>In Person</span>
-                    </div>
-
-                    {/* Google Places search */}
-                    <LocationPicker
-                      latitude={form.latitude}
-                      longitude={form.longitude}
-                      placeId={form.placeId}
-                      onPick={(loc: PickedLocation) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          address: loc.address || prev.address,
-                          city: loc.city || prev.city,
-                          state: loc.state || prev.state,
-                          country: loc.country || prev.country,
-                          pincode: loc.pincode || prev.pincode,
-                          latitude: loc.latitude,
-                          longitude: loc.longitude,
-                          placeId: loc.placeId,
-                        }))
-                      }
-                    />
-
-                    {form.placeId ? (
-                      <div className={`p-3 rounded-lg text-xs space-y-1 ${isDark ? 'bg-black/20 border border-white/10' : 'bg-neutral-50 border border-neutral-200'}`}>
-                        <div className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>
-                          {[form.city, form.state, form.country].filter(Boolean).join(', ') || 'Location selected'}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm((prev) => ({
-                              ...prev,
-                              latitude: null,
-                              longitude: null,
-                              placeId: '',
-                              country: '',
-                              state: '',
-                              city: '',
-                            }))
-                          }
-                          className="text-primary hover:underline text-[11px]"
-                        >
-                          Change / enter manually
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Or enter it manually:</p>
-
-                        <select
-                          value={form.country}
-                          onChange={(e) => {
-                            const country = e.target.value;
-                            setForm((prev) => ({ ...prev, country, state: '', city: '' }));
-                          }}
-                          className={`w-full h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                          }`}
-                        >
-                          <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select country…</option>
-                          {countryOptions.map((c) => (
-                            <option key={c.code} value={c.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{c.name}</option>
-                          ))}
-                        </select>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            value={form.state}
-                            onChange={(e) => {
-                              const state = e.target.value;
-                              setForm((prev) => ({ ...prev, state, city: '' }));
-                            }}
-                            disabled={!form.country}
-                            className={`h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                              isDark
-                                ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                            }`}
-                          >
-                            <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select state…</option>
-                            {stateOptions.map((s) => (
-                              <option key={s.code} value={s.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{s.name}</option>
-                            ))}
-                          </select>
-
-                          {cityOptions.length > 0 ? (
-                            <select
-                              value={form.city}
-                              onChange={(e) => set('city', e.target.value)}
-                              disabled={!form.state}
-                              className={`h-9 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
-                              }`}
-                            >
-                              <option value="" className={isDark ? 'bg-[#252528]' : 'bg-white'}>Select city…</option>
-                              {cityOptions.map((c) => (
-                                <option key={c.code} value={c.code} className={isDark ? 'bg-[#252528]' : 'bg-white'}>{c.name}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              value={form.city}
-                              onChange={(e) => set('city', e.target.value)}
-                              placeholder="City"
-                              disabled={!form.state}
-                              className={`h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 disabled:opacity-40 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                              }`}
-                            />
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div className="sm:col-span-2">
-                        <input
-                          value={form.address}
-                          onChange={(e) => set('address', e.target.value)}
-                          placeholder="Venue / local address *"
-                          className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <input
-                          value={form.pincode}
-                          onChange={(e) => set('pincode', e.target.value)}
-                          placeholder="Pincode *"
-                          className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                            isDark
-                              ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                              : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── About ── */}
-              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                About
-              </p>
-
-              {/* Description — expandable card */}
-              <div
-                className={`p-4 rounded-[14px] transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setDescExpanded((v) => !v)}
-                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
-                >
-                  <span className={form.description ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
-                    {form.description ? form.description.slice(0, 60) + (form.description.length > 60 ? '…' : '') : 'Add Description'}
-                  </span>
-                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{descExpanded ? '▲' : '▼'}</span>
-                </button>
-                {descExpanded && (
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => set('description', e.target.value)}
-                    placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
-                    rows={4}
-                    className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                    }`}
-                  />
-                )}
-              </div>
-
-              {/* Event Options Card */}
-              <div
-                className={`p-4 rounded-[14px] space-y-4 transition-colors ${
-                  isDark
-                    ? 'border border-white/10'
-                    : 'border border-neutral-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                    Event Options
-                  </span>
-                </div>
-
-                {/* Payout gate banner */}
-                {isPaidEvent && !payoutReady && (
-                  <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                    <div className="text-xs text-amber-600 dark:text-amber-300">
-                      <p className="font-medium">Set up payouts to receive money</p>
-                      <p className="mt-0.5 opacity-85">
-                        You're selling paid tickets but haven't added a verified bank account. Ticket revenue is held until verified.
-                      </p>
-                      <Link to="/organizer/payouts" className="inline-block mt-1 font-medium underline text-amber-600 dark:text-amber-400">
-                        Set up payouts →
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* Ticket Price (single-tier mode) */}
-                {!form.useTicketTypes && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-xs font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>Tickets</span>
-                      <div className={`inline-flex rounded-lg p-0.5 ${isDark ? 'bg-black/20 border border-white/10' : 'bg-neutral-100 border border-neutral-200'}`}>
-                        {([false, true] as const).map((isPaid) => (
-                          <button
-                            key={String(isPaid)}
-                            type="button"
-                            onClick={() => {
-                              if (!isPaid) set('ticketPrice', '');
-                              set('isPaid', isPaid);
-                            }}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                              form.isPaid === isPaid
-                                ? (isDark ? 'bg-white text-black shadow-sm' : 'bg-white text-neutral-900 shadow-sm')
-                                : (isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-neutral-900')
-                            }`}
-                          >
-                            {isPaid ? 'Paid' : 'Free'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {form.isPaid && (
-                      <input
-                        type="number"
-                        min={0}
-                        value={form.ticketPrice}
-                        onChange={(e) => set('ticketPrice', e.target.value)}
-                        placeholder="Price in ₹"
-                        className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                          isDark
-                            ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                            : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                        }`}
-                      />
-                    )}
-                  </div>
-                )}
-
-                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
-
-                {/* Require Approval */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Require Approval</p>
-                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Review and approve guests before confirmation</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => set('requiresApproval', !form.requiresApproval)}
-                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
-                      form.requiresApproval
-                        ? 'bg-primary'
-                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
-                    }`}
-                  >
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.requiresApproval ? 'right-0.5' : 'left-0.5'}`} />
-                  </button>
-                </div>
-
-                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
-
-                {/* Capacity */}
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Capacity</p>
-                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Maximum attendees allowed</p>
-                  </div>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.capacity === 0 ? '' : form.capacity}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                      set('capacity', cap);
-                      if (form.useTicketTypes) {
-                        setForm((prev) => ({
-                          ...prev,
-                          capacity: cap,
-                          ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
-                        }));
-                      }
-                    }}
-                    placeholder="Unlimited"
-                    className={`w-24 h-8 px-2.5 text-xs text-right rounded-lg focus:outline-none focus:border-primary/50 ${
-                      isDark
-                        ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                        : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                    }`}
-                  />
-                </div>
-
-                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
-
-                {/* Multiple ticket tiers toggle */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p
-                      className={`text-xs font-medium cursor-pointer select-none ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
-                      onClick={() => {
-                        const next = !form.useTicketTypes;
-                        setForm((prev) => ({
-                          ...prev,
-                          useTicketTypes: next,
-                          ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
-                        }));
-                      }}
-                    >
-                      Multiple ticket tiers
-                    </p>
-                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Offer VIP, General, and Early bird passes</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !form.useTicketTypes;
-                      setForm((prev) => ({
-                        ...prev,
-                        useTicketTypes: next,
-                        ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
-                      }));
-                    }}
-                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
-                      form.useTicketTypes
-                        ? 'bg-primary'
-                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
-                    }`}
-                  >
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.useTicketTypes ? 'right-0.5' : 'left-0.5'}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Multi-tier ticket cards */}
-              {form.useTicketTypes && (
-                <div className="space-y-3">
-                  <div
-                    className={`px-4 py-3 rounded-[14px] space-y-2 ${
-                      isDark
-                        ? 'border border-white/10'
-                        : 'border border-neutral-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className={isDark ? 'text-neutral-400' : 'text-neutral-500'}>
-                        Allocated: <span className={`font-semibold ${isDark ? 'text-white' : 'text-neutral-900'}`}>{usedCapacity.toLocaleString()}</span> / {form.capacity.toLocaleString()}
-                      </span>
-                      <span className={remainingCapacity < 0 ? 'text-red-500 font-semibold' : remainingCapacity === 0 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>
-                        {remainingCapacity < 0
-                          ? `⚠ ${Math.abs(remainingCapacity)} over limit`
-                          : remainingCapacity === 0
-                          ? '✓ Fully allocated'
-                          : `${remainingCapacity.toLocaleString()} unallocated`}
-                      </span>
-                    </div>
-                    <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-black/30' : 'bg-neutral-100'}`}>
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${remainingCapacity < 0 ? 'bg-red-500' : 'bg-primary'}`}
-                        style={{ width: `${Math.min(100, form.capacity > 0 ? (usedCapacity / form.capacity) * 100 : 0)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {form.ticketTypes.map((ticket) => {
-                    const otherUsed = form.ticketTypes
-                      .filter((t) => t.id !== ticket.id && t.isEnabled)
-                      .reduce((s, t) => s + t.count, 0);
-                    const maxForThisTier = Math.max(0, form.capacity - otherUsed);
-
-                    return (
-                      <div
-                        key={ticket.id}
-                        className={`rounded-[14px] border p-3.5 space-y-3 transition-all ${
-                          isDark
-                            ? (ticket.isEnabled ? 'border-white/20' : 'border-white/5 opacity-50')
-                            : (ticket.isEnabled ? 'border-neutral-200' : 'border-neutral-200/60 opacity-60')
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => updateTicket(ticket.id, { isEnabled: !ticket.isEnabled })}
-                              className={`w-8 h-4.5 rounded-full relative transition-colors flex-shrink-0 ${
-                                ticket.isEnabled
-                                  ? 'bg-primary'
-                                  : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
-                              }`}
-                            >
-                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all bg-white shadow-sm ${ticket.isEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                            </button>
-                            <input
-                              value={ticket.name}
-                              onChange={(e) => updateTicket(ticket.id, { name: e.target.value })}
-                              className={`text-xs font-semibold bg-transparent border-none focus:outline-none px-1 w-32 ${isDark ? 'text-white' : 'text-neutral-900'}`}
-                              placeholder="Tier name"
-                            />
-                          </div>
-                          <div className="flex gap-1.5">
-                            {Object.keys(TICKET_COLORS).map((c) => (
-                              <button
-                                key={c}
-                                type="button"
-                                onClick={() => updateTicket(ticket.id, { color: c })}
-                                className={`w-3.5 h-3.5 rounded-full border transition-all ${ticket.color === c ? 'border-foreground scale-125' : 'border-transparent'}`}
-                                style={{ background: c === 'gold' ? '#D4A853' : c === 'silver' ? '#9CA3AF' : c === 'blue' ? '#3B82F6' : c === 'green' ? '#10B981' : '#8B5CF6' }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <div>
-                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Price (₹)</span>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              value={ticket.price === 0 ? '' : String(ticket.price)}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                if (raw === '') { updateTicket(ticket.id, { price: 0 }); return; }
-                                const digitsOnly = raw.replace(/[^\d]/g, '');
-                                const nextPrice = digitsOnly === '' ? 0 : parseInt(digitsOnly, 10);
-                                updateTicket(ticket.id, { price: nextPrice });
-                              }}
-                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                              }`}
-                              placeholder="0 = free"
-                            />
-                          </div>
-                          <div>
-                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Seats</span>
-                            <input
-                              type="number"
-                              min={0}
-                              value={ticket.count === 0 ? '' : ticket.count}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const nextCount = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                                handleTicketCountChange(ticket.id, nextCount);
-                              }}
-                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
-                                isDark
-                                  ? 'bg-black/20 border border-white/10 text-neutral-200'
-                                  : 'bg-neutral-50 border border-neutral-200 text-neutral-900'
-                              } ${ticket.isEnabled && ticket.count > maxForThisTier ? 'border-red-400' : ''}`}
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Benefits</span>
-                            <button
-                              type="button"
-                              onClick={() => addBenefit(ticket.id)}
-                              className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
-                            >
-                              <Plus className="w-3 h-3" /> Add
-                            </button>
-                          </div>
-                          <div className="space-y-1.5">
-                            {ticket.benefits.map((benefit, idx) => (
-                              <div key={idx} className="flex items-center gap-1.5">
-                                <span className="text-primary text-xs">✓</span>
-                                <input
-                                  value={benefit}
-                                  onChange={(e) => updateBenefit(ticket.id, idx, e.target.value)}
-                                  className={`h-7 px-2 text-xs flex-1 rounded-md focus:outline-none focus:border-primary/50 ${
-                                    isDark
-                                      ? 'bg-black/20 border border-white/10 text-neutral-200 placeholder:text-neutral-500'
-                                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400'
-                                  }`}
-                                  placeholder="e.g. VIP seating"
-                                />
-                                <button type="button" onClick={() => removeBenefit(ticket.id, idx)} className="text-neutral-400 hover:text-red-500 p-1">
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* ── Visibility & sharing ── */}
-              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                Visibility & sharing
-              </p>
 
               {/* Top row: Calendar dropdown + Visibility toggle */}
               <div className="flex items-center justify-between gap-3">
@@ -1603,11 +867,7 @@ const CreateEventPage = () => {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
                     >
                       <Calendar className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
                       <span>
@@ -1678,11 +938,7 @@ const CreateEventPage = () => {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors focus:outline-none ${
-                        isDark
-                          ? 'hover:bg-white/5 border border-white/10 text-neutral-200'
-                          : 'hover:bg-neutral-100 border border-neutral-200 text-neutral-800'
-                      }`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
                     >
                       {form.visibility === 'PRIVATE' ? (
                         <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
@@ -1740,14 +996,31 @@ const CreateEventPage = () => {
                 </DropdownMenu>
               </div>
 
+              {/* Event Name Card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                </label>
+                {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
+                <input
+                  id="event-title"
+                  value={form.title}
+                  onChange={(e) => set('title', e.target.value)}
+                  placeholder="Enter event name..."
+                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                    isDark
+                      ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
+                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
+                  }`}
+                />
+              </div>
+
               {/* Community Card (optional) */}
               {(myCommunities?.length ?? 0) > 0 && (
                 <div
-                  className={`p-4 rounded-[14px] space-y-1.5 transition-colors ${
-                    isDark
-                      ? 'border border-white/10'
-                      : 'border border-neutral-200'
-                  }`}
+                  className="p-4 rounded-[14px] space-y-1.5 premium-glass-card"
                 >
                   <label htmlFor="event-community" className={`block text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                     Community (optional)
@@ -1760,8 +1033,8 @@ const CreateEventPage = () => {
                       id="event-community"
                       className={`w-full h-10 px-3 text-sm rounded-xl focus:ring-1 focus:ring-primary ${
                         isDark
-                          ? 'bg-black/20 border border-white/10 text-neutral-200'
-                          : 'bg-neutral-50 border border-neutral-200 text-neutral-800'
+                          ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                          : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
                       }`}
                     >
                       <SelectValue placeholder="No community" />
@@ -1784,10 +1057,689 @@ const CreateEventPage = () => {
                 </div>
               )}
 
-              {/* Submit button */}
+              {/* Date & Time Card */}
+              <div
+                className="p-4 rounded-[14px] space-y-3.5 premium-glass-card"
+              >
+                {/* Start */}
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                  <div className="flex-1">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="date"
+                      value={form.startDate}
+                      onChange={(e) => set('startDate', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="time"
+                      value={form.startTime}
+                      onChange={(e) => set('startTime', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+
+                {/* End */}
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                  <div className="flex-1">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="date"
+                      value={form.endDate}
+                      onChange={(e) => set('endDate', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="time"
+                      value={form.endTime}
+                      onChange={(e) => set('endTime', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+
+                {/* Timezone */}
+                <div className="pt-1 flex items-center gap-2.5">
+                  <Globe className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                  <div className="flex-1">
+                    <Select
+                      value={form.timezone}
+                      onValueChange={(val) => set('timezone', val)}
+                    >
+                      <SelectTrigger className="w-full h-9 px-3 text-xs rounded-xl">
+                        <SelectValue placeholder="Select timezone…" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value} className="text-xs">
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Where ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Where
+              </p>
+
+              {/* Location — expandable card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <button
+                  type="button"
+                  onClick={() => setLocationExpanded((v) => !v)}
+                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                >
+                  <MapPin className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                  <span className={form.address ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
+                    {form.address ? form.address : 'Add Event Location - In Person'}
+                  </span>
+                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{locationExpanded ? '▲' : '▼'}</span>
+                </button>
+
+                {locationExpanded && (
+                  <div className={`mt-4 pt-3 space-y-3 ${isDark ? 'border-t border-white/10' : 'border-t border-neutral-150'}`}>
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs ${
+                        isDark ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-neutral-100 border border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      <MapPin className="w-3.5 h-3.5 opacity-70" />
+                      <span>In Person</span>
+                    </div>
+
+                    {/* Google Places search */}
+                    <LocationPicker
+                      latitude={form.latitude}
+                      longitude={form.longitude}
+                      placeId={form.placeId}
+                      onPick={(loc: PickedLocation) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          address: loc.address || prev.address,
+                          city: loc.city || prev.city,
+                          state: loc.state || prev.state,
+                          country: loc.country || prev.country,
+                          pincode: loc.pincode || prev.pincode,
+                          latitude: loc.latitude,
+                          longitude: loc.longitude,
+                          placeId: loc.placeId,
+                        }))
+                      }
+                    />
+
+                    {form.placeId ? (
+                      <div className={`p-3 rounded-lg text-xs space-y-1 ${isDark ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15' : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15'}`}>
+                        <div className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>
+                          {[form.city, form.state, form.country].filter(Boolean).join(', ') || 'Location selected'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              latitude: null,
+                              longitude: null,
+                              placeId: '',
+                              country: '',
+                              state: '',
+                              city: '',
+                            }))
+                          }
+                          className="text-primary hover:underline text-[11px]"
+                        >
+                          Change / enter manually
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Or enter it manually:</p>
+
+                        <Select
+                          value={form.country}
+                          onValueChange={(country) => {
+                            setForm((prev) => ({ ...prev, country, state: '', city: '' }));
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                            <SelectValue placeholder="Select country…" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {countryOptions.map((c) => (
+                              <SelectItem key={c.code} value={c.code} className="text-xs">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            value={form.state}
+                            onValueChange={(state) => {
+                              setForm((prev) => ({ ...prev, state, city: '' }));
+                            }}
+                            disabled={!form.country}
+                          >
+                            <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                              <SelectValue placeholder="Select state…" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {stateOptions.map((s) => (
+                                <SelectItem key={s.code} value={s.code} className="text-xs">
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {cityOptions.length > 0 ? (
+                            <Select
+                              value={form.city}
+                              onValueChange={(city) => set('city', city)}
+                              disabled={!form.state}
+                            >
+                              <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                                <SelectValue placeholder="Select city…" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {cityOptions.map((c) => (
+                                  <SelectItem key={c.code} value={c.code} className="text-xs">
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <input
+                              value={form.city}
+                              onChange={(e) => set('city', e.target.value)}
+                              placeholder="City"
+                              disabled={!form.state}
+                              className="h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
+                            />
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="sm:col-span-2">
+                        <input
+                          value={form.address}
+                          onChange={(e) => set('address', e.target.value)}
+                          placeholder="Venue / local address *"
+                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          value={form.pincode}
+                          onChange={(e) => set('pincode', e.target.value)}
+                          placeholder="Pincode *"
+                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── About ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                About
+              </p>
+
+              {/* Description — expandable card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <button
+                  type="button"
+                  onClick={() => setDescExpanded((v) => !v)}
+                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                >
+                  <span className={form.description ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
+                    {form.description ? form.description.slice(0, 60) + (form.description.length > 60 ? '…' : '') : 'Add Description'}
+                  </span>
+                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{descExpanded ? '▲' : '▼'}</span>
+                </button>
+                {descExpanded && (
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
+                    rows={4}
+                    className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
+                      isDark
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                    }`}
+                  />
+                )}
+              </div>
+
+              {/* Category Card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
+                  <span className="text-xs text-red-500">*</span>
+                </div>
+                <Select
+                  value={form.category}
+                  onValueChange={(val) => set('category', val)}
+                >
+                  <SelectTrigger
+                    className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
+                      isDark
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
+                    }`}
+                  >
+                    <SelectValue placeholder="Select a category…" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className={`rounded-xl shadow-2xl backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    {EVENT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.id} value={c.label}>
+                        <div className="flex items-center gap-2">
+                          <c.icon className="w-3.5 h-3.5 transition-colors text-muted-foreground group-hover/item:text-primary group-focus/item:text-primary group-data-[highlighted]/item:text-primary" />
+                          <span>{c.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Event Options Card */}
+              <div
+                className="p-4 rounded-[14px] space-y-4 premium-glass-card"
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                    Event Options
+                  </span>
+                </div>
+
+                {/* Payout gate banner */}
+                {isPaidEvent && !payoutReady && (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div className="text-xs text-amber-600 dark:text-amber-300">
+                      <p className="font-medium">Set up payouts to receive money</p>
+                      <p className="mt-0.5 opacity-85">
+                        You're selling paid tickets but haven't added a verified bank account. Ticket revenue is held until verified.
+                      </p>
+                      <Link to="/organizer/payouts" className="inline-block mt-1 font-medium underline text-amber-600 dark:text-amber-400">
+                        Set up payouts →
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ticket Price (single-tier mode) */}
+                {!form.useTicketTypes && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>Tickets</span>
+                      <div className="inline-flex rounded-full p-1 premium-glass-chip border border-border/80">
+                        {([false, true] as const).map((isPaid) => {
+                          const active = form.isPaid === isPaid;
+                          return (
+                            <button
+                              key={String(isPaid)}
+                              type="button"
+                              onClick={() => {
+                                if (!isPaid) set('ticketPrice', '');
+                                set('isPaid', isPaid);
+                              }}
+                              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                                active
+                                  ? 'bg-[#1981FE] text-white shadow-sm shadow-[#1981FE]/30'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              }`}
+                            >
+                              {isPaid ? 'Paid' : 'Free'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {form.isPaid && (
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.ticketPrice}
+                        onChange={(e) => set('ticketPrice', e.target.value)}
+                        placeholder="Price in ₹"
+                        className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                          isDark
+                            ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                            : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                        }`}
+                      />
+                    )}
+                  </div>
+                )}
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Require Approval */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Require Approval</p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Review and approve guests before confirmation</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set('requiresApproval', !form.requiresApproval)}
+                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
+                      form.requiresApproval
+                        ? 'bg-primary'
+                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.requiresApproval ? 'right-0.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Capacity */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Capacity</p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Maximum attendees allowed</p>
+                  </div>
+                  <div className="inline-flex items-center rounded-full premium-glass-chip px-1.5 py-0.5 border border-border/80 shadow-sm gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.capacity === 0 ? '' : form.capacity}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                        set('capacity', cap);
+                        if (form.useTicketTypes) {
+                          setForm((prev) => ({
+                            ...prev,
+                            capacity: cap,
+                            ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
+                          }));
+                        }
+                      }}
+                      placeholder="Unlimited"
+                      className="w-16 h-7 text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
+                    />
+                    <div className="flex flex-col -space-y-0.5 border-l border-border/60 pl-1 pr-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = (form.capacity || 0) + 1;
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Increase capacity"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = Math.max(0, (form.capacity || 0) - 1);
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Decrease capacity"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Multiple ticket tiers toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className={`text-xs font-medium cursor-pointer select-none ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                      onClick={() => {
+                        const next = !form.useTicketTypes;
+                        setForm((prev) => ({
+                          ...prev,
+                          useTicketTypes: next,
+                          ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
+                        }));
+                      }}
+                    >
+                      Multiple ticket tiers
+                    </p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Offer VIP, General, and Early bird passes</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !form.useTicketTypes;
+                      setForm((prev) => ({
+                        ...prev,
+                        useTicketTypes: next,
+                        ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
+                      }));
+                    }}
+                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
+                      form.useTicketTypes
+                        ? 'bg-primary'
+                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.useTicketTypes ? 'right-0.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-tier ticket cards */}
+              {form.useTicketTypes && (
+                <div className="space-y-3">
+                  <div
+                    className="px-4 py-3 rounded-[14px] space-y-2 premium-glass-card"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className={isDark ? 'text-neutral-400' : 'text-neutral-500'}>
+                        Allocated: <span className={`font-semibold ${isDark ? 'text-white' : 'text-neutral-900'}`}>{usedCapacity.toLocaleString()}</span> / {form.capacity.toLocaleString()}
+                      </span>
+                      <span className={remainingCapacity < 0 ? 'text-red-500 font-semibold' : remainingCapacity === 0 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>
+                        {remainingCapacity < 0
+                          ? `⚠ ${Math.abs(remainingCapacity)} over limit`
+                          : remainingCapacity === 0
+                          ? '✓ Fully allocated'
+                          : `${remainingCapacity.toLocaleString()} unallocated`}
+                      </span>
+                    </div>
+                    <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-black/30' : 'bg-neutral-100'}`}>
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${remainingCapacity < 0 ? 'bg-red-500' : 'bg-primary'}`}
+                        style={{ width: `${Math.min(100, form.capacity > 0 ? (usedCapacity / form.capacity) * 100 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {form.ticketTypes.map((ticket) => {
+                    const otherUsed = form.ticketTypes
+                      .filter((t) => t.id !== ticket.id && t.isEnabled)
+                      .reduce((s, t) => s + t.count, 0);
+                    const maxForThisTier = Math.max(0, form.capacity - otherUsed);
+
+                    return (
+                      <div
+                        key={ticket.id}
+                        className={`rounded-[14px] p-3.5 space-y-3 transition-all premium-glass-card ${ticket.isEnabled ? '' : 'opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateTicket(ticket.id, { isEnabled: !ticket.isEnabled })}
+                              className={`w-8 h-4.5 rounded-full relative transition-colors flex-shrink-0 ${
+                                ticket.isEnabled
+                                  ? 'bg-primary'
+                                  : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                              }`}
+                            >
+                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all bg-white shadow-sm ${ticket.isEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                            </button>
+                            <input
+                              value={ticket.name}
+                              onChange={(e) => updateTicket(ticket.id, { name: e.target.value })}
+                              className={`text-xs font-semibold bg-transparent border-none focus:outline-none px-1 w-32 ${isDark ? 'text-white' : 'text-neutral-900'}`}
+                              placeholder="Tier name"
+                            />
+                          </div>
+                          <div className="flex gap-1.5">
+                            {Object.keys(TICKET_COLORS).map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => updateTicket(ticket.id, { color: c })}
+                                className={`w-3.5 h-3.5 rounded-full border transition-all ${ticket.color === c ? 'border-foreground scale-125' : 'border-transparent'}`}
+                                style={{ background: c === 'gold' ? '#D4A853' : c === 'silver' ? '#9CA3AF' : c === 'blue' ? '#3B82F6' : c === 'green' ? '#10B981' : '#8B5CF6' }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div>
+                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Price (₹)</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={ticket.price === 0 ? '' : String(ticket.price)}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') { updateTicket(ticket.id, { price: 0 }); return; }
+                                const digitsOnly = raw.replace(/[^\d]/g, '');
+                                const nextPrice = digitsOnly === '' ? 0 : parseInt(digitsOnly, 10);
+                                updateTicket(ticket.id, { price: nextPrice });
+                              }}
+                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                                isDark
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                              }`}
+                              placeholder="0 = free"
+                            />
+                          </div>
+                          <div>
+                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Seats</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={ticket.count === 0 ? '' : ticket.count}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const nextCount = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                                handleTicketCountChange(ticket.id, nextCount);
+                              }}
+                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                                isDark
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900'
+                              } ${ticket.isEnabled && ticket.count > maxForThisTier ? 'border-red-400' : ''}`}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Benefits</span>
+                            <button
+                              type="button"
+                              onClick={() => addBenefit(ticket.id)}
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                            >
+                              <Plus className="w-3 h-3" /> Add
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {ticket.benefits.map((benefit, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                <span className="text-primary text-xs">✓</span>
+                                <input
+                                  value={benefit}
+                                  onChange={(e) => updateBenefit(ticket.id, idx, e.target.value)}
+                                  className={`h-7 px-2 text-xs flex-1 rounded-md focus:outline-none focus:border-primary/50 ${
+                                    isDark
+                                      ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                      : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                                  }`}
+                                  placeholder="e.g. VIP seating"
+                                />
+                                <button type="button" onClick={() => removeBenefit(ticket.id, idx)} className="text-neutral-400 hover:text-red-500 p-1">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Submit button dynamically themed to selected event theme */}
               <button
                 type="button"
-                className="w-full h-11 rounded-[12px] font-semibold text-sm active:scale-[0.99] transition-all shadow-md shadow-[#1981FE]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center bg-[#1981FE] text-white hover:bg-[#1673e6]"
+                style={{
+                  background: activeTheme.gradient,
+                  boxShadow: `0 4px 14px -2px ${activeTheme.accent}55, inset 0 1px 1px rgba(255, 255, 255, 0.4)`,
+                  borderColor: activeTheme.accentHover,
+                }}
+                className="w-full h-11 rounded-xl font-semibold text-sm active:scale-[0.99] transition-all border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white hover:brightness-105"
                 onClick={handleSubmit}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
