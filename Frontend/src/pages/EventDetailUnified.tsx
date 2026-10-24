@@ -29,7 +29,7 @@ import { eventsService } from '@/services/events.service';
 import { useAppStore } from '@/store/appStore';
 import { ApiError } from '@/services/api';
 import {
-  useEvent, useRegisterForEvent, useCancelRegistration, useMyRegistrations, useEventAttendees,
+  useEvent, useRegisterForEvent, useCancelRegistration, useMyRegistrations, useEventAttendees, useEventQuestions,
 } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import { injectThemeVars } from '@/lib/eventThemes';
@@ -40,6 +40,8 @@ import { getRegistrationPricing } from '@/lib/ticketPricing';
 import { formatINR } from '@/lib/currency';
 import { paymentsService, loadRazorpayScript, openRazorpayCheckout } from '@/services/payments.service';
 import { useHomePath } from '@/lib/useHomePath';
+import { EventQuestionsForm } from '@/components/EventQuestionsForm';
+import { toAnswerList, unansweredRequired, type AnswerMap } from '@/lib/eventQuestions';
 
 /**
  * Unified event detail page rendered by both `/event/:id` (auth) and
@@ -71,6 +73,11 @@ const EventDetailUnified = () => {
   // links and guest RSVP never worked.
   const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
   const registerMutation = useRegisterForEvent();
+  // The host's custom questions, asked before a signed-in Register. Guests use
+  // the RSVP form, which doesn't ask them yet.
+  const { data: questions } = useEventQuestions(id ?? '', !!id && isAuthenticated);
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
   const cancelMutation = useCancelRegistration();
   const queryClient = useQueryClient();
   const { data: attendeesData } = useEventAttendees(id ?? '', !!id && isAuthenticated);
@@ -279,7 +286,8 @@ const EventDetailUnified = () => {
       setGuestRsvpOpen(true);
       return;
     }
-    registerMutation.mutate({ eventId: event.id });
+    const answerList = toAnswerList(answers);
+    registerMutation.mutate({ eventId: event.id, answers: answerList.length > 0 ? answerList : undefined });
   };
 
   const applyCoupon = async () => {
@@ -795,18 +803,23 @@ const EventDetailUnified = () => {
               </Button>
             </div>
           ) : (
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={handleRegister}
-              disabled={registerMutation.isPending}
-            >
-              {registerMutation.isPending
-                ? 'Registering…'
-                : isFull
-                  ? 'Join waitlist'
-                  : 'Register'}
-            </Button>
+            <div className="space-y-3">
+              {/* The host's questions, same form as the quick-register popup.
+                  This page used to register without asking them. */}
+              <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} />
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleRegister}
+                disabled={registerMutation.isPending || missingRequired.length > 0}
+              >
+                {registerMutation.isPending
+                  ? 'Registering…'
+                  : isFull
+                    ? 'Join waitlist'
+                    : 'Register'}
+              </Button>
+            </div>
           )}
 
           <div className="mt-3 flex items-center gap-2">

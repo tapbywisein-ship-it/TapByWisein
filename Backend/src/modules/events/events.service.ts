@@ -461,11 +461,66 @@ export class EventsService {
     };
   }
 
+  /**
+   * Checks the answers to the host's questions before anything is saved, and
+   * returns the ones to store (known questions, non-empty answers).
+   * Throws if a required question is unanswered, including when no answers
+   * were sent at all.
+   */
+  private async validateRegistrationAnswers(
+    eventId: string,
+    answers: Array<{ questionId: string; answer: string }> | undefined,
+    requireAnswers: boolean
+  ) {
+    const given = (answers ?? []).filter((a) => a.answer.trim() !== '');
+    if (requireAnswers) {
+      const required = await prisma.eventQuestion.findMany({
+        where: { eventId, required: true },
+        select: { id: true, prompt: true },
+      });
+      const answeredIds = new Set(given.map((a) => a.questionId));
+      const missing = required.filter((q) => !answeredIds.has(q.id));
+      if (missing.length > 0) {
+        throw new BadRequestError(
+          `Please answer required question${missing.length === 1 ? '' : 's'}: ${missing
+            .map((m) => `"${m.prompt}"`)
+            .join(', ')}`
+        );
+      }
+    }
+    if (given.length === 0) return [];
+    const questions = await prisma.eventQuestion.findMany({
+      where: { eventId, id: { in: given.map((a) => a.questionId) } },
+      select: { id: true },
+    });
+    const validIds = new Set(questions.map((q) => q.id));
+    return given.filter((a) => validIds.has(a.questionId));
+  }
+
+  private async saveRegistrationAnswers(
+    registrationId: string,
+    answers: Array<{ questionId: string; answer: string }>
+  ) {
+    if (answers.length === 0) return;
+    await prisma.registrationAnswer.createMany({
+      data: answers.map((a) => ({
+        registrationId,
+        questionId: a.questionId,
+        answer: a.answer.trim(),
+      })),
+      // One answer per question per registration; re-registering keeps the first.
+      skipDuplicates: true,
+    });
+  }
+
   async registerForEvent(
     eventId: string,
     userId: string,
     answers?: Array<{ questionId: string; answer: string }>,
-    referralCode?: string
+    referralCode?: string,
+    // Guest RSVP has no form for the host's questions yet, so it opts out to
+    // keep working (see guestRsvp). Every signed-in path must answer them.
+    { requireAnswers = true }: { requireAnswers?: boolean } = {}
   ) {
     const referredByAmbassadorId = await ambassadorsService.resolveReferralCode(referralCode);
 
@@ -496,6 +551,11 @@ export class EventsService {
 
     const requiresApproval = event.requiresApproval;
 
+    // Check required questions before creating anything. This used to run
+    // after the registration was saved (so a failed check still registered
+    // you) and only when some answers were sent (so sending none skipped it).
+    const validAnswers = await this.validateRegistrationAnswers(eventId, answers, requireAnswers);
+
     // Capacity guard. To prevent overselling under concurrent RSVPs we hold a
     // Postgres advisory lock for the event id while we check the count and
     // create the registration row; pg_advisory_xact_lock is released on COMMIT.
@@ -504,6 +564,7 @@ export class EventsService {
       const registration = await prisma.eventRegistration.create({
         data: { eventId, userId, status: 'WAITLISTED', referredByAmbassadorId },
       });
+      await this.saveRegistrationAnswers(registration.id, validAnswers);
       return { registration, message: 'You have been added to the waitlist' };
     }
 
@@ -518,6 +579,7 @@ export class EventsService {
           where: { id: existing.id },
           data: { status: newStatus },
         });
+        await this.saveRegistrationAnswers(updated.id, validAnswers);
         return {
           registration: updated,
           message: requiresApproval
@@ -550,41 +612,7 @@ export class EventsService {
       });
     });
 
-    // Persist answers if any. Required-question enforcement happens here so
-    // the API stays REST-y (single POST, all data attached).
-    if (answers && answers.length > 0) {
-      const questions = await prisma.eventQuestion.findMany({
-        where: { eventId, id: { in: answers.map((a) => a.questionId) } },
-        select: { id: true, required: true },
-      });
-      const validIds = new Set(questions.map((q) => q.id));
-      const required = await prisma.eventQuestion.findMany({
-        where: { eventId, required: true },
-        select: { id: true, prompt: true },
-      });
-      const answeredIds = new Set(
-        answers.filter((a) => a.answer.trim() !== '').map((a) => a.questionId)
-      );
-      const missing = required.filter((q) => !answeredIds.has(q.id));
-      if (missing.length > 0) {
-        throw new BadRequestError(
-          `Please answer required question${missing.length === 1 ? '' : 's'}: ${missing
-            .map((m) => `"${m.prompt}"`)
-            .join(', ')}`
-        );
-      }
-      const valid = answers.filter((a) => validIds.has(a.questionId) && a.answer.trim());
-      if (valid.length > 0) {
-        await prisma.registrationAnswer.createMany({
-          data: valid.map((a) => ({
-            registrationId: registration.id,
-            questionId: a.questionId,
-            answer: a.answer.trim(),
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
+    await this.saveRegistrationAnswers(registration.id, validAnswers);
 
     if (requiresApproval) {
       // Notify the organizer there's a pending approval to review.
@@ -913,7 +941,11 @@ export class EventsService {
         message: "You're already going to this event",
       };
     } else {
-      result = await this.registerForEvent(eventId, user.id);
+      // The guest form doesn't show the host's questions yet, so don't require
+      // them here (unchanged behaviour); signed-in registrations do.
+      result = await this.registerForEvent(eventId, user.id, undefined, undefined, {
+        requireAnswers: false,
+      });
     }
 
     // Security: if this email already has a password set, the account is

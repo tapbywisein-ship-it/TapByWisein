@@ -6,15 +6,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Calendar, CheckCircle2, MapPin, Tag, Ticket, Users, X } from 'lucide-react';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select as UiSelect,
-  SelectContent as UiSelectContent,
-  SelectItem as UiSelectItem,
-  SelectTrigger as UiSelectTrigger,
-  SelectValue as UiSelectValue,
-} from '@/components/ui/select';
+import { EventQuestionsForm } from '@/components/EventQuestionsForm';
+import { toAnswerList, unansweredRequired, type AnswerMap } from '@/lib/eventQuestions';
 import { useAppStore } from '@/store/appStore';
 import { useRegisterForEvent, useEventQuestions } from '@/hooks/useEvents';
 import { getRegistrationPricing } from '@/lib/ticketPricing';
@@ -23,7 +16,7 @@ import type { Event } from '@/services/events.service';
 /**
  * The "Register" popup for free events, moved out of the attendee Events page
  * so the event browser can use it on both Events pages.
- * It asks the host's custom questions (the event page doesn't), registers,
+ * It asks the host's custom questions (EventQuestionsForm, shared with the event page), registers,
  * then shows the QR ticket. Render it with key={event.id} so each event
  * starts fresh. It is drawn on document.body so no parent layout can clip it.
  */
@@ -33,12 +26,11 @@ export const QuickRegisterModal = ({ event, onClose }: { event: Event; onClose: 
   const { data: questions } = useEventQuestions(event.id, true);
   const [step, setStep] = useState<'confirm' | 'success'>('confirm');
   const [registrationId, setRegistrationId] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
 
   const handleRegister = async () => {
-    const answerArr = Object.entries(answers)
-      .filter(([, v]) => v.trim())
-      .map(([questionId, answer]) => ({ questionId, answer }));
+    const answerArr = toAnswerList(answers);
     const res = await registerMutation.mutateAsync({
       eventId: event.id,
       answers: answerArr.length > 0 ? answerArr : undefined,
@@ -86,56 +78,13 @@ export const QuickRegisterModal = ({ event, onClose }: { event: Event; onClose: 
                     </div>
                   ))}
                 </div>
-                {questions && questions.length > 0 && (
-                  <div className="mb-5 space-y-3 rounded-card border border-border bg-card/40 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      A few questions from the host
-                    </p>
-                    {questions.map((q) => (
-                      <div key={q.id} className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">
-                          {q.prompt}
-                          {q.required && <span className="ml-0.5 text-rose-500">*</span>}
-                        </label>
-                        {q.type === 'TEXTAREA' ? (
-                          <Textarea
-                            rows={2}
-                            value={answers[q.id] ?? ''}
-                            onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
-                            required={q.required}
-                          />
-                        ) : q.type === 'SELECT' && (q.options?.length ?? 0) > 0 ? (
-                          <UiSelect
-                            value={answers[q.id] ?? ''}
-                            onValueChange={(v) =>
-                              setAnswers((a) => ({ ...a, [q.id]: v }))
-                            }
-                          >
-                            <UiSelectTrigger>
-                              <UiSelectValue placeholder="Choose…" />
-                            </UiSelectTrigger>
-                            <UiSelectContent>
-                              {(q.options ?? []).map((opt) => (
-                                <UiSelectItem key={opt} value={opt}>
-                                  {opt}
-                                </UiSelectItem>
-                              ))}
-                            </UiSelectContent>
-                          </UiSelect>
-                        ) : (
-                          <Input
-                            value={answers[q.id] ?? ''}
-                            onChange={(e) =>
-                              setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
-                            }
-                            required={q.required}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Button className="w-full" size="lg" onClick={handleRegister} disabled={registerMutation.isPending}>
+                <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} className="mb-5" />
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handleRegister}
+                  disabled={registerMutation.isPending || missingRequired.length > 0}
+                >
                   {registerMutation.isPending ? (
                     <span className="flex items-center gap-2">
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
