@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
 import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
@@ -22,7 +23,7 @@ import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2, MessageCircle,
 } from 'lucide-react';
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
@@ -189,6 +190,8 @@ const AttendeeDashboard = () => {
     { icon: CreditCard, label: 'My Card', to: '/apply-card' },
     { icon: Users, label: 'Network', to: '/connections' },
     { icon: Calendar, label: 'Events', to: '/events' },
+    // Share Card is already at the top of the page, so this slot opens Messages.
+    { icon: MessageCircle, label: 'Messages', to: '/messages' },
   ];
 
   return (
@@ -212,14 +215,18 @@ const AttendeeDashboard = () => {
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="self-start sm:self-auto shrink-0 gap-1.5 rounded-xl h-9"
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 className="w-3.5 h-3.5" /> Share Card
-          </Button>
+          <div className="self-start sm:self-auto shrink-0 flex items-center gap-2">
+            {/* Phones already have this bell in the top bar, so only show it here on wider screens. */}
+            <NotificationBell className="hidden md:inline-flex rounded-xl border border-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xl h-9"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share Card
+            </Button>
+          </div>
         </motion.div>
 
         {/* Stats row */}
@@ -364,13 +371,6 @@ const AttendeeDashboard = () => {
                     <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">{a.label}</span>
                   </Link>
                 ))}
-                <button
-                  onClick={() => setShareOpen(true)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors group"
-                >
-                  <Share2 className="w-5 h-5 text-primary" />
-                  <span className="text-[11px] font-medium text-primary text-center leading-tight">Share Card</span>
-                </button>
               </div>
             </Surface>
           </motion.div>

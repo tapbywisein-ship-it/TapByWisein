@@ -1,11 +1,12 @@
-import { ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
-import { useUnreadCount } from '@/hooks/useNotifications';
+import { NotificationBell } from '@/components/NotificationBell';
+import { SidebarSearchButton } from '@/components/SidebarSearchButton';
 import { useUnreadMessageCount } from '@/hooks/useMessages';
 import { useRequestOrganizer } from '@/hooks/useOrganizer';
 import { VerifyEmailBanner } from '@/components/VerifyEmailBanner';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Bell, Calendar, Scan, User as UserIcon,
+  Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
   Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
 } from 'lucide-react';
@@ -49,7 +50,6 @@ const navItems = [
   { label: 'Messages',      icon: MessageCircle,   path: '/messages',       badge: 'messages' as const },
   { label: 'Connections',   icon: Users,           path: '/connections' },
   { label: 'Communities',   icon: Boxes,           path: '/communities' },
-  { label: 'Notifications', icon: Bell,            path: '/notifications',  badge: 'notifications' as const },
   { label: 'My Tickets',    icon: Ticket,          path: '/my-tickets' },
   { label: 'FK Score',      icon: Trophy,          path: '/gamification' },
   { label: 'Tap Card',      icon: QrCode,          path: '/apply-card' },
@@ -78,7 +78,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
-  const { data: unreadCount = 0 } = useUnreadCount();
   const { data: unreadMessages = 0 } = useUnreadMessageCount();
   const { data: pendingRequests } = useQuery({
     queryKey: ['connections', 'pending-count'],
@@ -135,29 +134,18 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         <div className="mb-3 px-1"><Logo size="md" collapsible clickable={false} /></div>
         {/* TEMP: logo no longer links to /dashboard */}
         {/* <div className="mb-3 px-1"><Logo size="md" collapsible /></div> */}
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          title="Search"
-          className="flex items-center gap-3 px-3 py-2 mb-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <Search className="w-5 h-5 flex-shrink-0" />
-          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Search</span>
-        </button>
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Primary">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge =
               item.badge === 'connect'
                 ? pendingRequests ?? 0
                 : item.badge === 'messages'
                 ? unreadMessages
-                : item.badge === 'notifications'
-                ? unreadCount
                 : 0;
             return (
+              <Fragment key={item.path}>
               <Link
-                key={item.path}
                 to={item.path}
                 title={item.label}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
@@ -180,6 +168,9 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                   </span>
                 )}
               </Link>
+              {/* Search sits right under Dashboard, so Dashboard stays at the top. */}
+              {index === 0 && <SidebarSearchButton onClick={() => setSearchOpen(true)} />}
+              </Fragment>
             );
           })}
           {isOrganizer ? (
@@ -274,18 +265,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                   </span>
                 )}
               </Link>
-              <Link
-                to="/notifications"
-                aria-label="Notifications"
-                className="relative inline-flex w-9 h-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center leading-none">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button

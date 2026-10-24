@@ -86,7 +86,6 @@ const ConnectPage = () => {
               </div>
               <div className="text-left">
                 <p className="text-lg font-semibold text-foreground">{fullName}</p>
-                <p className="text-xs text-muted-foreground">{profileData?.email}</p>
               </div>
             </div>
 
