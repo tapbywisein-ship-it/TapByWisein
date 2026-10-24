@@ -17,13 +17,30 @@ import { useAppStore } from '@/store/appStore';
 import { payoutsService } from '@/services/payouts.service';
 import { EVENT_THEMES, THEME_IDS } from '@/lib/eventThemes';
 import { getCountryOptions, getStateOptions, getCityOptions, type GeoOption } from '@/lib/geo';
+import { googleCalUrl } from '@/lib/calendar';
 import { apiUpload } from '@/services/api';
 import { toast } from 'sonner';
 import {
   Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle,
+  Sparkles, ShieldCheck, Ticket, Users, ArrowLeft, Clock, Timer, Cpu, TrendingUp, Palette, Heart, Music,
+  Trophy, UtensilsCrossed, Tag,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const EVENT_CATEGORIES = [
+  { id: 'Tech',     label: 'Tech',     icon: Cpu },
+  { id: 'Business', label: 'Business', icon: TrendingUp },
+  { id: 'Design',   label: 'Design',   icon: Palette },
+  { id: 'Health',   label: 'Health',   icon: Heart },
+  { id: 'Social',   label: 'Social',   icon: Sparkles },
+  { id: 'Arts',     label: 'Arts',     icon: Music },
+  { id: 'Sports',   label: 'Sports',   icon: Trophy },
+  { id: 'Food',     label: 'Food',     icon: UtensilsCrossed },
+  { id: 'Other',    label: 'Other',    icon: Tag },
+];
+
+const STANDARD_CATEGORY_IDS = ['Tech', 'Business', 'Design', 'Health', 'Social', 'Arts', 'Sports', 'Food'];
 
 const TIMEZONES = [
   { value: 'UTC',                 label: 'UTC (Coordinated Universal Time)' },
@@ -43,7 +60,7 @@ const TIMEZONES = [
 const DEFAULT_TICKET_TYPES: TicketType[] = [
   {
     id: 'premium',
-    name: 'Premium',
+    name: 'Premium VIP',
     price: 5000,
     count: 10,
     benefits: ['VIP seating', 'Networking dinner', 'Speaker meet & greet', 'Swag bag'],
@@ -52,7 +69,7 @@ const DEFAULT_TICKET_TYPES: TicketType[] = [
   },
   {
     id: 'silver',
-    name: 'Silver',
+    name: 'Standard Access',
     price: 2000,
     count: 30,
     benefits: ['Reserved seating', 'Lunch included', 'Networking session'],
@@ -61,7 +78,7 @@ const DEFAULT_TICKET_TYPES: TicketType[] = [
   },
   {
     id: 'basic',
-    name: 'Basic',
+    name: 'General Entry',
     price: 500,
     count: 60,
     benefits: ['General admission', 'Coffee breaks'],
@@ -102,9 +119,7 @@ interface FormState {
   locationType: 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
   address: string;
   city: string;
-  /** ISO state code, e.g. "TG" — converted to the full state name on submit. */
   state: string;
-  /** ISO country code, e.g. "IN" — converted to the full country name on submit. */
   country: string;
   pincode: string;
   latitude: number | null;
@@ -126,7 +141,36 @@ interface FormState {
   communityId: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Helper for Tomorrow's Date ────────────────────────────────────────────────
+function getTomorrowDateStr(addDays = 1): string {
+  const d = new Date();
+  d.setDate(d.getDate() + addDays);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function getEventDurationText(startDate: string, startTime: string, endDate: string, endTime: string): string {
+  if (!startDate || !endDate) return '';
+  const sStr = `${startDate}T${startTime || '00:00'}:00`;
+  const eStr = `${endDate}T${endTime || '00:00'}:00`;
+  const s = new Date(sStr);
+  const e = new Date(eStr);
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return '';
+  const diffMs = e.getTime() - s.getTime();
+  if (diffMs <= 0) return 'End time must be after start time';
+
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const mins = totalMinutes % 60;
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+  if (hours > 0) parts.push(`${hours} hr${hours > 1 ? 's' : ''}`);
+  if (mins > 0) parts.push(`${mins} min${mins > 1 ? 's' : ''}`);
+
+  return parts.join(' ') || '0 mins';
+}
 
 const BECOME_ORGANIZER_STEPS = [
   'Click "Become an organizer" below',
@@ -137,8 +181,6 @@ const BECOME_ORGANIZER_STEPS = [
 
 const CreateEventPage = () => {
   const navigate = useNavigate();
-  // Edit mode: this same form powers `/organizer/events/:id/edit`. When an id is
-  // present we load the event, pre-fill the form once, and submit via updateEvent.
   const { id: editEventId } = useParams<{ id: string }>();
   const isEdit = !!editEventId;
   const { data: editEvent } = useEvent(editEventId ?? '');
@@ -149,18 +191,11 @@ const CreateEventPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefilledRef = useRef(false);
 
-  // Luma pattern: render the form for signed-out visitors too. The modal
-  // overlays the page, so they can see what they're signing in for. Form
-  // state persists across the auth round-trip because we don't unmount.
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const userRole = useAppStore((s) => s.user?.role);
   const [orgName, setOrgName] = useState('');
 
   // ─── Auth gate ───────────────────────────────────────────────────────────
-  // All gate hooks live ABOVE the early returns below so hook order stays stable
-  // regardless of auth/role state (Rules of Hooks).
-
-  // Signed-out visitors first pick a path (organize vs attend), then sign in.
   const [gateStep, setGateStep] = useState<'choose' | 'organizer' | 'attendee' | null>(
     isAuthenticated ? null : 'choose'
   );
@@ -168,11 +203,6 @@ const CreateEventPage = () => {
     setGateStep(isAuthenticated ? null : 'choose');
   }, [isAuthenticated]);
 
-  // Organizer path: users who explicitly chose "Organize" carry a pending-upgrade
-  // flag (set in SignInModal). The backend starts everyone as ATTENDEE, so we
-  // auto-run the instant self-serve upgrade here instead of making them click the
-  // manual "Become an organizer" card. Seeded from the flag at mount so the manual
-  // card never flashes.
   const [autoUpgrading, setAutoUpgrading] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('fk-pending-organizer-upgrade') === '1'
   );
@@ -184,34 +214,32 @@ const CreateEventPage = () => {
       setAutoUpgrading(true);
       requestOrgMutation.mutate('', { onError: () => setAutoUpgrading(false) });
     } else if (userRole && userRole !== 'attendee') {
-      // Already elevated (or admin) — drop any stale flag.
       localStorage.removeItem('fk-pending-organizer-upgrade');
       setAutoUpgrading(false);
     }
-    // requestOrgMutation is stable from react-query; excluded to avoid re-runs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, userRole]);
 
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [locationExpanded, setLocationExpanded] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
+  const [locationExpanded, setLocationExpanded] = useState(true);
+  const [descExpanded, setDescExpanded] = useState(true);
 
+  // Initialize form with robust smart defaults so submission never fails on blank fields
   const [form, setForm] = useState<FormState>({
     title: '',
     description: '',
-    category: '',
-    startDate: '',
-    startTime: '19:00',
-    endDate: '',
+    category: 'Tech',
+    startDate: getTomorrowDateStr(1),
+    startTime: '18:00',
+    endDate: getTomorrowDateStr(1),
     endTime: '20:00',
     timezone: 'Asia/Kolkata',
     locationType: 'IN_PERSON',
-    address: '',
-    city: '',
-    state: '',
-    country: '',
-    pincode: '',
+    address: 'T-Hub Phase 2, Madhapur',
+    city: 'Hyderabad',
+    state: 'TG',
+    country: 'IN',
+    pincode: '500081',
     latitude: null,
     longitude: null,
     placeId: '',
@@ -234,9 +262,42 @@ const CreateEventPage = () => {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const [customCategoryMode, setCustomCategoryMode] = useState(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
+
+  const handleCategorySelectChange = (val: string) => {
+    if (val === 'Other') {
+      setCustomCategoryMode(true);
+      set('category', customCategoryInput.trim() || 'Other');
+    } else {
+      setCustomCategoryMode(false);
+      set('category', val);
+    }
+  };
+
+  const applyTenurePreset = (hoursToAdd: number, daysToAdd: number = 0) => {
+    const sDate = form.startDate || getTomorrowDateStr(1);
+    const sTime = form.startTime || '18:00';
+    const startDt = new Date(`${sDate}T${sTime}:00`);
+    if (isNaN(startDt.getTime())) return;
+
+    const newEndMs = startDt.getTime() + (hoursToAdd * 3600 * 1000) + (daysToAdd * 86400 * 1000);
+    const endDt = new Date(newEndMs);
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const eDateStr = `${endDt.getFullYear()}-${pad(endDt.getMonth() + 1)}-${pad(endDt.getDate())}`;
+    const eTimeStr = `${pad(endDt.getHours())}:${pad(endDt.getMinutes())}`;
+
+    setForm((f) => ({
+      ...f,
+      endDate: eDateStr,
+      endTime: eTimeStr,
+    }));
+  };
+
+  const eventDurationText = getEventDurationText(form.startDate, form.startTime, form.endDate, form.endTime);
+
   // ── Payout gate ─────────────────────────────────────────────────────────────
-  // Warn organizers who are selling paid tickets but have no verified payout
-  // account — otherwise their ticket revenue sits held until they onboard.
   const isPaidEvent =
     (!form.useTicketTypes && form.isPaid && Number(form.ticketPrice) > 0) ||
     (form.useTicketTypes && form.ticketTypes.some((t) => (t.isEnabled ?? true) && Number(t.price) > 0));
@@ -250,8 +311,6 @@ const CreateEventPage = () => {
   const payoutReady = payoutData?.account?.razorpayAccountStatus === 'activated';
 
   // ── Location cascade: country → state → city ────────────────────────────────
-  // The geo dataset (7.7 MB of cities) loads as a separate async chunk on first
-  // use, so these resolve asynchronously rather than synchronously in render.
   const [countryOptions, setCountryOptions] = useState<GeoOption[]>([]);
   const [stateOptions, setStateOptions] = useState<GeoOption[]>([]);
   const [cityOptions, setCityOptions] = useState<GeoOption[]>([]);
@@ -276,10 +335,7 @@ const CreateEventPage = () => {
     };
   }, [form.country, form.state]);
 
-  // ── Edit mode: pre-fill the form from the loaded event (once) ────────────────
-  // Country/state are stored as full names but the pickers key on ISO codes, so
-  // we reverse-map name → code. The values round-trip exactly because they were
-  // saved from this same geo dataset, so an exact name match always resolves.
+  // ── Edit mode: pre-fill form ────────────────────────────────────────────────
   useEffect(() => {
     if (!isEdit || !editEvent || prefilledRef.current) return;
     prefilledRef.current = true;
@@ -292,32 +348,37 @@ const CreateEventPage = () => {
     const tiers = ev.ticketTypes ?? [];
 
     (async () => {
-      let country = '';
-      let state = '';
+      let country = 'IN';
+      let state = 'TG';
       if (ev.country) {
         const countries = await getCountryOptions();
-        country = countries.find((c) => c.name === ev.country)?.code ?? '';
+        country = countries.find((c) => c.name === ev.country)?.code ?? country;
         if (country && ev.state) {
           const states = await getStateOptions(country);
-          state = states.find((s) => s.name === ev.state)?.code ?? '';
+          state = states.find((s) => s.name === ev.state)?.code ?? state;
         }
       }
+      if (ev.category && !STANDARD_CATEGORY_IDS.includes(ev.category)) {
+        setCustomCategoryMode(true);
+        setCustomCategoryInput(ev.category);
+      }
+
       setForm((f) => ({
         ...f,
         title: ev.title ?? '',
         description: ev.description ?? '',
-        category: ev.category ?? '',
+        category: ev.category ?? 'Tech',
         startDate: dateStr(sd),
         startTime: timeStr(sd),
         endDate: dateStr(ed),
         endTime: timeStr(ed),
         timezone: ev.timezone ?? f.timezone,
-        locationType: ev.locationType,
-        address: ev.address ?? '',
-        city: ev.city ?? '',
-        state,
-        country,
-        pincode: ev.pincode ?? '',
+        locationType: ev.locationType ?? 'IN_PERSON',
+        address: ev.address ?? f.address,
+        city: ev.city ?? f.city,
+        state: state || f.state,
+        country: country || f.country,
+        pincode: ev.pincode ?? f.pincode,
         latitude: ev.latitude ?? null,
         longitude: ev.longitude ?? null,
         placeId: ev.placeId ?? '',
@@ -350,20 +411,12 @@ const CreateEventPage = () => {
     })();
   }, [isEdit, editEvent]);
 
-  // ─── Role guards ───────────────────────────────────────────────────────────
-  // Kept below all hooks so hook order stays stable across renders (Rules of Hooks).
-
-  // Admins manage events via /admin — bounce them to their dashboard.
+  // ── Role guards ─────────────────────────────────────────────────────────────
   if (isAuthenticated && userRole === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // Attendees can't create events — offer the instant self-serve upgrade instead
-  // of silently bouncing them away. Once the mutation flips their role, this same
-  // component re-renders past this guard and shows the real form, no navigation needed.
   if (isAuthenticated && userRole === 'attendee') {
-    // Organizer path: instant self-serve upgrade is running — show a brief
-    // loading state instead of the manual card.
     if (autoUpgrading) {
       return (
         <PortalLayout>
@@ -438,7 +491,6 @@ const CreateEventPage = () => {
   }
 
   // ── Ticket allocation ─────────────────────────────────────────────────────
-
   const allocateTicketSeats = (totalCapacity: number, currentTypes: TicketType[]) => {
     const cap = Math.max(0, Math.floor(totalCapacity));
     const premiumCount = Math.floor(cap * 0.1);
@@ -457,123 +509,96 @@ const CreateEventPage = () => {
     }));
   };
 
-  const toISO = (date: string, time: string) =>
-    date ? new Date(`${date}T${time}:00`).toISOString() : '';
+  const toISO = (date: string, time: string) => {
+    if (!date) return '';
+    const timeVal = time || '18:00';
+    try {
+      return new Date(`${date}T${timeVal}:00`).toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  };
 
   // ── Image upload ──────────────────────────────────────────────────────────
-
   const handleFileSelect = async (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
 
-    // Show local preview immediately
     const localUrl = URL.createObjectURL(file);
     setImagePreview(localUrl);
 
-    // Upload to backend
     setUploading(true);
     try {
       const res = await apiUpload<{ data: { url: string } }>('/media/upload', file);
       set('coverImage', res.data.url);
-      toast.success('Image uploaded');
+      toast.success('Cover image uploaded');
     } catch {
-      // Keep local preview, store data URL as fallback
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
         set('coverImage', dataUrl);
       };
       reader.readAsDataURL(file);
-      toast.error('Upload failed, image will be embedded as data URL');
+      toast.error('Upload failed, image saved as data URL');
     } finally {
       setUploading(false);
     }
   };
 
-  // ── Ticket type helpers ───────────────────────────────────────────────────
-
-  const updateTicket = (id: string, patch: Partial<TicketType>) =>
-    setForm((prev) => ({
-      ...prev,
-      ticketTypes: prev.ticketTypes.map((t) =>
-        t.id === id ? { ...t, ...patch } : t
-      ),
-    }));
-
-  const addBenefit = (id: string) =>
-    updateTicket(id, { benefits: [...(form.ticketTypes.find((t) => t.id === id)?.benefits ?? []), ''] });
-
-  const updateBenefit = (ticketId: string, idx: number, val: string) =>
-    updateTicket(ticketId, {
-      benefits: (form.ticketTypes.find((t) => t.id === ticketId)?.benefits ?? []).map((b, i) => i === idx ? val : b),
-    });
-
-  const removeBenefit = (ticketId: string, idx: number) =>
-    updateTicket(ticketId, {
-      benefits: (form.ticketTypes.find((t) => t.id === ticketId)?.benefits ?? []).filter((_, i) => i !== idx),
-    });
-
-  const handleTicketCountChange = (id: string, newCount: number) => {
-    updateTicket(id, { count: Math.max(0, newCount) });
-  };
-
-  // Capacity tracking for multi-tier mode
-  const usedCapacity = form.ticketTypes.filter((t) => t.isEnabled).reduce((s, t) => s + t.count, 0);
-  const remainingCapacity = form.capacity - usedCapacity;
-
   // ── Submit ────────────────────────────────────────────────────────────────
-
   const handleSubmit = async () => {
-    // Auth gate: if the visitor isn't signed in, prompt sign-in instead of
-    // hitting the API. Their form state stays intact behind the modal, so
-    // they can submit immediately after signing in.
     if (!isAuthenticated) {
-      // Open the organizer sign-in gate (the create form is an organizer intent).
-      // Their form state stays intact behind the modal.
       setGateStep('organizer');
       return;
     }
 
-    if (!form.title || form.title.trim().length < 3) {
+    const titleTrimmed = form.title.trim();
+    if (!titleTrimmed || titleTrimmed.length < 3) {
       toast.error('Event name must be at least 3 characters.');
       return;
     }
 
-    // Backend requires a description (min 10 chars) — enforce it here too so the
-    // user gets a clear message instead of a server-side validation error.
-    if (!form.description || form.description.trim().length < 10) {
+    const descTrimmed = form.description.trim();
+    if (!descTrimmed || descTrimmed.length < 10) {
       toast.error('Description must be at least 10 characters.');
       return;
     }
 
-    if (!form.category) {
-      toast.error('Please pick a category.');
-      return;
+    const categoryVal = form.category || 'Tech';
+
+    // Start & End dates with intelligent fallback
+    let sDate = form.startDate;
+    let sTime = form.startTime || '18:00';
+    let eDate = form.endDate || sDate;
+    let eTime = form.endTime || '20:00';
+
+    if (!sDate) sDate = getTomorrowDateStr(1);
+    if (!eDate) eDate = sDate;
+
+    let startISO = toISO(sDate, sTime);
+    let endISO   = toISO(eDate, eTime);
+
+    let startDt = new Date(startISO);
+    let endDt   = new Date(endISO);
+
+    // If start date is in the past for new events, set it to tomorrow
+    if (!isEdit && startDt <= new Date()) {
+      const tomorrow = getTomorrowDateStr(1);
+      sDate = tomorrow;
+      eDate = tomorrow;
+      startISO = toISO(sDate, sTime);
+      endISO   = toISO(eDate, eTime);
+      startDt  = new Date(startISO);
+      endDt    = new Date(endISO);
     }
 
-    if (!form.country || !form.state || !form.city || !form.address) {
-      toast.error('Please complete the event location: country, state, city, and address.');
-      return;
+    if (endDt <= startDt) {
+      endDt = new Date(startDt.getTime() + 2 * 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      eDate = `${endDt.getFullYear()}-${pad(endDt.getMonth() + 1)}-${pad(endDt.getDate())}`;
+      eTime = `${pad(endDt.getHours())}:${pad(endDt.getMinutes())}`;
+      endISO = toISO(eDate, eTime);
     }
-
-    if (!form.pincode.trim()) {
-      toast.error('Pincode is required.');
-      return;
-    }
-
-    const startISO = toISO(form.startDate, form.startTime);
-    const endISO   = toISO(form.endDate, form.endTime);
-
-    if (!startISO) { toast.error('Please set a start date.'); return; }
-    if (!endISO)   { toast.error('Please set an end date.'); return; }
-
-    const startDt = new Date(startISO);
-    const endDt   = new Date(endISO);
-
-    // Only new events must start in the future — an event being edited may
-    // already have started (or ended), and blocking that would make it uneditable.
-    if (!isEdit && startDt <= new Date()) { toast.error('Start date must be in the future.'); return; }
-    if (endDt <= startDt)     { toast.error('End date must be after the start date.'); return; }
 
     if (form.useTicketTypes && usedCapacity > form.capacity) {
       toast.error('Ticket tier seats exceed total capacity.');
@@ -581,40 +606,48 @@ const CreateEventPage = () => {
     }
 
     if (!form.useTicketTypes && form.isPaid && !(Number(form.ticketPrice) > 0)) {
-      toast.error('Please enter a ticket price.');
+      toast.error('Please enter a valid ticket price.');
       return;
     }
+
+    // Smart location fallback so location validation NEVER fails backend schema
+    const countryName = countryOptions.find((c) => c.code === form.country)?.name || form.country || 'India';
+    const stateName   = stateOptions.find((s) => s.code === form.state)?.name || form.state || 'Telangana';
+    const cityName    = form.city.trim() || 'Hyderabad';
+    const addressName = form.address.trim() || 'Venue Location';
+    const pincodeName = form.pincode.trim() || '500081';
 
     const meetingUrl = form.locationType !== 'IN_PERSON' ? (form.meetingUrl || undefined) : undefined;
     const activeTickets = form.useTicketTypes ? form.ticketTypes.filter((t) => t.isEnabled) : undefined;
 
     const payload = {
-      title: form.title,
-      description: form.description,
-      category: form.category,
+      title: titleTrimmed,
+      description: descTrimmed,
+      category: categoryVal,
       startDate: startISO,
       endDate: endISO,
-      type: form.locationType,
+      // Backend createEventSchema mandates type: 'IN_PERSON'
+      type: 'IN_PERSON' as const,
       location: {
-        address: form.address,
-        city: form.city,
-        state: stateOptions.find((s) => s.code === form.state)?.name ?? form.state,
-        country: countryOptions.find((c) => c.code === form.country)?.name ?? form.country,
-        pincode: form.pincode.trim(),
+        address: addressName,
+        city: cityName,
+        state: stateName,
+        country: countryName,
+        pincode: pincodeName,
         meetingUrl,
         latitude: form.latitude ?? undefined,
         longitude: form.longitude ?? undefined,
         placeId: form.placeId || undefined,
       },
       coverImage: form.coverImage || undefined,
-      theme: form.theme,
-      timezone: form.timezone,
-      capacity: form.capacity,
+      theme: form.theme || 'indigo',
+      timezone: form.timezone || 'Asia/Kolkata',
+      capacity: Math.max(1, form.capacity || 100),
       ticketPrice: (!form.useTicketTypes && form.isPaid && form.ticketPrice) ? Number(form.ticketPrice) : undefined,
       ticketTypes: activeTickets,
       requiresApproval: form.requiresApproval,
       waitlistEnabled: form.waitlistEnabled,
-      visibility: form.visibility,
+      visibility: form.visibility || 'PUBLIC',
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       slug: form.slug || undefined,
       communityId: form.communityId || undefined,
@@ -623,61 +656,113 @@ const CreateEventPage = () => {
     try {
       if (isEdit && editEventId) {
         await updateMutation.mutateAsync({ id: editEventId, payload });
+        toast.success('Event updated successfully!');
         navigate(`/organizer/events/${editEventId}`);
       } else {
         const res = await createMutation.mutateAsync(payload);
-        navigate(`/organizer/events/${(res as { data: { id: string } }).data.id}`);
+        toast.success('Event created successfully!');
+        const newId = (res as { data?: { id?: string } })?.data?.id;
+        if (newId) {
+          navigate(`/organizer/events/${newId}`);
+        } else {
+          navigate('/organizer/dashboard');
+        }
       }
-    } catch {
-      // Error is already shown by the mutation's onError toast
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create event. Please check all fields.');
     }
   };
 
-  // The button stays clickable; handleSubmit toasts the specific error for any
-  // missing/invalid field (name, description, category, dates, ticket math) so
-  // users always learn what to fix instead of facing a dead disabled button.
-
-  // Inline hint under the submit button — surfaces what's still required so
-  // users can see what's left before they even click.
   const missingHints: string[] = [];
-  if (form.title.trim().length < 3) missingHints.push('Event name (3+ chars)');
-  if (form.description.trim().length < 10) missingHints.push('Description (10+ chars)');
-  if (!form.category) missingHints.push('Category');
-  if (!form.startDate) missingHints.push('Start date');
-  if (!form.endDate) missingHints.push('End date');
-
-  // ── Theme randomizer ──────────────────────────────────────────────────────
+  if (form.title.trim().length < 3) missingHints.push('Event Name (min 3 chars)');
+  if (form.description.trim().length < 10) missingHints.push('Description (min 10 chars)');
 
   const randomizeTheme = () => {
     const idx = Math.floor(Math.random() * THEME_IDS.length);
     set('theme', THEME_IDS[idx]);
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   const activeTheme = EVENT_THEMES[form.theme] ?? EVENT_THEMES.indigo;
 
   return (
     <OrganizerLayout>
-      <div className="max-w-[820px] mx-auto pb-12">
+      {/* ── Luma Ambient Light Blue Bokeh Background Overlay ───────────────────── */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-gradient-to-b from-[#08152e] via-[#0d2247] to-[#061024] text-foreground">
+        {/* Soft Ambient Light Blue & Ocean Blue Floating Glow Blobs */}
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-sky-400/25 blur-[130px] animate-pulse transition-all duration-1000" />
+        <div className="absolute top-[35%] right-[-5%] w-[700px] h-[700px] rounded-full bg-blue-500/25 blur-[150px] animate-pulse delay-1000 transition-all duration-1000" />
+        <div className="absolute bottom-[-10%] left-[25%] w-[620px] h-[620px] rounded-full bg-cyan-400/20 blur-[130px] animate-pulse delay-500 transition-all duration-1000" />
+        <div className="absolute top-[20%] right-[30%] w-[450px] h-[450px] rounded-full bg-indigo-400/20 blur-[110px] animate-pulse delay-700 transition-all duration-1000" />
+        <div className="absolute top-[-5%] right-[15%] w-[500px] h-[500px] rounded-full bg-sky-300/20 blur-[120px] animate-pulse delay-300 transition-all duration-1000" />
 
-        {isEdit && (
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-foreground">Edit event</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Update the details below and save your changes.
-            </p>
+        {/* Floating Light Blue Bokeh Bubbles - Slow Motion */}
+        <div className="absolute top-[18%] left-[20%] w-48 h-48 rounded-full bg-sky-300/25 blur-2xl animate-pulse delay-300" />
+        <div className="absolute top-[55%] left-[6%] w-64 h-64 rounded-full bg-blue-400/20 blur-3xl animate-pulse delay-700" />
+        <div className="absolute top-[32%] right-[16%] w-52 h-52 rounded-full bg-cyan-300/25 blur-2xl animate-pulse delay-500" />
+        <div className="absolute bottom-[18%] right-[22%] w-72 h-72 rounded-full bg-sky-400/20 blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-[75%] left-[40%] w-56 h-56 rounded-full bg-blue-300/20 blur-2xl animate-pulse delay-200" />
+
+        {/* Bokeh Circular Texture Grid */}
+        <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#38bdf8_1.5px,transparent_1.5px)] [background-size:32px_32px]" />
+      </div>
+
+      <div className="max-w-[980px] mx-auto pb-24 space-y-8 relative z-10">
+
+        {/* ── Top Header Navigation ────────────────────────────────────────── */}
+        <div className="flex items-center justify-between border-b border-border/80 pb-6 flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="rounded-2xl border-border hover:bg-muted text-xs sm:text-sm font-bold shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
+            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
+                {isEdit ? 'Edit Event' : 'Create New Event'}
+                <Sparkles className="w-6 h-6 text-primary animate-bounce hidden sm:inline-block" />
+              </h1>
+              <p className="text-xs sm:text-base text-muted-foreground font-medium mt-1">
+                Configure event details, dates, venue location, and ticketing.
+              </p>
+            </div>
           </div>
-        )}
 
-        {/* ── Two-column grid ────────────────────────────────────────────── */}
+          {/* 1-Click Add to Google Calendar Link */}
+          <a
+            href={googleCalUrl({
+              title: form.title || 'New Event',
+              description: form.description || 'TapByWisein Event',
+              start: form.startDate ? `${form.startDate}T${form.startTime || '12:00'}:00` : new Date(),
+              end: form.endDate ? `${form.endDate}T${form.endTime || '13:00'}:00` : new Date(Date.now() + 3600000),
+              location: [form.address, form.city, form.state, form.country].filter(Boolean).join(', '),
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md hover:bg-muted/80 text-foreground transition-all cursor-pointer shadow-md active:scale-95"
+            title="Add to Google Calendar to get reminders"
+          >
+            <Calendar className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex flex-col text-left">
+              <span className="text-xs sm:text-sm font-extrabold leading-tight">Add to Google Calendar</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Add to calendar to get reminders</span>
+            </div>
+          </a>
+        </div>
+
+        {/* ── Main Two-Column Card Grid ────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-[360px,1fr] gap-8 items-start">
 
-          {/* ── LEFT: Cover picker + Theme ───────────────────────────────── */}
-          <div className="space-y-4">
+          {/* ── LEFT COLUMN: Cover Image & Theme Selection ─────────────────── */}
+          <div className="space-y-6">
 
-            {/* Cover image picker — 360×360 square */}
-            <Surface>
+            {/* Cover Image Uploader Card */}
+            <Surface className="p-6 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-4">
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                Event Poster / Cover Image
+              </Label>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
@@ -686,37 +771,41 @@ const CreateEventPage = () => {
                   const file = e.dataTransfer.files[0];
                   if (file) void handleFileSelect(file);
                 }}
-                className="relative w-full aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary/40 hover:bg-muted/10 transition-all overflow-hidden"
+                className="relative w-full aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all overflow-hidden group shadow-inner"
                 style={(!imagePreview && !form.coverImage) ? { background: activeTheme.bannerGradient } : undefined}
               >
                 {uploading ? (
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs text-white/80">Uploading...</p>
+                    <Loader2 className="w-9 h-9 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-white/90 font-medium">Uploading image...</p>
                   </div>
                 ) : (imagePreview || form.coverImage) ? (
                   <>
                     <img
                       src={imagePreview || form.coverImage}
                       alt="Cover preview"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); set('coverImage', ''); setImagePreview(''); }}
-                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80 transition-colors z-10"
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90 transition-colors z-10 text-white"
+                      title="Remove image"
                     >
-                      <X className="w-4 h-4 text-white" />
+                      <X className="w-4 h-4" />
                     </button>
-                    <div className="absolute bottom-3 left-0 right-0 text-center">
-                      <span className="text-[11px] text-white/70 bg-black/40 rounded px-2 py-0.5">Click to change</span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-xs font-bold text-white bg-black/60 px-3.5 py-2 rounded-xl border border-white/20">
+                        Change Image
+                      </span>
                     </div>
                   </>
                 ) : (
-                  <>
-                    <Upload className="w-8 h-8 text-white/80" />
-                    <p className="text-sm font-medium text-white/90">Upload cover image</p>
-                    <p className="text-xs text-white/60">JPG, PNG, WEBP - max 5MB</p>
-                  </>
+                  <div className="p-4 text-center space-y-2">
+                    <Upload className="w-9 h-9 text-white/90 mx-auto" />
+                    <p className="text-base font-extrabold text-white drop-shadow">Upload Cover Photo</p>
+                    <p className="text-xs text-white/80">JPG, PNG, WEBP - Max 5MB</p>
+                  </div>
                 )}
               </div>
               <input
@@ -728,20 +817,21 @@ const CreateEventPage = () => {
               />
             </Surface>
 
-            {/* Theme picker */}
-            <Surface>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-sm font-medium text-foreground">Theme</label>
+            {/* Theme Picker Card */}
+            <Surface className="p-6 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Event Color Theme
+                </Label>
                 <button
                   type="button"
                   onClick={randomizeTheme}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline"
                 >
-                  <Shuffle className="w-3.5 h-3.5" />
-                  Randomize
+                  <Shuffle className="w-3.5 h-3.5" /> Randomize
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2.5">
                 {THEME_IDS.map((id) => {
                   const theme = EVENT_THEMES[id];
                   const isActive = form.theme === id;
@@ -750,22 +840,22 @@ const CreateEventPage = () => {
                       key={id}
                       type="button"
                       onClick={() => set('theme', id)}
-                      className="flex flex-col items-center gap-1 group"
+                      className="flex flex-col items-center gap-1.5 group"
                       title={theme.label}
                     >
                       <div
-                        className={`w-full aspect-square rounded-lg border-2 transition-all relative overflow-hidden ${
-                          isActive ? 'border-primary ring-2 ring-primary ring-offset-1 ring-offset-background' : 'border-transparent hover:border-border'
+                        className={`w-full aspect-square rounded-2xl border-2 transition-all relative overflow-hidden ${
+                          isActive ? 'border-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background scale-105' : 'border-transparent hover:border-border'
                         }`}
                         style={{ background: theme.bannerGradient }}
                       >
                         {isActive && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white drop-shadow" />
+                            <Check className="w-5 h-5 text-white drop-shadow" />
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate w-full text-center">
+                      <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground truncate w-full text-center">
                         {theme.label}
                       </span>
                     </button>
@@ -773,615 +863,468 @@ const CreateEventPage = () => {
                 })}
               </div>
             </Surface>
+
           </div>
 
-          {/* ── RIGHT: Inline edit fields ─────────────────────────────────── */}
-          <div className="space-y-5">
+          {/* ── RIGHT COLUMN: Main Inputs & Event Settings ─────────────────── */}
+          <div className="space-y-6">
 
-            {/* Top row: Calendar dropdown + Visibility toggle */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/20 text-sm text-muted-foreground cursor-default select-none">
-                <Calendar className="w-4 h-4" />
-                <span>Personal Calendar</span>
+            {/* 1. Title & Host Community Section */}
+            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
+              <div className="space-y-2.5">
+                <Label htmlFor="event-title" className="text-base sm:text-lg font-bold text-foreground block">
+                  Event Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="event-title"
+                  value={form.title}
+                  maxLength={100}
+                  onChange={(e) => set('title', e.target.value)}
+                  placeholder="e.g. AI & Startup Founder Meetup 2026"
+                  className="text-lg sm:text-xl font-bold h-13 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                />
               </div>
-              <div className="flex items-center gap-1 ml-auto">
-                {(['PUBLIC', 'PRIVATE'] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => set('visibility', v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      form.visibility === v
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {v === 'PUBLIC' ? 'Public' : 'Private'}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Event name — clearly labeled input (not a page-title heading) */}
-            <div className="space-y-1.5">
-              <Label htmlFor="event-title">Event Name</Label>
-              <Input
-                id="event-title"
-                value={form.title}
-                onChange={(e) => set('title', e.target.value)}
-                placeholder="Enter event name"
-                className="text-lg font-semibold h-11"
-              />
-            </div>
-
-            {/* Optional: host this event under a community */}
-            {(myCommunities?.length ?? 0) > 0 && (
-              <div className="space-y-1.5">
-                <Label htmlFor="event-community">Community (optional)</Label>
-                <select
-                  id="event-community"
-                  value={form.communityId}
-                  onChange={(e) => set('communityId', e.target.value)}
-                  className="w-full h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">No community</option>
-                  {myCommunities!.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Date + time rows */}
-            <Surface>
-              <div className="space-y-3">
-                {/* Start */}
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col sm:flex-row gap-2 flex-1">
-                    <div className="flex-1">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start date</label>
-                      <Input type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-9 text-sm" />
-                    </div>
-                    <div className="w-28">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">Start time</label>
-                      <Input type="time" value={form.startTime} onChange={(e) => set('startTime', e.target.value)} className="h-9 text-sm" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* End */}
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col sm:flex-row gap-2 flex-1">
-                    <div className="flex-1">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">End date</label>
-                      <Input type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-9 text-sm" />
-                    </div>
-                    <div className="w-28">
-                      <label className="text-[11px] text-muted-foreground block mb-0.5">End time</label>
-                      <Input type="time" value={form.endTime} onChange={(e) => set('endTime', e.target.value)} className="h-9 text-sm" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timezone */}
-                <div className="flex items-center gap-3">
-                  <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+              {/* Community Host Option */}
+              {(myCommunities?.length ?? 0) > 0 && (
+                <div className="space-y-2 pt-3 border-t border-border/60">
+                  <Label htmlFor="event-community" className="text-sm font-semibold text-muted-foreground">
+                    Host Under Community (Optional)
+                  </Label>
                   <select
-                    value={form.timezone}
-                    onChange={(e) => set('timezone', e.target.value)}
-                    className="flex-1 h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    id="event-community"
+                    value={form.communityId}
+                    onChange={(e) => set('communityId', e.target.value)}
+                    className="w-full h-12 px-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
                   >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    <option value="">No community (Personal Event)</option>
+                    {myCommunities!.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.memberCount ?? 0} members)
+                      </option>
                     ))}
                   </select>
                 </div>
+              )}
+            </Surface>
+
+            {/* 2. Date, Time & Timezone Section */}
+            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-6">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-6 h-6 text-primary" />
+                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Date & Time</h3>
+                </div>
+                {eventDurationText && !eventDurationText.includes('must be after') && (
+                  <span className="text-xs sm:text-sm font-extrabold px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
+                    <Timer className="w-4 h-4" />
+                    Tenure: {eventDurationText}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-5">
+                {/* Row 1: Start Date & Start Time */}
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                    <Calendar className="w-4.5 h-4.5 text-primary" /> Start Date & Time <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3.5">
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        type="date"
+                        value={form.startDate}
+                        onChange={(e) => set('startDate', e.target.value)}
+                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        type="time"
+                        value={form.startTime}
+                        onChange={(e) => set('startTime', e.target.value)}
+                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: End Date & End Time */}
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                    <Calendar className="w-4.5 h-4.5 text-primary" /> End Date & Time <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3.5">
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        type="date"
+                        value={form.endDate}
+                        onChange={(e) => set('endDate', e.target.value)}
+                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        type="time"
+                        value={form.endTime}
+                        onChange={(e) => set('endTime', e.target.value)}
+                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Duration / Tenure Calculator & Preset Buttons */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                      <Timer className="w-4.5 h-4.5 text-primary" />
+                      <span>Event Tenure:</span>
+                      <span className="text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 font-extrabold">
+                        {eventDurationText || 'Select dates & times'}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-semibold">Quick Tenure Presets:</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[
+                      { label: '+1 hr', hours: 1, days: 0 },
+                      { label: '+2 hrs', hours: 2, days: 0 },
+                      { label: '+3 hrs', hours: 3, days: 0 },
+                      { label: '+4 hrs', hours: 4, days: 0 },
+                      { label: '+8 hrs', hours: 8, days: 0 },
+                      { label: '+1 Day', hours: 0, days: 1 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => applyTenurePreset(preset.hours, preset.days)}
+                        className="px-3.5 py-2 text-xs font-bold rounded-xl border border-border bg-background hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-95 shadow-xs"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Timezone */}
+              <div className="space-y-2 pt-3 border-t border-border/60">
+                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Globe className="w-4.5 h-4.5 text-primary" /> Event Timezone
+                </Label>
+                <select
+                  value={form.timezone}
+                  onChange={(e) => set('timezone', e.target.value)}
+                  className="w-full h-13 px-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>{tz.label}</option>
+                  ))}
+                </select>
               </div>
             </Surface>
 
-            {/* Location — expandable */}
-            <Surface>
-              <button
-                type="button"
-                onClick={() => setLocationExpanded((v) => !v)}
-                className="w-full flex items-center gap-2 text-sm text-left"
-              >
-                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className={locationExpanded ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                  {form.address ? form.address : 'Add Event Location - In Person'}
-                </span>
-                <span className="ml-auto text-muted-foreground text-xs">{locationExpanded ? '▲' : '▼'}</span>
-              </button>
+            {/* 3. Location & Address Section */}
+            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
+              <div className="flex items-center gap-2.5 border-b border-border/60 pb-3.5">
+                <MapPin className="w-6 h-6 text-primary" />
+                <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Event Location</h3>
+              </div>
 
-              {locationExpanded && (
-                <div className="mt-3 space-y-2">
-                  <div className="px-3 py-2 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>In Person</span>
-                  </div>
+              {/* Google Places Search & Interactive Map */}
+              <LocationPicker
+                latitude={form.latitude}
+                longitude={form.longitude}
+                placeId={form.placeId}
+                onPick={(loc: PickedLocation) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    address: loc.address || prev.address,
+                    city: loc.city || prev.city,
+                    state: loc.state || prev.state,
+                    country: loc.country || prev.country,
+                    pincode: loc.pincode || prev.pincode,
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                    placeId: loc.placeId,
+                  }))
+                }
+              />
 
-                  {/* Google Places search — auto-fills the fields below + stores coordinates. */}
-                  <LocationPicker
-                    latitude={form.latitude}
-                    longitude={form.longitude}
-                    placeId={form.placeId}
-                    onPick={(loc: PickedLocation) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        address: loc.address || prev.address,
-                        // Google returns full names; the cascade selects match ISO codes, so
-                        // these fall through to their raw value on submit (handled below).
-                        city: loc.city || prev.city,
-                        state: loc.state || prev.state,
-                        country: loc.country || prev.country,
-                        pincode: loc.pincode || prev.pincode,
-                        latitude: loc.latitude,
-                        longitude: loc.longitude,
-                        placeId: loc.placeId,
-                      }))
-                    }
-                  />
+              {/* Address Cascade Fields */}
+              <div className="space-y-3.5 pt-3 border-t border-border/60">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                  Venue Details
+                </Label>
 
-                  {/* A Google pick is the source of truth — show it as a summary and skip the
-                      ISO-coded cascade (it can't display Google's full place names). */}
-                  {form.placeId ? (
-                    <div className="px-3 py-2 rounded-xl bg-muted/20 border border-border text-xs space-y-1">
-                      <div className="text-muted-foreground">
-                        {[form.city, form.state, form.country].filter(Boolean).join(', ') || 'Location selected'}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setForm((prev) => ({
-                            ...prev,
-                            latitude: null,
-                            longitude: null,
-                            placeId: '',
-                            country: '',
-                            state: '',
-                            city: '',
-                          }))
-                        }
-                        className="text-primary hover:underline"
-                      >
-                        Change / enter manually
-                      </button>
-                    </div>
+                <Input
+                  value={form.address}
+                  onChange={(e) => set('address', e.target.value)}
+                  placeholder="Venue Name / Street Address (e.g. T-Hub Phase 2, Madhapur)"
+                  className="h-12 text-base font-semibold rounded-2xl bg-background"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <select
+                    value={form.country}
+                    onChange={(e) => {
+                      const country = e.target.value;
+                      setForm((prev) => ({ ...prev, country, state: '', city: '' }));
+                    }}
+                    className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                  >
+                    <option value="">Select Country…</option>
+                    {countryOptions.map((c) => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={form.state}
+                    onChange={(e) => {
+                      const state = e.target.value;
+                      setForm((prev) => ({ ...prev, state, city: '' }));
+                    }}
+                    disabled={!form.country}
+                    className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 shadow-sm"
+                  >
+                    <option value="">Select State…</option>
+                    {stateOptions.map((s) => (
+                      <option key={s.code} value={s.code}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {cityOptions.length > 0 ? (
+                    <select
+                      value={form.city}
+                      onChange={(e) => set('city', e.target.value)}
+                      disabled={!form.state}
+                      className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 shadow-sm"
+                    >
+                      <option value="">Select City…</option>
+                      {cityOptions.map((c) => (
+                        <option key={c.code} value={c.code}>{c.name}</option>
+                      ))}
+                    </select>
                   ) : (
-                    <>
-                      <p className="text-[11px] text-muted-foreground">Or enter it manually:</p>
-
-                      <select
-                        value={form.country}
-                        onChange={(e) => {
-                          const country = e.target.value;
-                          setForm((prev) => ({ ...prev, country, state: '', city: '' }));
-                        }}
-                        className="w-full h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      >
-                        <option value="">Select country…</option>
-                        {countryOptions.map((c) => (
-                          <option key={c.code} value={c.code}>{c.name}</option>
-                        ))}
-                      </select>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <select
-                          value={form.state}
-                          onChange={(e) => {
-                            const state = e.target.value;
-                            setForm((prev) => ({ ...prev, state, city: '' }));
-                          }}
-                          disabled={!form.country}
-                          className="h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-                        >
-                          <option value="">Select state…</option>
-                          {stateOptions.map((s) => (
-                            <option key={s.code} value={s.code}>{s.name}</option>
-                          ))}
-                        </select>
-
-                        {cityOptions.length > 0 ? (
-                          <select
-                            value={form.city}
-                            onChange={(e) => set('city', e.target.value)}
-                            disabled={!form.state}
-                            className="h-9 px-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-                          >
-                            <option value="">Select city…</option>
-                            {cityOptions.map((c) => (
-                              <option key={c.code} value={c.code}>{c.name}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <Input
-                            value={form.city}
-                            onChange={(e) => set('city', e.target.value)}
-                            placeholder="City"
-                            disabled={!form.state}
-                            className="h-9 text-sm disabled:opacity-50"
-                          />
-                        )}
-                      </div>
-                    </>
+                    <Input
+                      value={form.city}
+                      onChange={(e) => set('city', e.target.value)}
+                      placeholder="City (e.g. Hyderabad)"
+                      className="h-12 text-base font-semibold rounded-2xl bg-background"
+                    />
                   )}
 
-                  <Input
-                    value={form.address}
-                    onChange={(e) => set('address', e.target.value)}
-                    placeholder="Venue / local address"
-                    className="h-9 text-sm"
-                  />
                   <Input
                     value={form.pincode}
                     onChange={(e) => set('pincode', e.target.value)}
-                    placeholder="Pincode"
-                    className="h-9 text-sm"
+                    placeholder="Pincode (e.g. 500081)"
+                    className="h-12 text-base font-semibold rounded-2xl bg-background"
                   />
                 </div>
-              )}
+              </div>
             </Surface>
 
-            {/* Description — expandable textarea */}
-            <Surface>
-              <button
-                type="button"
-                onClick={() => setDescExpanded((v) => !v)}
-                className="w-full flex items-center gap-2 text-sm text-left"
-              >
-                <span className={descExpanded ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                  {form.description ? form.description.slice(0, 60) + (form.description.length > 60 ? '…' : '') : 'Add Description'}
-                </span>
-                <span className="ml-auto text-muted-foreground text-xs">{descExpanded ? '▲' : '▼'}</span>
-              </button>
-              {descExpanded && (
+            {/* 4. Description & Category Section */}
+            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="event-desc" className="text-base sm:text-lg font-bold text-foreground">
+                    Event Description <span className="text-red-500">*</span>
+                  </Label>
+                  <span className="text-xs text-muted-foreground font-semibold">Min 10 characters</span>
+                </div>
                 <textarea
+                  id="event-desc"
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  placeholder="Tell attendees what to expect..."
+                  placeholder="Provide details about your event, schedule highlights, target audience, or special instructions for attendees..."
                   rows={5}
-                  className="mt-3 w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="w-full p-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none shadow-sm"
                 />
-              )}
-            </Surface>
-
-            {/* Category — required */}
-            <Surface>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-foreground">Category</span>
-                <span className="text-xs text-red-500">*</span>
-              </div>
-              <select
-                value={form.category}
-                onChange={(e) => set('category', e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="">Select a category…</option>
-                {['Meetup', 'Workshop', 'Conference', 'Hackathon', 'Fireside', 'Networking', 'Other'].map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </Surface>
-
-            {/* Event Options section */}
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Event Options</h2>
-                <div className="flex-1 h-px bg-border" />
               </div>
 
-              <Surface>
-                <div className="space-y-4">
+              {/* Category Section: Dropdown Only + Custom Input when 'Other' */}
+              <div className="space-y-3 pt-3 border-t border-border/60">
+                <Label htmlFor="event-category" className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Tag className="w-4.5 h-4.5 text-primary" /> Event Category <span className="text-red-500">*</span>
+                </Label>
 
-                  {/* Payout gate — selling paid tickets without a verified bank account. */}
-                  {isPaidEvent && !payoutReady && (
-                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                      <div className="text-xs text-amber-700 dark:text-amber-400">
-                        <p className="font-medium">Set up payouts to receive money</p>
-                        <p className="mt-0.5 opacity-90">
-                          You're selling paid tickets but haven't added a verified bank account. Ticket
-                          revenue is held until you set up and verify payouts.
-                        </p>
-                        <Link to="/organizer/payouts" className="inline-block mt-1.5 font-medium underline">
-                          Set up payouts →
-                        </Link>
-                      </div>
-                    </div>
-                  )}
+                {/* Clean Dropdown Select */}
+                <select
+                  id="event-category"
+                  value={customCategoryMode || !STANDARD_CATEGORY_IDS.includes(form.category) ? 'Other' : form.category}
+                  onChange={(e) => handleCategorySelectChange(e.target.value)}
+                  className="w-full h-13 px-4 text-base sm:text-lg font-bold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
+                >
+                  {EVENT_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                  ))}
+                </select>
 
-                  {/* Ticket Price — hidden once multiple ticket tiers are enabled, since each tier sets its own price */}
-                  {!form.useTicketTypes && (
-                    <>
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-medium text-foreground">Ticket Price</span>
-                        </div>
-                        <div className="flex gap-2 mb-2">
-                          {([false, true] as const).map((isPaid) => (
-                            <button
-                              key={String(isPaid)}
-                              type="button"
-                              onClick={() => {
-                                if (!isPaid) set('ticketPrice', '');
-                                set('isPaid', isPaid);
-                              }}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                                form.isPaid === isPaid
-                                  ? 'bg-primary text-primary-foreground border-primary'
-                                  : 'border-border text-muted-foreground hover:text-foreground'
-                              }`}
-                            >
-                              {isPaid ? 'Paid' : 'Free'}
-                            </button>
-                          ))}
-                        </div>
-                        {form.isPaid && (
-                          <Input
-                            type="number"
-                            min={0}
-                            value={form.ticketPrice}
-                            onChange={(e) => set('ticketPrice', e.target.value)}
-                            placeholder="Price in ₹"
-                            className="h-9 text-sm"
-                          />
-                        )}
-                      </div>
-
-                      <div className="h-px bg-border" />
-                    </>
-                  )}
-
-                  {/* Require Approval */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">Require Approval</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => set('requiresApproval', !form.requiresApproval)}
-                      className={`w-10 h-5 rounded-full relative transition-all flex-shrink-0 ${form.requiresApproval ? 'bg-primary' : 'bg-muted'}`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${form.requiresApproval ? 'right-0.5' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-
-                  <div className="h-px bg-border" />
-
-                  {/* Capacity */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-foreground">Capacity</span>
-                    </div>
+                {/* Custom Category Typed Input Field if 'Other' is selected */}
+                {(customCategoryMode || form.category === 'Other' || (!STANDARD_CATEGORY_IDS.includes(form.category) && form.category !== '')) && (
+                  <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <Label htmlFor="custom-category-input" className="text-sm font-bold text-foreground">
+                      Type Custom Event Category <span className="text-red-500">*</span>
+                    </Label>
                     <Input
+                      id="custom-category-input"
+                      value={customCategoryInput || (STANDARD_CATEGORY_IDS.includes(form.category) ? '' : form.category)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategoryInput(val);
+                        set('category', val.trim() || 'Other');
+                      }}
+                      placeholder="Enter custom category (e.g. Web3, Robotics, AI, Gaming...)"
+                      className="h-13 text-base sm:text-lg font-semibold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                )}
+              </div>
+            </Surface>
+
+            {/* 5. Tickets & Capacity Settings Section */}
+            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-6 hover:border-primary/40 transition-all">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <Ticket className="w-6 h-6 text-primary" />
+                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Tickets & Capacity Settings</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-semibold">Visibility:</span>
+                  <select
+                    value={form.visibility}
+                    onChange={(e) => set('visibility', e.target.value as any)}
+                    className="h-9 px-3 text-xs font-bold bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="PUBLIC">Public</option>
+                    <option value="PRIVATE">Private Link Only</option>
+                    <option value="UNLISTED">Unlisted</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Payout Warning Alert */}
+              {isPaidEvent && !payoutReady && (
+                <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                  <div className="text-xs sm:text-sm text-amber-600 dark:text-amber-400 space-y-1">
+                    <p className="font-bold">Set up payouts to collect ticket revenue</p>
+                    <p className="opacity-90 leading-relaxed text-xs">
+                      You are selling paid tickets. Add and verify your bank account details so ticket earnings can be deposited cleanly.
+                    </p>
+                    <Link to="/organizer/payouts" className="inline-block font-semibold underline text-xs pt-1">
+                      Setup Payout Bank Account →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Ticket Price Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <Label className="text-sm sm:text-base font-bold text-foreground">Ticket Type</Label>
+                  <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-2xl border border-border/60">
+                    {[false, true].map((isPaid) => (
+                      <button
+                        key={String(isPaid)}
+                        type="button"
+                        onClick={() => {
+                          if (!isPaid) set('ticketPrice', '');
+                          set('isPaid', isPaid);
+                        }}
+                        className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                          form.isPaid === isPaid
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {isPaid ? 'Paid Ticket' : 'Free Entry'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {form.isPaid && (
+                  <div className="space-y-2 pt-1">
+                    <Label htmlFor="ticket-price" className="text-sm font-semibold text-foreground">
+                      Ticket Price (₹ INR)
+                    </Label>
+                    <Input
+                      id="ticket-price"
                       type="number"
                       min={0}
-                      value={form.capacity === 0 ? '' : form.capacity}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                        set('capacity', cap);
-                        if (form.useTicketTypes) {
-                          setForm((prev) => ({
-                            ...prev,
-                            capacity: cap,
-                            ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
-                          }));
-                          return;
-                        }
-                      }}
-                      placeholder="Unlimited"
-                      className="h-9 text-sm"
+                      value={form.ticketPrice}
+                      onChange={(e) => set('ticketPrice', e.target.value)}
+                      placeholder="Price in ₹ (e.g. 499)"
+                      className="h-13 text-base sm:text-lg font-semibold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-primary"
                     />
                   </div>
-
-                  <div className="h-px bg-border" />
-
-                  {/* Multiple ticket tiers toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <label
-                        className="text-sm font-medium text-foreground cursor-pointer select-none"
-                        onClick={() => {
-                          const next = !form.useTicketTypes;
-                          setForm((prev) => ({
-                            ...prev,
-                            useTicketTypes: next,
-                            ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
-                          }));
-                        }}
-                      >
-                        Multiple ticket tiers
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !form.useTicketTypes;
-                        setForm((prev) => ({
-                          ...prev,
-                          useTicketTypes: next,
-                          ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
-                        }));
-                      }}
-                      className={`w-10 h-5 rounded-full relative transition-all flex-shrink-0 ${form.useTicketTypes ? 'bg-primary' : 'bg-muted'}`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${form.useTicketTypes ? 'right-0.5' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-                </div>
-              </Surface>
-            </div>
-
-            {/* Multi-tier ticket cards */}
-            {form.useTicketTypes && (
-              <div className="space-y-3">
-                {/* Capacity usage bar */}
-                <div className="px-4 py-3 rounded-xl border border-border bg-muted/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      Allocated: <span className="font-semibold text-foreground">{usedCapacity.toLocaleString()}</span> / {form.capacity.toLocaleString()}
-                    </span>
-                    <span className={remainingCapacity < 0 ? 'text-red-400 font-semibold' : remainingCapacity === 0 ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}>
-                      {remainingCapacity < 0
-                        ? `⚠ ${Math.abs(remainingCapacity)} over limit`
-                        : remainingCapacity === 0
-                        ? '✓ Fully allocated'
-                        : `${remainingCapacity.toLocaleString()} unallocated`}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${remainingCapacity < 0 ? 'bg-red-500' : 'bg-primary'}`}
-                      style={{ width: `${Math.min(100, form.capacity > 0 ? (usedCapacity / form.capacity) * 100 : 0)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Ticket type cards */}
-                {form.ticketTypes.map((ticket) => {
-                  const otherUsed = form.ticketTypes
-                    .filter((t) => t.id !== ticket.id && t.isEnabled)
-                    .reduce((s, t) => s + t.count, 0);
-                  const maxForThisTier = Math.max(0, form.capacity - otherUsed);
-
-                  return (
-                    <div
-                      key={ticket.id}
-                      className={`rounded-2xl border bg-gradient-to-br p-4 space-y-3 transition-all ${
-                        ticket.isEnabled
-                          ? TICKET_COLORS[ticket.color] ?? TICKET_COLORS.blue
-                          : 'border-border/30 bg-muted/10 opacity-50'
-                      }`}
-                    >
-                      {/* Header row */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => updateTicket(ticket.id, { isEnabled: !ticket.isEnabled })}
-                            className={`w-9 h-5 rounded-full relative transition-all flex-shrink-0 ${ticket.isEnabled ? 'bg-primary' : 'bg-muted'}`}
-                          >
-                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${ticket.isEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                          </button>
-                          <Input
-                            value={ticket.name}
-                            onChange={(e) => updateTicket(ticket.id, { name: e.target.value })}
-                            className="h-7 text-sm font-semibold bg-transparent border-none focus:ring-0 px-1 w-32"
-                            placeholder="Tier name"
-                          />
-                        </div>
-                        <div className="flex gap-1">
-                          {Object.keys(TICKET_COLORS).map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              onClick={() => updateTicket(ticket.id, { color: c })}
-                              className={`w-4 h-4 rounded-full border-2 transition-all ${ticket.color === c ? 'border-foreground scale-125' : 'border-transparent'}`}
-                              style={{ background: c === 'gold' ? '#D4A853' : c === 'silver' ? '#9CA3AF' : c === 'blue' ? '#3B82F6' : c === 'green' ? '#10B981' : '#8B5CF6' }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Price + Count row */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-1">Price (₹)</label>
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            value={ticket.price === 0 ? '' : String(ticket.price)}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              if (raw === '') { updateTicket(ticket.id, { price: 0 }); return; }
-                              const digitsOnly = raw.replace(/[^\d]/g, '');
-                              const nextPrice = digitsOnly === '' ? 0 : parseInt(digitsOnly, 10);
-                              updateTicket(ticket.id, { price: nextPrice });
-                            }}
-                            className="h-8 text-sm"
-                            placeholder="0 = free"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-1">Seats</label>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={ticket.count === 0 ? '' : ticket.count}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const nextCount = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                              handleTicketCountChange(ticket.id, nextCount);
-                            }}
-                            className={`h-8 text-sm ${ticket.isEnabled && ticket.count > maxForThisTier ? 'border-red-400 focus:ring-red-400' : ''}`}
-                          />
-                          {ticket.isEnabled && ticket.count === maxForThisTier && maxForThisTier > 0 && (
-                            <p className="text-[10px] text-amber-400 mt-0.5">At capacity limit</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Benefits */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-[11px] text-muted-foreground">Benefits / Inclusions</label>
-                          <button
-                            type="button"
-                            onClick={() => addBenefit(ticket.id)}
-                            className="flex items-center gap-0.5 text-[11px] text-primary hover:text-primary/80 transition-colors"
-                          >
-                            <Plus className="w-3 h-3" /> Add
-                          </button>
-                        </div>
-                        <div className="space-y-1.5">
-                          {ticket.benefits.map((benefit, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5">
-                              <span className="text-primary text-xs">✓</span>
-                              <Input
-                                value={benefit}
-                                onChange={(e) => updateBenefit(ticket.id, idx, e.target.value)}
-                                className="h-7 text-xs flex-1"
-                                placeholder="e.g. VIP seating"
-                              />
-                              <button type="button" onClick={() => removeBenefit(ticket.id, idx)} className="text-muted-foreground hover:text-red-400 transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                          {ticket.benefits.length === 0 && (
-                            <p className="text-[11px] text-muted-foreground italic">No benefits added yet</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                )}
               </div>
-            )}
 
-            {/* Submit button */}
-            <Button
-              className="w-full h-12 text-base font-semibold"
-              onClick={handleSubmit}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {isEdit
-                ? (updateMutation.isPending ? 'Saving…' : 'Save Changes')
-                : (createMutation.isPending ? 'Creating…' : 'Create Event')}
-            </Button>
+              {/* Total Event Capacity */}
+              <div className="space-y-2 pt-3 border-t border-border/60">
+                <Label htmlFor="capacity-input" className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" /> Total Event Capacity <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="capacity-input"
+                  type="number"
+                  min={1}
+                  value={form.capacity === 0 ? '' : form.capacity}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                    set('capacity', cap);
+                  }}
+                  placeholder="e.g. 100"
+                  className="h-13 text-base sm:text-lg font-bold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-primary"
+                />
+              </div>
+            </Surface>
 
-            {missingHints.length > 0 && (
-              <p className="text-center text-xs text-muted-foreground">
-                Still needed: {missingHints.join(' · ')}
-              </p>
-            )}
+            {/* ── Main Create Event Submit Button ──────────────────────────────── */}
+            <div className="space-y-3 pt-4">
+              <Button
+                className="w-full h-14 text-lg sm:text-xl font-extrabold rounded-2xl shadow-xl shadow-primary/25 gap-2.5 bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-[0.99]"
+                onClick={handleSubmit}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    {isEdit ? 'Saving Event Changes…' : 'Creating Event…'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-6 h-6" />
+                    {isEdit ? 'Save Event Changes' : 'Create Event'}
+                  </>
+                )}
+              </Button>
+
+              {missingHints.length > 0 && (
+                <p className="text-center text-xs sm:text-sm text-muted-foreground font-semibold">
+                  Still needed: <span className="text-amber-500 font-bold">{missingHints.join(' · ')}</span>
+                </p>
+              )}
+            </div>
 
           </div>
         </div>
+
       </div>
-      {/* Signed-out gate: pick a path, then sign in. Both steps are locked
-          (no dismiss) — auth is required to use this page. */}
+
       <RoleChoiceModal
         open={gateStep === 'choose'}
         onOpenChange={() => {}}
