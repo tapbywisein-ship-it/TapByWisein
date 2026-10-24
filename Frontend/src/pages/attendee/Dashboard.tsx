@@ -224,7 +224,13 @@ const AttendeeDashboard = () => {
               className="hidden md:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-border overflow-hidden bg-muted text-foreground text-sm font-semibold hover:border-primary/50 transition-colors"
             >
               {user?.photoUrl || user?.avatar ? (
-                <img src={user.photoUrl || user.avatar} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={user.photoUrl || user.avatar}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  // Broken photo link: fall back to the initial, like the sidebar does.
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = (user?.name?.[0] ?? 'U').toUpperCase(); }}
+                />
               ) : (
                 (user?.name?.[0] ?? 'U').toUpperCase()
               )}

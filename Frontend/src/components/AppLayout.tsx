@@ -85,7 +85,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   };
   const isOrganizer = user?.role === 'organizer';
 
-
   return (
     <div className="min-h-screen bg-background flex relative">
       <AppBackgroundGrid />
