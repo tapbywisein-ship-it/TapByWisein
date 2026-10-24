@@ -233,7 +233,8 @@ const AttendeeDashboard = () => {
             <Surface key={label} padding="none" className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center">
               <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1.5 sm:mb-2" />
               <p className={`text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 tracking-tight ${gold ? 'text-primary' : 'text-foreground'}`}>
-                <Counter to={value} delay={150} />
+                {/* undefined = still loading, so the counter rolls digits instead of showing 0. */}
+                <AnimatedCounter value={value} />
               </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</p>
               <p className="text-[9px] sm:text-[11px] text-muted-foreground/60 mt-0.5">{sub}</p>
