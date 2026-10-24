@@ -366,6 +366,10 @@ const CreateEventPage = () => {
     })();
   }, [isEdit, editEvent]);
 
+  // Must run before the early returns below (Rules of Hooks): it used to be
+  // called further down, after them, so some renders skipped it.
+  const { resolvedTheme } = useTheme();
+
   // ─── Role guards ───────────────────────────────────────────────────────────
   // Kept below all hooks so hook order stays stable across renders (Rules of Hooks).
 
@@ -677,7 +681,6 @@ const CreateEventPage = () => {
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme !== 'light';
   const activeTheme = EVENT_THEMES[form.theme] ?? EVENT_THEMES.indigo;
 
