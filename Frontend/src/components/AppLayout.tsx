@@ -1,16 +1,15 @@
-import { ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
-import { useUnreadCount } from '@/hooks/useNotifications';
+import { NotificationBell } from '@/components/NotificationBell';
+import { SidebarSearchButton } from '@/components/SidebarSearchButton';
 import { useUnreadMessageCount } from '@/hooks/useMessages';
-import { useRequestOrganizer } from '@/hooks/useOrganizer';
 import { VerifyEmailBanner } from '@/components/VerifyEmailBanner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import { SearchDialog } from '@/components/SearchDialog';
 import {
@@ -22,23 +21,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import {
-  Bell, Calendar, Scan, User as UserIcon,
+  Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
-  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
+  Building2, Boxes, X, Menu, Crown, LayoutDashboard, CalendarDays,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/services/api';
 import { useSocket } from '@/lib/socket';
-import { toast } from 'sonner';
 
 // Left-sidebar nav (desktop). `badge` keys map to the live unread/pending counts.
 const navItems = [
@@ -49,7 +38,6 @@ const navItems = [
   { label: 'Messages',      icon: MessageCircle,   path: '/messages',       badge: 'messages' as const },
   { label: 'Connections',   icon: Users,           path: '/connections' },
   { label: 'Communities',   icon: Boxes,           path: '/communities' },
-  { label: 'Notifications', icon: Bell,            path: '/notifications',  badge: 'notifications' as const },
   { label: 'My Tickets',    icon: Ticket,          path: '/my-tickets' },
   { label: 'FK Score',      icon: Trophy,          path: '/gamification' },
   { label: 'Tap Card',      icon: QrCode,          path: '/apply-card' },
@@ -78,7 +66,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
-  const { data: unreadCount = 0 } = useUnreadCount();
   const { data: unreadMessages = 0 } = useUnreadMessageCount();
   const { data: pendingRequests } = useQuery({
     queryKey: ['connections', 'pending-count'],
@@ -88,13 +75,8 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   });
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Organizer request dialog
-  const [orgDialogOpen, setOrgDialogOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
-  const [orgOrganization, setOrgOrganization] = useState('');
-  // Gate the irreversible upgrade behind an explicit acknowledgement.
-  const [orgAck, setOrgAck] = useState(false);
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const handleSignOutConfirm = () => {
@@ -102,20 +84,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
     setSignOutOpen(false);
   };
   const isOrganizer = user?.role === 'organizer';
-
-  const orgRequestMutation = useRequestOrganizer();
-
-  const handleRequestOrganizer = () => {
-    orgRequestMutation.mutate(orgOrganization, {
-      onSuccess: () => {
-        toast.success("You're an organizer now. Welcome to your dashboard!");
-        setOrgDialogOpen(false);
-        setOrgOrganization('');
-        setOrgAck(false);
-        navigate('/organizer/dashboard');
-      },
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background flex relative">
@@ -135,29 +103,18 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         <div className="mb-3 px-1"><Logo size="md" collapsible clickable={false} /></div>
         {/* TEMP: logo no longer links to /dashboard */}
         {/* <div className="mb-3 px-1"><Logo size="md" collapsible /></div> */}
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          title="Search"
-          className="flex items-center gap-3 px-3 py-2 mb-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <Search className="w-5 h-5 flex-shrink-0" />
-          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Search</span>
-        </button>
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Primary">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge =
               item.badge === 'connect'
                 ? pendingRequests ?? 0
                 : item.badge === 'messages'
                 ? unreadMessages
-                : item.badge === 'notifications'
-                ? unreadCount
                 : 0;
             return (
+              <Fragment key={item.path}>
               <Link
-                key={item.path}
                 to={item.path}
                 title={item.label}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
@@ -180,9 +137,13 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                   </span>
                 )}
               </Link>
+              {/* Search sits right under Dashboard, so Dashboard stays at the top. */}
+              {index === 0 && <SidebarSearchButton onClick={() => setSearchOpen(true)} />}
+              </Fragment>
             );
           })}
-          {isOrganizer ? (
+          {/* "Become an organizer" is on the Profile page only. */}
+          {isOrganizer && (
             <Link
               to="/organizer/dashboard"
               title="Organizer portal"
@@ -191,44 +152,30 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
               <Building2 className="w-5 h-5 flex-shrink-0" />
               <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Organizer portal</span>
             </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setOrgDialogOpen(true)}
-              title="Become an organizer"
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <Building2 className="w-5 h-5 flex-shrink-0" />
-              <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Become an organizer</span>
-            </button>
           )}
         </nav>
         <div className="flex flex-col gap-1 pt-3 border-t border-border">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
-              >
-                <div className="w-5 h-5 rounded-full overflow-hidden bg-muted flex items-center justify-center text-foreground text-xs font-semibold border border-border flex-shrink-0">
-                  {user?.photoUrl ? (
-                    <img src={user.photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = user?.name?.[0]?.toUpperCase() || 'U'; }} />
-                  ) : (
-                    user?.name?.[0]?.toUpperCase() || 'U'
-                  )}
-                </div>
-                <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">{user?.name || 'Account'}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link to="/profile"><UserIcon className="w-4 h-4 mr-2" /> Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setSignOutOpen(true)} className="text-destructive focus:text-destructive">
-                <LogOut className="w-4 h-4 mr-2" /> Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Who's signed in. Profile is on the Dashboard header now, so this
+              is just the name, with Sign out always visible right under it. */}
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-foreground" title={user?.name || 'Account'}>
+            <div className="w-5 h-5 rounded-full overflow-hidden bg-muted flex items-center justify-center text-foreground text-xs font-semibold border border-border flex-shrink-0">
+              {user?.photoUrl ? (
+                <img src={user.photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = user?.name?.[0]?.toUpperCase() || 'U'; }} />
+              ) : (
+                user?.name?.[0]?.toUpperCase() || 'U'
+              )}
+            </div>
+            <span className="whitespace-nowrap truncate opacity-0 group-hover:opacity-100 transition-opacity">{user?.name || 'Account'}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSignOutOpen(true)}
+            title="Sign out"
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors w-full"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Sign out</span>
+          </button>
           {/* TEMP MOVED: Sign out now lives in the bottom account menu */}
           {/* <button
             type="button"
@@ -274,18 +221,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                   </span>
                 )}
               </Link>
-              <Link
-                to="/notifications"
-                aria-label="Notifications"
-                className="relative inline-flex w-9 h-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center leading-none">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -324,11 +260,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
                   <DropdownMenuItem asChild>
                     <Link to="/apply-card"><QrCode className="w-4 h-4 mr-2" /> Tap Card</Link>
                   </DropdownMenuItem>
-                  {!isOrganizer && (
-                    <DropdownMenuItem onSelect={() => setOrgDialogOpen(true)}>
-                      <Building2 className="w-4 h-4 mr-2" /> Become an organizer
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => setSignOutOpen(true)} className="text-destructive focus:text-destructive">
                     <LogOut className="w-4 h-4 mr-2" /> Sign out
@@ -454,62 +385,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
 
       {/* ── Global search (shared with the organizer layout) ── */}
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
-
-      {/* ── Become an organizer dialog ─────────────────────── */}
-      <Dialog
-        open={orgDialogOpen}
-        onOpenChange={(o) => { setOrgDialogOpen(o); if (!o) setOrgAck(false); }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Become an Organizer</DialogTitle>
-            <DialogDescription>
-              Unlock the host portal to create and manage your own events. Your account upgrades instantly.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="org-organization">Organization / Company <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Input
-                id="org-organization"
-                value={orgOrganization}
-                onChange={(e) => setOrgOrganization(e.target.value)}
-                placeholder="e.g. Acme Corp, Indie Events Co."
-              />
-            </div>
-
-            {/* Irreversible: there is no backend path from ORGANIZER back to
-                ATTENDEE, and the attendee dashboard redirects organizers away. */}
-            <div className="flex gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
-              <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                This is <strong>permanent</strong>. Once you become an organizer, your account can’t be switched back to a regular attendee account — you’ll use the organizer portal from now on.
-              </p>
-            </div>
-
-            <label className="flex items-start gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={orgAck}
-                onChange={(e) => setOrgAck(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
-              />
-              <span className="text-sm text-foreground">
-                I understand this can’t be undone and I want to become an organizer.
-              </span>
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOrgDialogOpen(false)}>Cancel</Button>
-            <Button
-              onClick={handleRequestOrganizer}
-              disabled={orgRequestMutation.isPending || !orgAck}
-            >
-              {orgRequestMutation.isPending ? 'Upgrading…' : 'Become an organizer'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* ── Sign out confirmation dialog ───────────────────── */}
       <SignOutConfirmDialog

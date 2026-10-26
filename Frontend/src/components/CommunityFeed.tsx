@@ -16,6 +16,7 @@ import {
   useUpdateComment,
   useToggleCommentLike,
   useDeleteComment,
+  isSendingPost,
 } from '@/hooks/useCommunities';
 import type { CommunityPost, CommunityPostComment, PostAuthor } from '@/services/communities.service';
 import {
@@ -205,6 +206,8 @@ const PostCard = ({
 
   const name = authorName(post.author);
   const p = post.author?.profile;
+  // Not saved yet: it has no real id, so likes, comments and edits can't work.
+  const sending = isSendingPost(post);
   const isAuthor = post.authorId === user?.id;
   const isWithinOneHour = Date.now() - new Date(post.createdAt).getTime() <= 60 * 60 * 1000;
   const canEdit = (isAuthor || canModerate) && isWithinOneHour;
@@ -226,7 +229,12 @@ const PostCard = ({
   };
 
   return (
-    <Surface className={post.isAnnouncement ? 'border-primary/30 bg-primary/5' : undefined}>
+    <Surface
+      className={[post.isAnnouncement && 'border-primary/30 bg-primary/5', sending && 'opacity-70']
+        .filter(Boolean)
+        .join(' ') || undefined}
+      aria-busy={sending || undefined}
+    >
       <div className="flex items-start gap-3">
         <Avatar author={post.author} />
         <div className="min-w-0 flex-1">
@@ -240,7 +248,15 @@ const PostCard = ({
               </span>
             )}
             {post.pinned && !post.isAnnouncement && <Pin className="w-3 h-3 text-muted-foreground" />}
-            <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{timeAgo(post.createdAt)}</span>
+            <span className="text-[11px] text-muted-foreground ml-auto shrink-0 inline-flex items-center gap-1">
+              {sending ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Sending…
+                </>
+              ) : (
+                timeAgo(post.createdAt)
+              )}
+            </span>
           </div>
           {(p?.position || p?.company) && (
             <p className="text-[11px] text-muted-foreground truncate">
@@ -292,6 +308,7 @@ const PostCard = ({
             <img src={post.imageUrl} alt="" loading="lazy" className="mt-2 rounded-lg max-h-80 object-cover" />
           )}
 
+          {!sending && (
           <div className="flex items-center gap-3.5 mt-2.5">
             {/* Like button */}
             <button
@@ -351,8 +368,9 @@ const PostCard = ({
               </button>
             )}
           </div>
+          )}
 
-          {showComments && (
+          {showComments && !sending && (
             <div className="mt-3 space-y-2.5 border-t border-border pt-3">
               {commentsLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -420,15 +438,17 @@ export const CommunityFeed = ({
   const submit = () => {
     const trimmed = body.trim();
     if (!trimmed) return;
+    // The post shows in the feed right away (see useCreateCommunityPost), so
+    // clear the composer now, like a chat app.
+    setBody('');
+    setAsAnnouncement(false);
+    // Your own post should always come into view.
+    followLatestRef.current = true;
     createPost.mutate(
       { body: trimmed, announce: isOwner && asAnnouncement },
       {
-        onSuccess: () => {
-          setBody('');
-          setAsAnnouncement(false);
-          // Your own post should always come into view.
-          followLatestRef.current = true;
-        },
+        // Put the text back so it isn't lost, unless something new was typed.
+        onError: () => setBody((current) => current || trimmed),
       }
     );
   };
@@ -532,8 +552,8 @@ export const CommunityFeed = ({
                   <Megaphone className="w-3.5 h-3.5" /> Announce (notifies all members)
                 </label>
               ) : <span />}
-              <Button size="sm" onClick={submit} disabled={!body.trim() || createPost.isPending}>
-                {createPost.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post'}
+              <Button size="sm" onClick={submit} disabled={!body.trim()}>
+                Post
               </Button>
             </div>
           </Surface>

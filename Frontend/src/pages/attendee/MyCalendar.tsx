@@ -84,20 +84,15 @@ const MyCalendarPage = () => {
   // Fetch hosted events (if organizer/admin)
   const { data: orgEventsData } = useMyOrgEvents(1, 100, isOrganizer);
 
-  // Fetch user's communities (owned + joined)
+  // Names of your own and followed communities, to label community calendars.
   const { data: myCommunities = [] } = useMyCommunities();
   const { data: followedCommunities = [] } = useFollowedCommunities();
-
-  // Unified unique list of user's communities
-  const availableCommunities = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; avatar?: string | null }>();
-    myCommunities.forEach((c) => {
-      if (c && c.id) map.set(c.id, { id: c.id, name: c.name, avatar: c.avatar });
+  const communityNames = useMemo(() => {
+    const map = new Map<string, { name: string; avatar?: string | null }>();
+    [...myCommunities, ...followedCommunities].forEach((c) => {
+      if (c?.id && !map.has(c.id)) map.set(c.id, { name: c.name, avatar: c.avatar });
     });
-    followedCommunities.forEach((c) => {
-      if (c && c.id && !map.has(c.id)) map.set(c.id, { id: c.id, name: c.name, avatar: c.avatar });
-    });
-    return Array.from(map.values());
+    return map;
   }, [myCommunities, followedCommunities]);
 
   // Combine and normalize events
@@ -197,33 +192,28 @@ const MyCalendarPage = () => {
       },
     ];
 
+    // A community gets a calendar only when you have events in it. Every
+    // followed community used to get one (usually with 0 events), and it
+    // popped in a few seconds late, after the community lists loaded.
+    // Registrations don't include the event's community, so its name comes
+    // from the event when present, else from your own/followed communities.
     const addedIds = new Set<string>();
-    availableCommunities.forEach((c) => {
-      addedIds.add(c.id);
+    allEvents.forEach((e) => {
+      if (!e.communityId || addedIds.has(e.communityId)) return;
+      const known = e.community ?? communityNames.get(e.communityId);
+      if (!known) return;
+      addedIds.add(e.communityId);
       options.push({
-        id: c.id,
-        name: c.name,
+        id: e.communityId,
+        name: known.name,
         isCommunity: true,
-        avatar: c.avatar,
-        count: commCounts.get(c.id) || 0,
+        avatar: known.avatar,
+        count: commCounts.get(e.communityId) || 0,
       });
     });
 
-    allEvents.forEach((e) => {
-      if (e.communityId && e.community && !addedIds.has(e.communityId)) {
-        addedIds.add(e.communityId);
-        options.push({
-          id: e.communityId,
-          name: e.community.name,
-          isCommunity: true,
-          avatar: e.community.avatar,
-          count: commCounts.get(e.communityId) || 0,
-        });
-      }
-    });
-
     return options;
-  }, [allEvents, availableCommunities]);
+  }, [allEvents, communityNames]);
 
   const activeCalendar = calendarOptions.find((c) => c.id === selectedCalendarId) || calendarOptions[0];
 

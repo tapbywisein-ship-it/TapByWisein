@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
 import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
@@ -22,7 +23,7 @@ import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2, MessageCircle,
 } from 'lucide-react';
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
@@ -189,6 +190,8 @@ const AttendeeDashboard = () => {
     { icon: CreditCard, label: 'My Card', to: '/apply-card' },
     { icon: Users, label: 'Network', to: '/connections' },
     { icon: Calendar, label: 'Events', to: '/events' },
+    // Share Card is already at the top of the page, so this slot opens Messages.
+    { icon: MessageCircle, label: 'Messages', to: '/messages' },
   ];
 
   return (
@@ -212,14 +215,36 @@ const AttendeeDashboard = () => {
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="self-start sm:self-auto shrink-0 gap-1.5 rounded-xl h-9"
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 className="w-3.5 h-3.5" /> Share Card
-          </Button>
+          <div className="self-start sm:self-auto shrink-0 flex items-center gap-2">
+            {/* Phones already have profile and the bell in the top bar, so only show them here on wider screens. */}
+            <Link
+              to="/profile"
+              aria-label="My profile"
+              title="My profile"
+              className="hidden md:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-border overflow-hidden bg-muted text-foreground text-sm font-semibold hover:border-primary/50 transition-colors"
+            >
+              {user?.photoUrl || user?.avatar ? (
+                <img
+                  src={user.photoUrl || user.avatar}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  // Broken photo link: fall back to the initial, like the sidebar does.
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = (user?.name?.[0] ?? 'U').toUpperCase(); }}
+                />
+              ) : (
+                (user?.name?.[0] ?? 'U').toUpperCase()
+              )}
+            </Link>
+            <NotificationBell className="hidden md:inline-flex rounded-xl border border-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xl h-9"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share Card
+            </Button>
+          </div>
         </motion.div>
 
         {/* Stats row */}
@@ -364,13 +389,6 @@ const AttendeeDashboard = () => {
                     <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">{a.label}</span>
                   </Link>
                 ))}
-                <button
-                  onClick={() => setShareOpen(true)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors group"
-                >
-                  <Share2 className="w-5 h-5 text-primary" />
-                  <span className="text-[11px] font-medium text-primary text-center leading-tight">Share Card</span>
-                </button>
               </div>
             </Surface>
           </motion.div>
@@ -559,33 +577,6 @@ const AttendeeDashboard = () => {
               </Surface>
             </motion.div>
           )}
-
-          {/* ── Discover ── */}
-          <motion.div {...fade(0.18)}>
-            <Surface hover className="h-full">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                  <span className="section-label">Discover</span>
-                </div>
-                <Link to="/discover" className="flex items-center gap-0.5 text-[11px] text-primary font-medium hover:underline">
-                  Explore <ArrowUpRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">Events tailored to your interests.</p>
-              <div className="grid grid-cols-2 gap-2">
-                {['Tech', 'Business', 'Design', 'Startup'].map((label) => (
-                  <Link
-                    key={label}
-                    to={`/discover?category=${label.toLowerCase()}`}
-                    className="py-3 rounded-xl bg-muted/40 hover:bg-secondary transition-colors text-center"
-                  >
-                    <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                  </Link>
-                ))}
-              </div>
-            </Surface>
-          </motion.div>
 
         </div>
       </div>
