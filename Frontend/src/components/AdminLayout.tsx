@@ -217,11 +217,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-muted-foreground/20 text-foreground font-semibold text-xs flex items-center justify-center overflow-hidden border border-border">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{getInitials(user?.name, user?.email)}</span>
-                  )}
+                  <UserAvatar avatar={user?.avatar} name={user?.name} email={user?.email} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground leading-tight">{displayName}</p>

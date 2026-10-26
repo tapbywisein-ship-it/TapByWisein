@@ -67,11 +67,20 @@ export class GamificationService {
   async getLeaderboard(page?: number, limit?: number) {
     const pagination = parsePaginationQuery({ page, limit });
 
+    // Everyone with an account, minus deactivated or deleted ones.
+    const where = { user: { isActive: true, deletedAt: null } };
+
     const [users, total] = await Promise.all([
       prisma.gamification.findMany({
+        where,
         include: {
+          // Any signed-in user can read the leaderboard, so select only public
+          // fields. `include` on user would send the whole account row for
+          // everyone listed.
           user: {
-            include: {
+            select: {
+              id: true,
+              username: true,
               profile: {
                 select: {
                   firstName: true,
@@ -83,11 +92,13 @@ export class GamificationService {
             },
           },
         },
-        orderBy: { fkScore: 'desc' },
+        // Ties keep a fixed order (earliest first), so nobody shows up on two
+        // pages or on none when paging through equal scores.
+        orderBy: [{ fkScore: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
         skip: pagination.skip,
         take: pagination.limit,
       }),
-      prisma.gamification.count(),
+      prisma.gamification.count({ where }),
     ]);
 
     const leaderboard = users.map((g, index) => ({
