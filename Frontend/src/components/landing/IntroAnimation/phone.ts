@@ -20,7 +20,7 @@ function profile(ctx: CanvasRenderingContext2D, s: PhoneStyle, k: number, at: Ve
   const [cx, cy] = at;
   const step = (i: number) => easeOutCubic(clamp(k * 1.6 - i * 0.18, 0, 1));
   // avatar
-  let e = step(0);
+  const e = step(0);
   if (e > 0) {
     ctx.save();
     ctx.globalAlpha = e;

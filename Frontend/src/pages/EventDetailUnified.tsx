@@ -251,7 +251,7 @@ const EventDetailUnified = () => {
 
   const organizerName = event.organizer?.profile
     ? `${event.organizer.profile.firstName} ${event.organizer.profile.lastName}`.trim()
-    : event.organizer?.email ?? 'Organizer';
+    : event.organizer?.username ?? 'Organizer';
   const organizerCompany = event.organizer?.profile?.company;
   const organizerAvatar = event.organizer?.profile?.avatar;
 

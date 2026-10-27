@@ -2,7 +2,7 @@ import { forwardRef, type ReactNode, type HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SurfaceProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
+  children?: ReactNode;
   /** Apply heavier shadow stack or glass elevation */
   elevated?: boolean;
   /** Padding scale; default 'md' */

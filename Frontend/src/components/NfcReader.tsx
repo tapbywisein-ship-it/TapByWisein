@@ -43,6 +43,7 @@ const decodeRecord = (rec: NDEFRecordLike): string | null => {
   const text = decoder.decode(buf);
   if (rec.recordType === 'text') {
     // First 1+1 bytes are status + lang code; strip them when present.
+    // eslint-disable-next-line no-control-regex -- the status byte is a control character
     return text.replace(/^[\x00-\x1F].{0,5}/, '');
   }
   return text;

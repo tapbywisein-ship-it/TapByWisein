@@ -94,7 +94,7 @@ const AttendeeDirectoryPage = () => {
   const someSelected  = selected.size > 0;
 
   const toggleOne = (userId: string) =>
-    setSelected((prev) => { const s = new Set(prev); s.has(userId) ? s.delete(userId) : s.add(userId); return s; });
+    setSelected((prev) => { const s = new Set(prev); if (s.has(userId)) s.delete(userId); else s.add(userId); return s; });
 
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(selectableIds));

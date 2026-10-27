@@ -1,5 +1,12 @@
 import { apiFetch } from './api';
 
+/** The chart series GET /admin/analytics sends (other totals omitted). */
+export interface AdminAnalytics {
+  signupsByMonth: { month: string; users: number }[];
+  connectionsByDay: { day: string; connections: number }[];
+  eventsByCategory: { name: string; events: number }[];
+}
+
 export const adminService = {
   async getDashboardStats() {
     return apiFetch<{ data: {
@@ -94,10 +101,10 @@ export const adminService = {
     return apiFetch<{ data: { key: string; value: string; type: string; label?: string }[] }>('/admin/settings');
   },
 
-  async updatePlatformSetting(key: string, value: string) {
+  async updatePlatformSetting(key: string, value: string, type?: string, label?: string) {
     return apiFetch<{ data: unknown }>(`/admin/settings/${key}`, {
       method: 'PUT',
-      body: JSON.stringify({ value }),
+      body: JSON.stringify({ value, type, label }),
     });
   },
 
@@ -115,7 +122,7 @@ export const adminService = {
   },
 
   async getAnalytics() {
-    return apiFetch<{ data: unknown }>('/admin/analytics');
+    return apiFetch<{ data: AdminAnalytics }>('/admin/analytics');
   },
 
   async suspendEvent(eventId: string) {
