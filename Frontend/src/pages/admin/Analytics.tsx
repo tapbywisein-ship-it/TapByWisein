@@ -8,9 +8,13 @@ import {
 import { TrendingUp, Users, Zap, Calendar, CreditCard, ArrowUpRight, AlertCircle } from 'lucide-react';
 import { useAdminDashboard, useAdminAnalytics } from '@/hooks/useAdmin';
 
-type TooltipEntry = { name: string; value: number | string; color?: string };
+type TooltipProps = {
+  active?: boolean;
+  label?: string;
+  payload?: { name: string; value: number | string; color?: string }[];
+};
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string }) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-primary/20 rounded-xl p-3 text-xs">

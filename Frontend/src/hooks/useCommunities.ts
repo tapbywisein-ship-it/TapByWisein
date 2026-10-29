@@ -109,8 +109,10 @@ type PostsResponse = { data: CommunityPost[]; pagination: unknown };
 
 type CommentsResponse = { data: CommunityPostComment[] };
 
+type Likeable = { id: string; isLiked?: boolean; likeCount?: number };
+
 /** Flip isLiked on one post or comment and move its like count to match. */
-const toggleLiked = <T extends { id: string; isLiked?: boolean; likeCount?: number }>(items: T[], id: string): T[] =>
+const toggleLiked = <T extends Likeable>(items: T[], id: string): T[] =>
   items.map((item) => {
     if (item.id !== id) return item;
     const willBeLiked = !item.isLiked;

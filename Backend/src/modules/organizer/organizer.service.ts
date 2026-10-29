@@ -1,13 +1,13 @@
 import prisma from '@config/database';
 import { assertEntitled } from '@config/entitlements';
 import { NotFoundError, ForbiddenError, BadRequestError } from '@utils/errors';
-import type { CreateSpeakerDto, CreateAgendaItemDto } from './organizer.validation';
 import { parsePaginationQuery, buildPaginationMeta } from '@utils/pagination';
 import { parseAttendeeCsv } from '@utils/csvImport';
 import { sendEmail, inviteClaimEmail, plainTextToEmailHtml } from '@utils/email';
 import { addEmailJob } from '@jobs/email.queue';
 import authService from '@modules/auth/auth.service';
 import logger from '@utils/logger';
+import type { CreateSpeakerDto, CreateAgendaItemDto } from './organizer.validation';
 
 export class OrganizerService {
   async getDashboardStats(organizerId: string) {
@@ -588,7 +588,7 @@ export class OrganizerService {
 
   async deleteCoupon(eventId: string, organizerId: string, couponId: string) {
     await this.assertEventOwner(eventId, organizerId);
-    // Scoped to the event so a coupon id from another event can't be deleted here.
+    // Scoped to the event. Like before, deleting a coupon that's already gone is not an error.
     await prisma.coupon.deleteMany({ where: { id: couponId, eventId } });
   }
 
