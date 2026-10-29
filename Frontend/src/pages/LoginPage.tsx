@@ -199,7 +199,7 @@ const LoginPage = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="login-pw" className="text-xs sm:text-sm font-medium">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                <Link to="/forgot-password" className="inline-block py-2 -my-2 text-xs text-primary hover:underline font-medium">
                   Forgot password?
                 </Link>
               </div>
@@ -267,7 +267,7 @@ const LoginPage = () => {
           <p className="text-center text-xs sm:text-sm text-muted-foreground pt-1">
             New to TapByWisein?{' '}
             {/* Forward the return path so signup doesn't lose "go back to /e/:id" */}
-            <Link to="/register" state={location.state} className="text-primary font-semibold hover:underline">
+            <Link to="/register" state={location.state} className="inline-block py-2 -my-2 text-primary font-semibold hover:underline">
               Create an account
             </Link>
           </p>

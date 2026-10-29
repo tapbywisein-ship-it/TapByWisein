@@ -170,6 +170,8 @@ const TITLE_BY_PREFIX: [string, string][] = [
   ["/verify-email", "Verify email"],
   ["/dashboard", "Dashboard"],
   ["/events", "Events"],
+  ["/communities", "Communities"],
+  ["/pricing", "Pricing"],
   ["/connect", "Connect"],
   ["/connections", "Connections"],
   ["/network-search", "Network Search"],

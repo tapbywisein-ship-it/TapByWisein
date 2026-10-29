@@ -6,6 +6,7 @@ import { PortalLayout } from '@/components/PortalLayout';
 import { useCommunity, useToggleCommunityMembership } from '@/hooks/useCommunities';
 import { CommunityFeed } from '@/components/CommunityFeed';
 import { useAppStore } from '@/store/appStore';
+import { useSeo } from '@/lib/useSeo';
 import { Boxes, Users, Calendar, MapPin, Check, Plus, Sparkles, AlertCircle } from 'lucide-react';
 
 const CommunityPublicPage = () => {
@@ -14,6 +15,21 @@ const CommunityPublicPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { data, isLoading, isError } = useCommunity(slug!);
   const toggle = useToggleCommunityMembership(slug!);
+
+  // Called before the early returns below so the hook order never changes.
+  const community = data?.community;
+  useSeo(
+    community
+      ? {
+          title: community.name,
+          description:
+            community.description?.trim().slice(0, 160) ||
+            `${community.name} - a community on TapByWisein.`,
+          canonical: `/community/${slug}`,
+          image: community.coverImage ?? community.avatar ?? undefined,
+        }
+      : {}
+  );
 
   // Signed-in visitors get their portal chrome (sidebar/nav per role, like the
   // event page); anonymous visitors keep the minimal shareable shell.
