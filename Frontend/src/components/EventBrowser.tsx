@@ -338,7 +338,7 @@ export const EventBrowser = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search events, topics, venues..."
-            className="w-full h-full bg-transparent border-none outline-none pl-3 text-[14px] font-[500] text-[color:var(--eb-ink-900)] placeholder:text-[color:var(--eb-ink-700)] focus:placeholder:text-[color:var(--eb-ink-800)] transition-colors"
+            className="w-full h-full bg-transparent border-none outline-none pl-3 text-base sm:text-[14px] font-[500] text-[color:var(--eb-ink-900)] placeholder:text-[color:var(--eb-ink-700)] focus:placeholder:text-[color:var(--eb-ink-800)] transition-colors"
           />
           <div className="absolute inset-0 border-[1.5px] border-transparent group-focus-within:border-[#3B82F6]/30 rounded-[1.5rem] lg:rounded-full pointer-events-none transition-colors opacity-0 group-focus-within:opacity-100 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.05)]" />
         </div>
@@ -353,7 +353,7 @@ export const EventBrowser = ({
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Location"
-            className="w-full h-full bg-transparent border-none outline-none pl-2.5 text-[14px] font-[500] text-[color:var(--eb-ink-900)] placeholder:text-[color:var(--eb-ink-700)] focus:placeholder:text-[color:var(--eb-ink-800)]"
+            className="w-full h-full bg-transparent border-none outline-none pl-2.5 text-base sm:text-[14px] font-[500] text-[color:var(--eb-ink-900)] placeholder:text-[color:var(--eb-ink-700)] focus:placeholder:text-[color:var(--eb-ink-800)]"
           />
         </div>
 
@@ -365,7 +365,7 @@ export const EventBrowser = ({
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full h-full bg-transparent border-none outline-none text-[14px] font-[500] text-[color:var(--eb-ink-800)] cursor-pointer"
+            className="w-full h-full bg-transparent border-none outline-none text-base sm:text-[14px] font-[500] text-[color:var(--eb-ink-800)] cursor-pointer"
           />
         </div>
 
@@ -454,7 +454,7 @@ export const EventBrowser = ({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-[10px] font-[700] tracking-[0.08em] uppercase ${labelColour}`}>{label}</p>
+                    <p className={`text-[11px] font-[700] tracking-[0.08em] uppercase ${labelColour}`}>{label}</p>
                     <p className="text-[14px] font-[700] text-[color:var(--eb-ink-900)] truncate">{ev.title}</p>
                     <p className="text-[12px] font-[500] text-[color:var(--eb-ink-500)] truncate">
                       {new Date(ev.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -514,7 +514,7 @@ export const EventBrowser = ({
                 <p className="text-[13px] font-[450] text-[color:var(--eb-ink-500)] mt-0.5">Check your connection and try again.</p>
               </div>
             </div>
-            <button onClick={() => refetch()} className="shrink-0 px-4 py-1.5 rounded-[8px] bg-[color:var(--eb-muted-bg)] border border-[color:var(--eb-border)] text-[color:var(--eb-ink-800)] text-[13px] font-[600] hover:bg-[color:var(--eb-surface)] transition-colors">
+            <button onClick={() => refetch()} className="shrink-0 px-4 py-2 rounded-[8px] bg-[color:var(--eb-muted-bg)] border border-[color:var(--eb-border)] text-[color:var(--eb-ink-800)] text-[13px] font-[600] hover:bg-[color:var(--eb-surface)] transition-colors">
               Retry
             </button>
           </motion.div>
@@ -570,18 +570,18 @@ export const EventBrowser = ({
                         )}
                         
                         {e.category && (
-                          <span className="absolute top-[10px] left-[10px] px-[10px] py-[4px] rounded-[8px] text-[10px] font-[700] tracking-[0.05em] uppercase bg-[color:var(--eb-badge)] text-[color:var(--eb-ink-800)] shadow-sm backdrop-blur-md border border-white/70">
+                          <span className="absolute top-[10px] left-[10px] px-[10px] py-[4px] rounded-[8px] text-[11px] font-[700] tracking-[0.05em] uppercase bg-[color:var(--eb-badge)] text-[color:var(--eb-ink-800)] shadow-sm backdrop-blur-md border border-white/70">
                             {e.category}
                           </span>
                         )}
                         <div className="absolute top-[10px] right-[10px] flex gap-2">
                           {isRegistered && (
-                            <span className="px-[10px] py-[4px] rounded-[8px] text-[10px] font-[700] tracking-[0.05em] uppercase bg-[#10B981]/95 text-white shadow-sm backdrop-blur-md flex items-center gap-[4px] border border-white/20">
+                            <span className="px-[10px] py-[4px] rounded-[8px] text-[11px] font-[700] tracking-[0.05em] uppercase bg-[#10B981]/95 text-white shadow-sm backdrop-blur-md flex items-center gap-[4px] border border-white/20">
                               <CheckCircle2 className="w-[12px] h-[12px]" /> Registered
                             </span>
                           )}
                           {!isRegistered && isWaitlisted && (
-                            <span className="px-[10px] py-[4px] rounded-[8px] text-[10px] font-[700] tracking-[0.05em] uppercase bg-[#F59E0B]/95 text-white shadow-sm backdrop-blur-md border border-white/20">
+                            <span className="px-[10px] py-[4px] rounded-[8px] text-[11px] font-[700] tracking-[0.05em] uppercase bg-[#F59E0B]/95 text-white shadow-sm backdrop-blur-md border border-white/20">
                               Waitlisted
                             </span>
                           )}
@@ -625,7 +625,7 @@ export const EventBrowser = ({
                         <div className="flex items-center justify-between pt-[14px] mt-[14px] border-t border-[color:var(--eb-line-soft)]">
                           <div className="flex items-center gap-[8px] min-w-0">
                             <div className="w-[22px] h-[22px] rounded-full bg-[color:var(--eb-surface)] border border-[color:var(--eb-border)] flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                              {organizerName ? <span className="text-[10px] font-[700] text-[color:var(--eb-ink-700)]">{organizerName.charAt(0).toUpperCase()}</span> : <Users className="w-[12px] h-[12px] text-[color:var(--eb-ink-400)]" />}
+                              {organizerName ? <span className="text-[11px] font-[700] text-[color:var(--eb-ink-700)]">{organizerName.charAt(0).toUpperCase()}</span> : <Users className="w-[12px] h-[12px] text-[color:var(--eb-ink-400)]" />}
                             </div>
                             <span className="text-[13px] font-[500] text-[color:var(--eb-ink-500)] truncate max-w-[120px]">
                               {organizerName || 'Organizer'}

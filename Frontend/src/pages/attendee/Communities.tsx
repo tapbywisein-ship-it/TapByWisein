@@ -153,7 +153,7 @@ const CommunitiesPage = () => {
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               Failed to load communities. Check your connection and try again.
             </span>
-            <button onClick={() => refetch()} className="shrink-0 text-xs font-medium underline underline-offset-2 hover:opacity-80">
+            <button onClick={() => refetch()} className="shrink-0 px-2 py-2 -mx-2 -my-2 text-xs font-medium underline underline-offset-2 hover:opacity-80">
               Retry
             </button>
           </div>
