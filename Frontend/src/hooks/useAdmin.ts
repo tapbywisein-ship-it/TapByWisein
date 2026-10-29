@@ -153,11 +153,13 @@ export function useMarkOrderDelivered() {
   });
 }
 
+type PlatformSettingUpdate = { key: string; value: string; type?: string; label?: string };
+
 export function useUpdatePlatformSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ key, value }: { key: string; value: string }) =>
-      adminService.updatePlatformSetting(key, value),
+    mutationFn: ({ key, value, type, label }: PlatformSettingUpdate) =>
+      adminService.updatePlatformSetting(key, value, type, label),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.settings() });
       toast.success('Setting updated');

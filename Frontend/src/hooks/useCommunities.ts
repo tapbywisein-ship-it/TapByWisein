@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   communitiesService,
   type CommunityPost,
+  type CommunityPostComment,
   type CreateCommunityPayload,
 } from '@/services/communities.service';
 import { useAppStore } from '@/store/appStore';
@@ -105,6 +106,23 @@ export function useCommunityPosts(communityId: string | undefined) {
 }
 
 type PostsResponse = { data: CommunityPost[]; pagination: unknown };
+
+type CommentsResponse = { data: CommunityPostComment[] };
+
+type Likeable = { id: string; isLiked?: boolean; likeCount?: number };
+
+/** Flip isLiked on one post or comment and move its like count to match. */
+const toggleLiked = <T extends Likeable>(items: T[], id: string): T[] =>
+  items.map((item) => {
+    if (item.id !== id) return item;
+    const willBeLiked = !item.isLiked;
+    const currentCount = item.likeCount ?? 0;
+    return {
+      ...item,
+      isLiked: willBeLiked,
+      likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
+    };
+  });
 
 const TEMP_POST_PREFIX = 'temp-';
 
@@ -215,22 +233,9 @@ export function useTogglePostLike(communityId: string) {
     onMutate: async (postId: string) => {
       await qc.cancelQueries({ queryKey: feedKeys.posts(communityId) });
       const previousData = qc.getQueryData(feedKeys.posts(communityId));
-      qc.setQueryData(feedKeys.posts(communityId), (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((p: any) => {
-            if (p.id !== postId) return p;
-            const willBeLiked = !p.isLiked;
-            const currentCount = p.likeCount ?? 0;
-            return {
-              ...p,
-              isLiked: willBeLiked,
-              likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
-            };
-          }),
-        };
-      });
+      qc.setQueryData<PostsResponse>(feedKeys.posts(communityId), (old) =>
+        old?.data ? { ...old, data: toggleLiked(old.data, postId) } : old
+      );
       return { previousData };
     },
     onError: (err: Error, _postId, context) => {
@@ -300,22 +305,9 @@ export function useToggleCommentLike(postId: string) {
     onMutate: async (commentId: string) => {
       await qc.cancelQueries({ queryKey: feedKeys.comments(postId) });
       const previousData = qc.getQueryData(feedKeys.comments(postId));
-      qc.setQueryData(feedKeys.comments(postId), (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((c: any) => {
-            if (c.id !== commentId) return c;
-            const willBeLiked = !c.isLiked;
-            const currentCount = c.likeCount ?? 0;
-            return {
-              ...c,
-              isLiked: willBeLiked,
-              likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
-            };
-          }),
-        };
-      });
+      qc.setQueryData<CommentsResponse>(feedKeys.comments(postId), (old) =>
+        old?.data ? { ...old, data: toggleLiked(old.data, commentId) } : old
+      );
       return { previousData };
     },
     onError: (err: Error, _commentId, context) => {

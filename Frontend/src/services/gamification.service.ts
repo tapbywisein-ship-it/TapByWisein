@@ -112,7 +112,7 @@ export const gamificationService = {
     } catch (error) {
       // Fallback to local rules if backend is unavailable
       console.warn('Failed to fetch score rules from backend, using local fallback');
-      return LOCAL_SCORE_RULES;
+      return [...LOCAL_SCORE_RULES];
     }
   },
 };

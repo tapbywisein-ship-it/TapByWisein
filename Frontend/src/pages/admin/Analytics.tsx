@@ -8,12 +8,18 @@ import {
 import { TrendingUp, Users, Zap, Calendar, CreditCard, ArrowUpRight, AlertCircle } from 'lucide-react';
 import { useAdminDashboard, useAdminAnalytics } from '@/hooks/useAdmin';
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+type TooltipProps = {
+  active?: boolean;
+  label?: string;
+  payload?: { name: string; value: number | string; color?: string }[];
+};
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-primary/20 rounded-xl p-3 text-xs">
         <p className="text-foreground font-medium mb-1">{label}</p>
-        {payload.map((p: any) => (
+        {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }}>
             {p.name}: {typeof p.value === 'number' && p.value > 1000 ? p.value.toLocaleString() : p.value}
           </p>
@@ -32,17 +38,17 @@ const AdminAnalyticsPage = () => {
   const hasError = statsError || analyticsError;
 
   // Use real data if available, otherwise show placeholder structure
-  const signupData = (analytics as any)?.signupsByMonth ?? [
+  const signupData = analytics?.signupsByMonth ?? [
     { month: 'Oct', users: 0 }, { month: 'Nov', users: 0 },
     { month: 'Dec', users: 0 }, { month: 'Jan', users: 0 },
     { month: 'Feb', users: 0 }, { month: 'Mar', users: 0 },
   ];
-  const connectionData = (analytics as any)?.connectionsByDay ?? [
+  const connectionData = analytics?.connectionsByDay ?? [
     { day: 'Mon', connections: 0 }, { day: 'Tue', connections: 0 },
     { day: 'Wed', connections: 0 }, { day: 'Thu', connections: 0 },
     { day: 'Fri', connections: 0 }, { day: 'Sat', connections: 0 }, { day: 'Sun', connections: 0 },
   ];
-  const categoryData = (analytics as any)?.eventsByCategory ?? [];
+  const categoryData = analytics?.eventsByCategory ?? [];
   const tierData = [
     { name: 'Free', value: (stats?.totalUsers ?? 0) - (stats?.totalFounderCards ?? 0) },
     { name: 'FounderCard', value: stats?.totalFounderCards ?? 0 },

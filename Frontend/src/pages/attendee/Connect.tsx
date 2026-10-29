@@ -30,7 +30,8 @@ const ConnectPage = () => {
 
   // The QR encodes the public-card URL. Anyone scanning it (TapByWisein app or a
   // generic QR reader) lands on the same /c/:slug page.
-  const cardSlug = (card as { publicSlug?: string | null; slug?: string | null } | undefined)?.publicSlug || (card as any)?.slug;
+  const cardLinks = card as { publicSlug?: string | null; slug?: string | null } | undefined;
+  const cardSlug = cardLinks?.publicSlug || cardLinks?.slug;
   const cardUrl = cardSlug
     ? `${window.location.origin}/c/${cardSlug}`
     : `${window.location.origin}/card/${user?.id ?? ''}`;

@@ -13,7 +13,6 @@ export function StoryAndProcessSection() {
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    let loop: NodeJS.Timeout;
     let isAutoPlaying = true;
     
     // Automatic timer-based flow
@@ -32,7 +31,7 @@ export function StoryAndProcessSection() {
     };
 
     runFlow();
-    loop = setInterval(() => runFlow(0), 14000);
+    const loop = setInterval(() => runFlow(0), 14000);
 
     // Scroll-based intersection observer
     const observer = new IntersectionObserver(

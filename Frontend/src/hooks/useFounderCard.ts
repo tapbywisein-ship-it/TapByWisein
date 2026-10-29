@@ -34,7 +34,7 @@ export function useCardAnalytics() {
 export function usePublicCard(userId: string) {
   return useQuery({
     queryKey: cardKeys.public(userId),
-    queryFn: () => founderCardService.getPublicCard(userId),
+    queryFn: () => founderCardService.getPublicCardByUserId(userId),
     select: (res) => res.data,
     enabled: !!userId,
   });

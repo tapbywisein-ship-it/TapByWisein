@@ -758,7 +758,9 @@ const MyCalendarPage = () => {
                           const d = parseISO(ev.startDate);
                           setCurrentDate(d);
                           setSelectedDay(d);
-                        } catch {}
+                        } catch {
+                          // Ignore an unparsable date and stay on the current view.
+                        }
                       }}
                       className="p-2.5 rounded-xl border border-border/70 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between gap-3 text-xs"
                     >

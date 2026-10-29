@@ -32,6 +32,14 @@ const RegisterPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const currentRole = useAppStore((s) => s.user?.role);
 
+  // Hooks must run before the early return below, or React sees fewer hooks
+  // once sign-up succeeds and isAuthenticated flips to true.
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   // Already signed in? Skip the signup form.
   if (isAuthenticated) {
     return <Navigate to={ROLE_HOME[currentRole ?? 'attendee'] ?? '/dashboard'} replace />;
@@ -46,12 +54,6 @@ const RegisterPage = () => {
   };
   const intendedRoute = navState.from?.pathname;
   const signupRole = navState.signupRole;
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
