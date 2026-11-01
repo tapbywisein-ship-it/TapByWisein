@@ -30,7 +30,8 @@ const GamificationPage = () => {
   // doubles as the unlock condition.
   const lockedBadges = (allBadges ?? []).filter((b) => !earnedIds.has(b.id));
   const leaderboard = leaderboardData?.leaderboard ?? [];
-  const history = historyData?.history ?? [];
+  // useScoreHistory returns the list itself; reading `.history` made it always empty.
+  const history = historyData ?? [];
   const myEntry = leaderboard.find((e) => e.userId === user?.id);
 
   // Track newly earned badges for the celebration animation
