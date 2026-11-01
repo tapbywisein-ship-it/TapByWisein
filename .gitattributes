@@ -1,0 +1,13 @@
+# Keep LF line endings in every checkout (Prettier expects "lf"), including on
+# Windows where core.autocrlf would otherwise convert files to CRLF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

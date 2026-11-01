@@ -6,6 +6,7 @@ import { PortalLayout } from '@/components/PortalLayout';
 import { useCommunity, useToggleCommunityMembership } from '@/hooks/useCommunities';
 import { CommunityFeed } from '@/components/CommunityFeed';
 import { useAppStore } from '@/store/appStore';
+import { useSeo } from '@/lib/useSeo';
 import { Boxes, Users, Calendar, MapPin, Check, Plus, Sparkles, AlertCircle } from 'lucide-react';
 
 const CommunityPublicPage = () => {
@@ -14,6 +15,21 @@ const CommunityPublicPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { data, isLoading, isError } = useCommunity(slug!);
   const toggle = useToggleCommunityMembership(slug!);
+
+  // Called before the early returns below so the hook order never changes.
+  const community = data?.community;
+  useSeo(
+    community
+      ? {
+          title: community.name,
+          description:
+            community.description?.trim().slice(0, 160) ||
+            `${community.name} - a community on TapByWisein.`,
+          canonical: `/community/${slug}`,
+          image: community.coverImage ?? community.avatar ?? undefined,
+        }
+      : {}
+  );
 
   // Signed-in visitors get their portal chrome (sidebar/nav per role, like the
   // event page); anonymous visitors keep the minimal shareable shell.
@@ -70,7 +86,9 @@ const CommunityPublicPage = () => {
     <>
         {/* Community header */}
         <Surface elevated className="space-y-4">
-          <div className="flex items-start gap-4">
+          {/* Wraps on phones: the name keeps at least 10rem and the Follow
+              button drops to a full-width row instead of squeezing it. */}
+          <div className="flex flex-wrap items-start gap-4">
             {c.avatar ? (
               <img src={c.avatar} alt="" className="h-16 w-16 rounded-2xl object-cover shrink-0" />
             ) : (
@@ -78,12 +96,12 @@ const CommunityPublicPage = () => {
                 <Boxes className="w-7 h-7 text-primary" />
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-foreground leading-tight">{c.name}</h1>
+            <div className="min-w-[10rem] flex-1">
+              <h1 className="text-2xl font-bold text-foreground leading-tight break-words">{c.name}</h1>
               {c.category && <p className="text-xs text-muted-foreground mt-0.5">{c.category}</p>}
               {orgName && <p className="text-sm text-muted-foreground mt-1">by {orgName}</p>}
             </div>
-            <Button size="sm" variant={isMember ? 'outline' : 'default'} onClick={onFollow} disabled={toggle.isPending} className="shrink-0">
+            <Button size="sm" variant={isMember ? 'outline' : 'default'} onClick={onFollow} disabled={toggle.isPending} className="shrink-0 max-sm:w-full">
               {isMember ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Following</> : <><Plus className="w-3.5 h-3.5 mr-1.5" /> Follow</>}
             </Button>
           </div>
@@ -94,8 +112,13 @@ const CommunityPublicPage = () => {
           </div>
         </Surface>
 
-        {/* Feed — posts, comments, organizer announcements */}
-        <CommunityFeed communityId={c.id} isMember={isMember} isOwner={isOwner} />
+        {/* Feed — posts, comments, organizer announcements. The feed scrolls
+            inside itself like a chat, so it needs a height limit: without one
+            it grows with every post, the composer ends up below all of them
+            and the page never opens at the latest post. */}
+        <div className="flex flex-col max-h-[70dvh] md:max-h-[640px]">
+          <CommunityFeed communityId={c.id} isMember={isMember} isOwner={isOwner} />
+        </div>
 
         {/* Events */}
         <div>

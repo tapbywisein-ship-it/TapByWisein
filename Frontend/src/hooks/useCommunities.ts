@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { communitiesService, type CreateCommunityPayload } from '@/services/communities.service';
+import {
+  communitiesService,
+  type CommunityPost,
+  type CommunityPostComment,
+  type CreateCommunityPayload,
+} from '@/services/communities.service';
+import { useAppStore } from '@/store/appStore';
 
 const keys = {
   mine: () => ['communities', 'mine'] as const,
@@ -99,19 +105,111 @@ export function useCommunityPosts(communityId: string | undefined) {
   });
 }
 
-/** Create a post or an announcement (announcement also notifies all members). */
+type PostsResponse = { data: CommunityPost[]; pagination: unknown };
+
+type CommentsResponse = { data: CommunityPostComment[] };
+
+type Likeable = { id: string; isLiked?: boolean; likeCount?: number };
+
+/** Flip isLiked on one post or comment and move its like count to match. */
+const toggleLiked = <T extends Likeable>(items: T[], id: string): T[] =>
+  items.map((item) => {
+    if (item.id !== id) return item;
+    const willBeLiked = !item.isLiked;
+    const currentCount = item.likeCount ?? 0;
+    return {
+      ...item,
+      isLiked: willBeLiked,
+      likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
+    };
+  });
+
+const TEMP_POST_PREFIX = 'temp-';
+
+/** True for a post that is shown in the feed but not saved by the server yet. */
+export const isSendingPost = (post: CommunityPost) => post.id.startsWith(TEMP_POST_PREFIX);
+
+/**
+ * Create a post or an announcement (announcement also notifies all members).
+ *
+ * The post appears in the feed straight away, marked as sending, and is
+ * swapped for the saved one when the server replies. Waiting for the POST and
+ * then a full refetch made every message take a few seconds to show up.
+ */
 export function useCreateCommunityPost(communityId: string) {
   const qc = useQueryClient();
+  const postsKey = feedKeys.posts(communityId);
+  const mutationKey = ['communities', 'create-post', communityId];
+
+  const removePost = (postId: string) =>
+    qc.setQueryData<PostsResponse>(postsKey, (old) =>
+      old ? { ...old, data: old.data.filter((p) => p.id !== postId) } : old
+    );
+
   return useMutation({
+    mutationKey,
     mutationFn: ({ body, announce }: { body: string; announce?: boolean }) =>
       announce
         ? communitiesService.announce(communityId, body)
         : communitiesService.createPost(communityId, { body }),
-    onSuccess: (_res, { announce }) => {
-      qc.invalidateQueries({ queryKey: feedKeys.posts(communityId) });
-      toast.success(announce ? 'Announcement posted — members notified' : 'Posted');
+    onMutate: async ({ body, announce }) => {
+      await qc.cancelQueries({ queryKey: postsKey });
+      const user = useAppStore.getState().user;
+      const [firstName = 'You', ...rest] = (user?.name ?? '').trim().split(/\s+/).filter(Boolean);
+      const tempPost: CommunityPost = {
+        id: `${TEMP_POST_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        communityId,
+        authorId: user?.id ?? '',
+        body,
+        imageUrl: null,
+        pinned: !!announce,
+        isAnnouncement: !!announce,
+        createdAt: new Date().toISOString(),
+        author: {
+          id: user?.id ?? '',
+          profile: {
+            firstName,
+            lastName: rest.join(' '),
+            avatar: user?.avatar ?? null,
+            company: user?.company ?? null,
+            position: user?.designation ?? null,
+          },
+        },
+        commentCount: 0,
+        likeCount: 0,
+        isLiked: false,
+      };
+      // The API lists pinned posts first, then newest first: a new post goes
+      // right after the pinned ones (an announcement goes to the very top).
+      qc.setQueryData<PostsResponse>(postsKey, (old) => {
+        if (!old) return old;
+        const at = announce ? 0 : old.data.filter((p) => p.pinned).length;
+        return { ...old, data: [...old.data.slice(0, at), tempPost, ...old.data.slice(at)] };
+      });
+      return { tempId: tempPost.id };
     },
-    onError: (err: Error) => toast.error(err.message),
+    onSuccess: (res, { announce }, context) => {
+      qc.setQueryData<PostsResponse>(postsKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.map((p) =>
+                p.id === context?.tempId ? { ...p, ...res.data, commentCount: res.data.commentCount ?? 0 } : p
+              ),
+            }
+          : old
+      );
+      if (announce) toast.success('Announcement posted — members notified');
+    },
+    onError: (err: Error, _vars, context) => {
+      if (context?.tempId) removePost(context.tempId);
+      toast.error(err.message || 'Could not send your post');
+    },
+    onSettled: () => {
+      // Sync with the server once the last send finishes. Refetching while
+      // another post is still sending would drop it from the feed until it lands.
+      if (qc.isMutating({ mutationKey }) === 1) qc.invalidateQueries({ queryKey: postsKey });
+    },
   });
 }
 
@@ -135,22 +233,9 @@ export function useTogglePostLike(communityId: string) {
     onMutate: async (postId: string) => {
       await qc.cancelQueries({ queryKey: feedKeys.posts(communityId) });
       const previousData = qc.getQueryData(feedKeys.posts(communityId));
-      qc.setQueryData(feedKeys.posts(communityId), (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((p: any) => {
-            if (p.id !== postId) return p;
-            const willBeLiked = !p.isLiked;
-            const currentCount = p.likeCount ?? 0;
-            return {
-              ...p,
-              isLiked: willBeLiked,
-              likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
-            };
-          }),
-        };
-      });
+      qc.setQueryData<PostsResponse>(feedKeys.posts(communityId), (old) =>
+        old?.data ? { ...old, data: toggleLiked(old.data, postId) } : old
+      );
       return { previousData };
     },
     onError: (err: Error, _postId, context) => {
@@ -220,22 +305,9 @@ export function useToggleCommentLike(postId: string) {
     onMutate: async (commentId: string) => {
       await qc.cancelQueries({ queryKey: feedKeys.comments(postId) });
       const previousData = qc.getQueryData(feedKeys.comments(postId));
-      qc.setQueryData(feedKeys.comments(postId), (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((c: any) => {
-            if (c.id !== commentId) return c;
-            const willBeLiked = !c.isLiked;
-            const currentCount = c.likeCount ?? 0;
-            return {
-              ...c,
-              isLiked: willBeLiked,
-              likeCount: willBeLiked ? currentCount + 1 : Math.max(0, currentCount - 1),
-            };
-          }),
-        };
-      });
+      qc.setQueryData<CommentsResponse>(feedKeys.comments(postId), (old) =>
+        old?.data ? { ...old, data: toggleLiked(old.data, commentId) } : old
+      );
       return { previousData };
     },
     onError: (err: Error, _commentId, context) => {

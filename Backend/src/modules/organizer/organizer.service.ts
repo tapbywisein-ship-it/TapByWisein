@@ -7,6 +7,7 @@ import { sendEmail, inviteClaimEmail, plainTextToEmailHtml } from '@utils/email'
 import { addEmailJob } from '@jobs/email.queue';
 import authService from '@modules/auth/auth.service';
 import logger from '@utils/logger';
+import type { CreateSpeakerDto, CreateAgendaItemDto } from './organizer.validation';
 
 export class OrganizerService {
   async getDashboardStats(organizerId: string) {
@@ -587,7 +588,8 @@ export class OrganizerService {
 
   async deleteCoupon(eventId: string, organizerId: string, couponId: string) {
     await this.assertEventOwner(eventId, organizerId);
-    await prisma.coupon.delete({ where: { id: couponId } }).catch(() => {});
+    // Scoped to the event. Like before, deleting a coupon that's already gone is not an error.
+    await prisma.coupon.deleteMany({ where: { id: couponId, eventId } });
   }
 
   /**
@@ -783,18 +785,7 @@ export class OrganizerService {
       .catch(() => {});
   }
 
-  async createSpeaker(
-    eventId: string,
-    organizerId: string,
-    dto: {
-      name: string;
-      title?: string;
-      company?: string;
-      bio?: string;
-      avatar?: string;
-      position?: number;
-    }
-  ) {
+  async createSpeaker(eventId: string, organizerId: string, dto: CreateSpeakerDto) {
     await this.assertEventOwner(eventId, organizerId);
     if (!dto.name?.trim()) throw new BadRequestError('Name is required');
     return prisma.eventSpeaker.create({
@@ -812,20 +803,11 @@ export class OrganizerService {
 
   async deleteSpeaker(eventId: string, organizerId: string, speakerId: string): Promise<void> {
     await this.assertEventOwner(eventId, organizerId);
-    await prisma.eventSpeaker.delete({ where: { id: speakerId } });
+    const { count } = await prisma.eventSpeaker.deleteMany({ where: { id: speakerId, eventId } });
+    if (count === 0) throw new NotFoundError('Speaker');
   }
 
-  async createAgendaItem(
-    eventId: string,
-    organizerId: string,
-    dto: {
-      startsAt: string;
-      endsAt?: string;
-      title: string;
-      description?: string;
-      speakerId?: string;
-    }
-  ) {
+  async createAgendaItem(eventId: string, organizerId: string, dto: CreateAgendaItemDto) {
     await this.assertEventOwner(eventId, organizerId);
     if (!dto.title?.trim()) throw new BadRequestError('Title is required');
     if (!dto.startsAt) throw new BadRequestError('Start time is required');
@@ -843,7 +825,8 @@ export class OrganizerService {
 
   async deleteAgendaItem(eventId: string, organizerId: string, itemId: string): Promise<void> {
     await this.assertEventOwner(eventId, organizerId);
-    await prisma.eventAgendaItem.delete({ where: { id: itemId } });
+    const { count } = await prisma.eventAgendaItem.deleteMany({ where: { id: itemId, eventId } });
+    if (count === 0) throw new NotFoundError('Agenda item');
   }
 
   /** Custom registration question CRUD — organizer-only. */
@@ -895,8 +878,14 @@ export class OrganizerService {
     });
     if (!event) throw new NotFoundError('Event');
 
+    const question = await prisma.eventQuestion.findFirst({
+      where: { id: questionId, eventId },
+      select: { id: true },
+    });
+    if (!question) throw new NotFoundError('Question');
+
     return prisma.eventQuestion.update({
-      where: { id: questionId },
+      where: { id: question.id },
       data: {
         prompt: dto.prompt?.trim(),
         type: dto.type,
@@ -913,7 +902,8 @@ export class OrganizerService {
       select: { id: true },
     });
     if (!event) throw new NotFoundError('Event');
-    await prisma.eventQuestion.delete({ where: { id: questionId } });
+    const { count } = await prisma.eventQuestion.deleteMany({ where: { id: questionId, eventId } });
+    if (count === 0) throw new NotFoundError('Question');
   }
 
   /**

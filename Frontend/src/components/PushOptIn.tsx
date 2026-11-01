@@ -38,7 +38,7 @@ export const PushOptIn = () => {
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not update notifications');
-      setState(await getPushState().catch(() => 'default'));
+      setState(await getPushState().catch((): PushState => 'default'));
     } finally {
       setBusy(false);
     }

@@ -69,6 +69,7 @@ export interface Event {
   description: string;
   startDate: string;
   endDate: string;
+  timezone?: string | null;
   locationType: 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
   address?: string;
   city?: string;
