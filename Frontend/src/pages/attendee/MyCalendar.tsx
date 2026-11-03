@@ -469,7 +469,7 @@ const MyCalendarPage = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                    className="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Previous month"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -477,7 +477,7 @@ const MyCalendarPage = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                    className="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Next month"
                   >
                     <ChevronRight className="w-4 h-4" />

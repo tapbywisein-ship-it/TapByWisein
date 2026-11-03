@@ -443,13 +443,17 @@ const ProfilePage = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{window.location.host}/card/</span>
+              {/* On phones the link prefix takes its own line so the input
+                  isn't squeezed next to it. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="w-full sm:w-auto text-sm text-muted-foreground">
+                  {window.location.host}/card/
+                </span>
                 <Input
                   value={usernameDraft}
                   onChange={(e) => setUsernameDraft(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30))}
                   placeholder="your-handle"
-                  className="font-mono"
+                  className="flex-1 min-w-0 font-mono"
                 />
                 <Button
                   size="sm"
@@ -488,7 +492,7 @@ const ProfilePage = () => {
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                 placeholder="Tell your story…"
                 rows={4}
-                className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background resize-none"
+                className="w-full px-3 py-2 text-base sm:text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background resize-none"
               />
               {form.bio && form.bio.trim().length <= BIO_MIN_LENGTH_EXCLUSIVE && (
                 <p className="text-xs text-destructive mt-1">
@@ -833,7 +837,7 @@ const ProfilePage = () => {
                 Connections grouped by event you attended together.
               </p>
             </div>
-            <Link to="/people-i-met" className="text-xs text-primary hover:underline">
+            <Link to="/people-i-met" className="shrink-0 whitespace-nowrap text-xs text-primary hover:underline">
               Open →
             </Link>
           </div>

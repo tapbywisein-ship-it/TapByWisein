@@ -108,13 +108,14 @@ const CommunitiesPage = () => {
               Discover and join communities. Share them or invite your connections.
             </p>
           </div>
-          <div className="relative">
+          {/* Full width on phones, a compact box beside the title from sm up. */}
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search communities..."
-              className="pl-9 h-8 text-sm w-56"
+              className="pl-9 h-10 sm:h-8 text-sm w-full sm:w-56"
             />
           </div>
         </div>
@@ -187,9 +188,9 @@ const CommunitiesPage = () => {
                     {/* Cover */}
                     <button type="button" onClick={() => navigate(`/community/${c.slug}`)} className="relative block text-left">
                       {c.coverImage ? (
-                        <img src={c.coverImage} alt={c.name} loading="lazy" className="w-full aspect-[16/9] object-cover" />
+                        <img src={c.coverImage} alt={c.name} loading="lazy" className="w-full aspect-[5/2] sm:aspect-[16/9] object-cover" />
                       ) : (
-                        <div className="w-full aspect-[16/9]" style={{ background: theme.gradient }} aria-hidden />
+                        <div className="w-full aspect-[5/2] sm:aspect-[16/9]" style={{ background: theme.gradient }} aria-hidden />
                       )}
                       {c.category && (
                         <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background/85 text-foreground backdrop-blur-sm border border-border">
@@ -247,11 +248,11 @@ const CommunitiesPage = () => {
                             {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Join'}
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Share" onClick={() => share(c)}>
+                        <Button variant="ghost" size="sm" className="w-9 h-9 p-0" title="Share" aria-label="Share" onClick={() => share(c)}>
                           <Share2 className="w-4 h-4" />
                         </Button>
                         {isAuthenticated && (
-                          <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Invite connections" onClick={() => openInvite(c)}>
+                          <Button variant="ghost" size="sm" className="w-9 h-9 p-0" title="Invite connections" aria-label="Invite connections" onClick={() => openInvite(c)}>
                             <UserPlus className="w-4 h-4" />
                           </Button>
                         )}

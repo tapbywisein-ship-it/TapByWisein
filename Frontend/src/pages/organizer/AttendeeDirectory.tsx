@@ -196,7 +196,7 @@ const AttendeeDirectoryPage = () => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 pl-10 text-sm bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full px-3 py-2 pl-10 text-base sm:text-sm bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Search by name or company..."
             />
           </div>
