@@ -1074,7 +1074,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.startDate}
                       onChange={(e) => set('startDate', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1085,7 +1085,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.startTime}
                       onChange={(e) => set('startTime', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1100,7 +1100,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.endDate}
                       onChange={(e) => set('endDate', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1111,7 +1111,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.endTime}
                       onChange={(e) => set('endTime', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1279,7 +1279,7 @@ const CreateEventPage = () => {
                               onChange={(e) => set('city', e.target.value)}
                               placeholder="City"
                               disabled={!form.state}
-                              className="h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
+                              className="h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
                             />
                           )}
                         </div>
@@ -1292,7 +1292,7 @@ const CreateEventPage = () => {
                           value={form.address}
                           onChange={(e) => set('address', e.target.value)}
                           placeholder="Venue / local address *"
-                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                       <div>
@@ -1300,7 +1300,7 @@ const CreateEventPage = () => {
                           value={form.pincode}
                           onChange={(e) => set('pincode', e.target.value)}
                           placeholder="Pincode *"
-                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                     </div>

@@ -497,7 +497,7 @@ const AttendeeDashboard = () => {
                             {name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                         {(p?.position || p?.company) && (
                           <p className="text-[11px] text-muted-foreground truncate w-full mb-1">
                             {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -547,7 +547,7 @@ const AttendeeDashboard = () => {
                               {name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                           {(p?.position || p?.company) && (
                             <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
                               {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -564,7 +564,7 @@ const AttendeeDashboard = () => {
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7 mt-auto"
+                          className="w-full text-xs h-8 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >

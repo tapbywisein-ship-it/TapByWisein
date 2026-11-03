@@ -92,7 +92,7 @@ const BlastsTab = () => {
               onChange={(e) => setBody(e.target.value)}
               rows={5}
               placeholder="Write your message to attendees…"
-              className="w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              className="w-full px-3 py-2 text-base sm:text-sm bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
 

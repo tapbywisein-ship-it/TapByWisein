@@ -24,6 +24,11 @@ import {
   Heart, Edit3, Check, X,
 } from 'lucide-react';
 
+// Phones and tablets (a finger is the main pointer). matchMedia is missing in
+// some test environments, hence the optional call.
+const isTouchScreen =
+  typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
+
 const authorName = (a: PostAuthor | null | undefined) =>
   a?.profile ? `${a.profile.firstName} ${a.profile.lastName}`.trim() : 'Member';
 
@@ -530,13 +535,19 @@ export const CommunityFeed = ({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Phone keyboards have no Shift+Enter, so there Enter is a new
+                // line and the Post button sends.
+                if (e.key === 'Enter' && !e.shiftKey && !isTouchScreen) {
                   e.preventDefault();
                   submit();
                 }
               }}
               rows={2}
-              placeholder="Share something with the community… (Enter to post, Shift+Enter for newline)"
+              placeholder={
+                isTouchScreen
+                  ? 'Share something with the community…'
+                  : 'Share something with the community… (Enter to post, Shift+Enter for a new line)'
+              }
               maxLength={4000}
               className="resize-none"
             />

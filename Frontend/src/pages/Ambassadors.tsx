@@ -222,7 +222,7 @@ function ApplyPanel({
         onChange={(e) => setMotivation(e.target.value)}
         placeholder="Why do you want to lead your city's community? (20+ chars)"
         rows={4}
-        className="w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+        className="w-full px-3 py-2 text-base sm:text-sm bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
       />
       <Button
         size="sm"

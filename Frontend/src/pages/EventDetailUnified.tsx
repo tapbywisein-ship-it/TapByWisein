@@ -831,19 +831,22 @@ const EventDetailUnified = () => {
             >
               <Share2 className="w-3.5 h-3.5" /> Share event
             </Button>
-            <AddToCalendar
-              event={{
-                title: event.title,
-                description: event.description ?? undefined,
-                start: event.startDate,
-                end: event.endDate,
-                location:
-                  event.locationType === 'VIRTUAL'
-                    ? event.meetingUrl ?? 'Online'
-                    : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
-                url: `${window.location.origin}/e/${event.id}`,
-              }}
-            />
+            {/* Nothing to add to a calendar once the event is over. */}
+            {!isPast && (
+              <AddToCalendar
+                event={{
+                  title: event.title,
+                  description: event.description ?? undefined,
+                  start: event.startDate,
+                  end: event.endDate,
+                  location:
+                    event.locationType === 'VIRTUAL'
+                      ? event.meetingUrl ?? 'Online'
+                      : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
+                  url: `${window.location.origin}/e/${event.id}`,
+                }}
+              />
+            )}
             {isAuthenticated && (
               <ReportButton
                 targetType="EVENT"
