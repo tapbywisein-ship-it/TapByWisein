@@ -3,6 +3,7 @@ import { NotFoundError } from '@utils/errors';
 import { LEVEL_THRESHOLDS, SCORE_VALUES, BADGE_NAMES } from '@config/constants';
 import { parsePaginationQuery, buildPaginationMeta } from '@utils/pagination';
 import notificationsService from '@modules/notifications/notifications.service';
+import logger from '@utils/logger';
 
 export class GamificationService {
   async getUserScore(userId: string) {
@@ -21,47 +22,67 @@ export class GamificationService {
     points: number,
     metadata?: Record<string, unknown>
   ): Promise<void> {
-    const currentGamification = await prisma.gamification.findUnique({ where: { userId } });
-    const currentScore = currentGamification?.fkScore ?? 0;
-    const currentLevel = currentGamification?.level ?? 1;
+    // The database adds the points itself (increment), so two awards landing at
+    // the same moment both count. Reading the score, adding in code and writing
+    // it back let one award overwrite the other. The history row doesn't depend
+    // on the score, so both writes go out together.
+    const [scoreRow] = await Promise.all([
+      prisma.gamification.upsert({
+        where: { userId },
+        update: { fkScore: { increment: points } },
+        create: { userId, fkScore: Math.max(0, points) },
+      }),
+      prisma.scoreHistory.create({
+        data: {
+          userId,
+          action,
+          points,
+          metadata: metadata
+            ? (metadata as import('@prisma/client').Prisma.InputJsonValue)
+            : undefined,
+        },
+      }),
+    ]);
 
     // Clamp at 0 so a buggy double-debit can't push a score negative.
-    const newScore = Math.max(0, currentScore + points);
-    const newLevel = this.calculateLevel(newScore);
-
-    await prisma.gamification.upsert({
-      where: { userId },
-      update: { fkScore: newScore, level: newLevel },
-      create: { userId, fkScore: newScore, level: newLevel },
-    });
-
-    await prisma.scoreHistory.create({
-      data: {
-        userId,
-        action,
-        points,
-        metadata: metadata
-          ? (metadata as import('@prisma/client').Prisma.InputJsonValue)
-          : undefined,
-      },
-    });
-
-    // Check for level up
-    if (newLevel > currentLevel) {
-      const levelInfo = this.getLevelInfo(newScore);
-      await notificationsService
-        .createNotification(
-          userId,
-          'LEVEL_UP',
-          'Level Up!',
-          `Congratulations! You've reached Level ${newLevel}: ${levelInfo.label}`,
-          { newLevel, oldLevel: currentLevel }
-        )
-        .catch(() => {});
+    let newScore = scoreRow.fkScore;
+    if (newScore < 0) {
+      await prisma.gamification.updateMany({
+        where: { userId, fkScore: { lt: 0 } },
+        data: { fkScore: 0 },
+      });
+      newScore = 0;
     }
 
-    // Check badge conditions
-    await this.checkAndAwardBadges(userId).catch(() => {});
+    const oldLevel = scoreRow.level;
+    const newLevel = this.calculateLevel(newScore);
+    if (newLevel > oldLevel) {
+      // Only ever raise the stored level: when two awards run at once their
+      // writes can land in either order. The count also makes sure only one
+      // of them sends the level-up notification.
+      const raised = await prisma.gamification.updateMany({
+        where: { userId, level: { lt: newLevel } },
+        data: { level: newLevel },
+      });
+      if (raised.count > 0) {
+        const levelInfo = this.getLevelInfo(newScore);
+        await notificationsService
+          .createNotification(
+            userId,
+            'LEVEL_UP',
+            'Level Up!',
+            `Congratulations! You've reached Level ${newLevel}: ${levelInfo.label}`,
+            { newLevel, oldLevel }
+          )
+          .catch(() => {});
+      }
+    }
+
+    // Badge checks run about ten queries and the caller doesn't need their
+    // result, so the request no longer waits for them.
+    this.checkAndAwardBadges(userId).catch((err: unknown) =>
+      logger.warn('Badge check failed', { userId, err })
+    );
   }
 
   async getLeaderboard(page?: number, limit?: number) {
@@ -131,7 +152,7 @@ export class GamificationService {
       connectionCount,
       eventCount,
       gamification,
-      badgeCount,
+      earnedBadges,
       hasFounderCard,
       qrScanCount,
       profile,
@@ -147,7 +168,11 @@ export class GamificationService {
         where: { userId, status: { in: ['REGISTERED', 'ATTENDED'] } },
       }),
       prisma.gamification.findUnique({ where: { userId } }),
-      prisma.userBadge.count({ where: { userId } }),
+      // Fetched with the counts instead of after them: one round trip fewer.
+      prisma.userBadge.findMany({
+        where: { userId },
+        select: { badge: { select: { name: true } } },
+      }),
       prisma.founderCard.findUnique({ where: { userId, status: 'ACTIVE' } } as {
         where: { userId: string; status: 'ACTIVE' };
       }),
@@ -159,12 +184,7 @@ export class GamificationService {
       prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } }),
     ]);
 
-    const earnedBadgeNames = await prisma.userBadge
-      .findMany({
-        where: { userId },
-        include: { badge: { select: { name: true } } },
-      })
-      .then((badges) => new Set(badges.map((b) => b.badge.name)));
+    const earnedBadgeNames = new Set(earnedBadges.map((b) => b.badge.name));
 
     const badgesToAward: string[] = [];
 
@@ -226,9 +246,15 @@ export class GamificationService {
       const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
       if (!badge) continue;
 
-      await prisma.userBadge.create({
-        data: { userId, badgeId: badge.id },
+      // Two badge checks for the same user can now overlap (they run in the
+      // background), so both may decide to award the same badge. skipDuplicates
+      // lets the database keep only one; the other check sees count 0 and
+      // skips the notification and the points.
+      const awarded = await prisma.userBadge.createMany({
+        data: [{ userId, badgeId: badge.id }],
+        skipDuplicates: true,
       });
+      if (awarded.count === 0) continue;
 
       await notificationsService
         .createNotification(
@@ -245,8 +271,6 @@ export class GamificationService {
         badgeId: badge.id,
       }).catch(() => {});
     }
-
-    void badgeCount; // suppress unused-var warning
   }
 
   calculateLevel(score: number): number {
