@@ -31,7 +31,7 @@ describe("Score Rules Consistency", () => {
       'Register for an event': 20,
       'Attend an event (check-in)': 50,
       'Make a connection': 10,
-      'Activate your Founder Card': 100,
+      'Activate your Tap Card': 100,
       'Scan a QR code': 5,
       'Earn a badge': 25,
       'First login': 10,

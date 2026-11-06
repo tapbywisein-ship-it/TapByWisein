@@ -178,7 +178,7 @@ const ApplyCardPage = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Founder Card</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tap Card</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">

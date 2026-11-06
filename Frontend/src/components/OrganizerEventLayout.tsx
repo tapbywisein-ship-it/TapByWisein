@@ -140,7 +140,9 @@ export const OrganizerEventLayout = () => {
 
           {/* Tab strip */}
           <nav aria-label="Event tabs" className="border-b border-border">
-            <div className="flex gap-1 -mb-px overflow-x-auto">
+            {/* 9 tabs can't fit on a phone, so they scroll. The fade at the right
+                edge shows there are more; from md up they fit and it's off. */}
+            <div className="flex gap-1 -mb-px overflow-x-auto [mask-image:linear-gradient(to_right,black_85%,transparent)] md:[mask-image:none]">
               {TABS.map((tab) => (
                 <NavLink
                   key={tab.to || 'index'}
