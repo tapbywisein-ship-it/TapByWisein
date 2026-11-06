@@ -48,7 +48,7 @@ Frontend (`cd Frontend`):
 
 ```sh
 npm run dev                              # http://localhost:5173
-npx tsc --noEmit -p tsconfig.app.json    # the real typecheck (see below)
+npm run typecheck                        # tsc on tsconfig.app.json + tsconfig.node.json
 npm test                                 # vitest
 npm run lint
 npm run build
@@ -65,13 +65,13 @@ npm test         # jest; tests mock external services and need no .env
 npm run lint
 ```
 
-### `npm run typecheck` checks nothing
+### Typecheck before you push
 
-In `Frontend/`, `npm run typecheck` runs `tsc --noEmit` against the root `tsconfig.json`,
-which has `"files": []` and only references, so it always passes. `vite build` doesn't
-typecheck either. Run `npx tsc --noEmit -p tsconfig.app.json` before calling frontend
-work done. CI currently runs the empty check, so a green CI is not enough: a merge with
-undefined components has already crashed live pages this way.
+`vite build` doesn't typecheck, so an undefined component builds fine and only crashes
+in the browser. That's how `/events` went down after #108. In `Frontend/`,
+`npm run typecheck` points `tsc` at `tsconfig.app.json` and `tsconfig.node.json`. Don't
+change it back to plain `tsc --noEmit`: the root `tsconfig.json` has `"files": []`, so
+that checks nothing. CI runs the typecheck, the build and the tests for both halves.
 
 ## Safety
 
@@ -147,12 +147,19 @@ Any PR that touches `Backend/prisma/schema.prisma`:
 
 ## Pull requests
 
-- One branch per change. Group related fixes into one PR rather than many small ones.
+- Start every branch from the latest `main` (`git fetch origin`, then
+  `git switch -c <branch> origin/main`). Don't keep working in an old branch or a
+  separate copy of the project: a branch that started a month earlier is how #108 undid
+  newer fixes when its conflicts were resolved.
+- Merge `main` into a long-running branch at least daily, so conflicts stay small.
 - Resolve conflicts by merging `main` into the branch. Don't force-push or rewrite history.
+  After resolving conflicts, run the typecheck and tests again before pushing.
+- One branch per change, kept small enough to review. Group related fixes into one PR,
+  but don't mix unrelated work (styling, schema changes, new endpoints) in one PR.
 - The PR description says the problem, the cause, the fix, and what was tested,
   including what couldn't be tested. Call out any database or env var step.
-- Before opening a PR: the real frontend typecheck, frontend and backend tests,
-  `npm run build` in each changed half, and a browser check of anything visible.
+- Before opening a PR: `npm run typecheck` and `npm test` in `Frontend/`, `npm test` in
+  `Backend/`, `npm run build` in each changed half, and a browser check of anything visible.
 
 ## Personal settings
 
