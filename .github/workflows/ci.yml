@@ -30,8 +30,12 @@ jobs:
         run: npx prisma generate
       - name: Typecheck & build
         run: npm run build
-      - name: Tests
-        run: npm test
+      # Integration tests are skipped here: they need a real Postgres, and
+      # tests/integration/auth.test.ts still tests the old /auth/register,
+      # /login, /refresh-token and /logout endpoints, which were removed when
+      # sign-in moved to Supabase. Unit tests mock the database and run here.
+      - name: Tests (unit)
+        run: npm test -- --testPathIgnorePatterns=tests/integration
 
   frontend:
     name: Frontend — typecheck & build

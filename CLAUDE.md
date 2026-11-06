@@ -87,9 +87,15 @@ Backend (`cd Backend`):
 
 ```sh
 npm run build    # tsc + tsc-alias; this is CI's backend typecheck
-npm test         # jest; tests mock external services and need no .env
+npm test -- --testPathIgnorePatterns=tests/integration   # unit tests, as CI runs them
 npm run lint
 ```
+
+Unit tests mock the database and external services, so they need no `.env`. If your
+`Backend/.env` holds production credentials, move it aside while testing: `dotenv` loads
+it into the test run. `tests/integration/` needs a real Postgres and still tests the old
+`/auth/register`, `/login`, `/refresh-token` and `/logout` endpoints, which were removed
+when sign-in moved to Supabase, so it fails and CI skips it.
 
 ### Typecheck before you push
 
@@ -97,7 +103,8 @@ npm run lint
 in the browser. That's how `/events` went down after #108. In `Frontend/`,
 `npm run typecheck` points `tsc` at `tsconfig.app.json` and `tsconfig.node.json`. Don't
 change it back to plain `tsc --noEmit`: the root `tsconfig.json` has `"files": []`, so
-that checks nothing. CI runs the typecheck, the build and the tests for both halves.
+that checks nothing. CI runs the typecheck, the build and the tests for both halves
+(backend unit tests only).
 
 ## Safety
 
@@ -184,8 +191,9 @@ Any PR that touches `Backend/prisma/schema.prisma`:
   but don't mix unrelated work (styling, schema changes, new endpoints) in one PR.
 - The PR description says the problem, the cause, the fix, and what was tested,
   including what couldn't be tested. Call out any database or env var step.
-- Before opening a PR: `npm run typecheck` and `npm test` in `Frontend/`, `npm test` in
-  `Backend/`, `npm run build` in each changed half, and a browser check of anything visible.
+- Before opening a PR: `npm run typecheck` and `npm test` in `Frontend/`, the backend
+  unit tests (see Commands), `npm run build` in each changed half, and a browser check of
+  anything visible.
 
 ## Personal settings
 
