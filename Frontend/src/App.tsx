@@ -188,6 +188,13 @@ const TITLE_BY_PREFIX: [string, string][] = [
   ["/apply-card", "Tap Card"],
   ["/card-analytics", "Card Analytics"],
   ["/organizer/payouts", "Payouts"],
+  ["/organizer/dashboard", "Organizer Dashboard"],
+  ["/organizer/events/create", "Create Event"],
+  // Also covers one event's pages (/organizer/events/:id/...).
+  ["/organizer/events", "Events"],
+  ["/organizer/attendees", "Attendee Directory"],
+  ["/organizer/communities", "Communities"],
+  ["/organizer/leads", "Leads"],
   ["/organizer", "Organizer"],
   ["/admin", "Admin"],
 ];

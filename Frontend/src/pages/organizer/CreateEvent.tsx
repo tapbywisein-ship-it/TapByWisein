@@ -1012,7 +1012,7 @@ const CreateEventPage = () => {
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder="Enter event name..."
-                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                  className={`w-full h-10 px-3 rounded-lg text-base sm:text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
                     isDark
                       ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
                       : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
@@ -1333,7 +1333,7 @@ const CreateEventPage = () => {
                     onChange={(e) => set('description', e.target.value)}
                     placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
                     rows={4}
-                    className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
+                    className={`mt-3 w-full px-3 py-2.5 text-base sm:text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
                       isDark
                         ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
                         : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
@@ -1500,7 +1500,7 @@ const CreateEventPage = () => {
                         }
                       }}
                       placeholder="Unlimited"
-                      className="w-16 h-7 text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
+                      className="w-20 sm:w-16 h-7 text-base sm:text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
                     />
                     <div className="flex flex-col -space-y-0.5 border-l border-border/60 pl-1 pr-0.5">
                       <button

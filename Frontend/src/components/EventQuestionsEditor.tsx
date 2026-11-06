@@ -124,7 +124,7 @@ export const EventQuestionsEditor = ({ eventId }: EventQuestionsEditorProps) => 
             <select
               value={type}
               onChange={(e) => setType(e.target.value as 'TEXT' | 'TEXTAREA' | 'SELECT')}
-              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-base sm:text-sm"
             >
               <option value="TEXT">Short text</option>
               <option value="TEXTAREA">Long text</option>

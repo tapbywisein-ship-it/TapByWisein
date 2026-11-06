@@ -235,7 +235,7 @@ export const EventSpeakersAgendaEditor = ({ eventId }: Props) => {
             <select
               value={aSpeaker}
               onChange={(e) => setASpeaker(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-base sm:text-sm"
             >
               <option value="">- None -</option>
               {(speakers.data ?? []).map((s) => (
