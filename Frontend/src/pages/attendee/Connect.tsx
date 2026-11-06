@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -7,19 +7,20 @@ import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAppStore } from '@/store/appStore';
-import { useMyCard } from '@/hooks/useFounderCard';
+import { useMyCard, useCardAnalytics } from '@/hooks/useFounderCard';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useActiveEventId } from '@/lib/useActiveEvent';
 import { connectionsService } from '@/services/connections.service';
 import { QrScanner } from '@/components/QrScanner';
 import { NfcReader } from '@/components/NfcReader';
 import { NfcProvisioner } from '@/components/NfcProvisioner';
-import { Scan, QrCode, Nfc, Sparkles, UserPlus } from 'lucide-react';
+import { Scan, QrCode, Nfc, Sparkles, UserPlus, Loader2 } from 'lucide-react';
 
 const ConnectPage = () => {
   const [mode, setMode] = useState<'scan' | 'show' | 'nfc'>('show');
   const user = useAppStore((s) => s.user);
   const { data: card } = useMyCard();
+  const { data: analytics } = useCardAnalytics();
   const { data: profileData } = useMyProfile();
   const activeEventId = useActiveEventId();
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const ConnectPage = () => {
 
   // The QR encodes the public-card URL. Anyone scanning it (TapByWisein app or a
   // generic QR reader) lands on the same /c/:slug page.
-  const cardSlug = (card as { publicSlug?: string | null } | undefined)?.publicSlug;
+  const cardSlug = (card as { publicSlug?: string | null; slug?: string | null } | undefined)?.publicSlug || (card as any)?.slug;
   const cardUrl = cardSlug
     ? `${window.location.origin}/c/${cardSlug}`
     : `${window.location.origin}/card/${user?.id ?? ''}`;
@@ -62,7 +63,7 @@ const ConnectPage = () => {
           {([
             { key: 'show', label: 'My QR', icon: QrCode },
             { key: 'scan', label: 'Scan', icon: Scan },
-            { key: 'nfc', label: 'NFC', icon: Nfc },
+            { key: 'nfc', label: 'Tap', icon: Nfc },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -89,12 +90,12 @@ const ConnectPage = () => {
               </div>
             </div>
 
-            <div className="bg-foreground p-5 rounded-2xl inline-block mb-6">
+            <div className="bg-white p-5 rounded-2xl inline-block mb-6 shadow-md border border-border">
               <QRCodeSVG
                 value={cardUrl}
                 size={200}
-                bgColor="#E8E0D0"
-                fgColor="#0D0D0D"
+                bgColor="#ffffff"
+                fgColor="#000000"
                 level="M"
               />
             </div>
@@ -129,7 +130,7 @@ const ConnectPage = () => {
 
             {card?.status === 'ACTIVE' && (
               <div className="mt-6 border-t border-border pt-4 text-left">
-                <p className="mb-2 text-sm font-semibold text-foreground">Provision an NFC sticker</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">Provision a Tap Card sticker</p>
                 <NfcProvisioner cardUrl={cardUrl} />
               </div>
             )}
@@ -137,7 +138,7 @@ const ConnectPage = () => {
         )}
 
         {mode === 'scan' && (
-          <Surface>
+          <Surface className="relative">
             <div className="mb-3">
               <h3 className="text-lg font-semibold text-foreground">Scan a card</h3>
               <p className="text-xs text-muted-foreground">
@@ -145,6 +146,11 @@ const ConnectPage = () => {
                 {activeEventId && ' This scan will be tagged to this event.'}
               </p>
             </div>
+            {connect.isPending && (
+              <div className="mb-3 flex items-center justify-center gap-2 p-3 rounded-lg bg-primary/10 text-primary text-sm font-medium animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin" /> Connecting to scanned user...
+              </div>
+            )}
             <QrScanner
               onResult={(value) => {
                 if (!connect.isPending) connect.mutate(value);
@@ -196,9 +202,9 @@ const ConnectPage = () => {
           <h3 className="text-sm font-medium text-foreground mb-3">Your Profile Stats</h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { label: 'Profile views', value: '-' },
-              { label: 'QR scans', value: '-' },
-              { label: 'Connections', value: '-' },
+              { label: 'Profile views', value: analytics?.totalViews ?? '-' },
+              { label: 'QR scans', value: analytics?.taps ?? '-' },
+              { label: 'Connections', value: analytics?.connections ?? '-' },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-xl font-bold text-foreground">{s.value}</p>
@@ -213,3 +219,4 @@ const ConnectPage = () => {
 };
 
 export default ConnectPage;
+

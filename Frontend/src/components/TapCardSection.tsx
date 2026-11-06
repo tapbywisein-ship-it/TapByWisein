@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Nfc, Smartphone, RefreshCcw, Award, ArrowRight, Info,
@@ -55,7 +55,7 @@ const FAQS = [
     a: 'No. Their phone handles it natively - Android and iPhone both open NFC URLs automatically. No app needed on their end.',
   },
   {
-    q: "What if their NFC is turned off?",
+    q: "What if their phone doesn't support taps?",
     a: 'NFC is on by default on most phones. As a backup, your Tap Card page also has your QR code - so you’re always covered.',
   },
   {
@@ -73,7 +73,7 @@ const FAQS = [
 ];
 
 /**
- * "Your network, one tap away" — the NFC Tap Card story, from the problem
+ * "Your network, one tap away" — the Tap Card story, from the problem
  * QR codes have at a live event through how tapping works, what it's good
  * for, pricing, and an honest note on what the tag actually is (a public
  * URL, same trust model as a QR code — not a secure hardware token).
@@ -92,7 +92,7 @@ export const TapCardSection = () => {
             {...fadeUp()}
             className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-primary mb-5"
           >
-            <Nfc className="w-3.5 h-3.5" /> NFC Tap Card
+            <Nfc className="w-3.5 h-3.5" /> Tap Card
           </motion.span>
           <motion.h2
             {...fadeUp(0.05)}
@@ -405,3 +405,5 @@ export const TapCardSection = () => {
     </>
   );
 };
+
+

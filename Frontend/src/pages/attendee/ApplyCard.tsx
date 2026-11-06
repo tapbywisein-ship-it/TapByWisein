@@ -139,7 +139,7 @@ const ApplyCardPage = () => {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Your physical NFC card is being prepared and will be shipped soon. We'll notify you once it's on the way.
+                Your physical Tap Card is being prepared and will be shipped soon. We'll notify you once it's on the way.
               </p>
             )}
 
@@ -165,7 +165,7 @@ const ApplyCardPage = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Active</p>
-                <p className="text-xs text-muted-foreground">Your physical NFC card is live</p>
+                <p className="text-xs text-muted-foreground">Your physical Tap Card is live</p>
               </div>
             </div>
             <div className="rounded-2xl border border-border bg-card p-5">
@@ -198,7 +198,7 @@ const ApplyCardPage = () => {
       <div className="max-w-md mx-auto space-y-6 pb-24 md:pb-8">
         <div>
           <h1 className="text-3xl font-semibold text-foreground">Get your Tap Card</h1>
-          <p className="text-sm text-muted-foreground mt-1">A physical NFC card that shares your profile with a single tap.</p>
+          <p className="text-sm text-muted-foreground mt-1">A physical Tap Card that shares your profile with a single tap.</p>
         </div>
 
         {/* Step indicator */}

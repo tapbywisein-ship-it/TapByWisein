@@ -67,6 +67,8 @@ export interface CommunityPost {
   createdAt: string;
   author: PostAuthor;
   commentCount: number;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 export interface CommunityPostComment {
@@ -76,6 +78,8 @@ export interface CommunityPostComment {
   body: string;
   createdAt: string;
   author: PostAuthor;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 export interface CreateCommunityPayload {
@@ -150,6 +154,18 @@ export const communitiesService = {
       body: JSON.stringify({ body }),
     });
   },
+  async updatePost(id: string, postId: string, input: { body?: string; imageUrl?: string }) {
+    return apiFetch<{ data: CommunityPost }>(`/communities/${id}/posts/${postId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+  async toggleLike(id: string, postId: string) {
+    return apiFetch<{ data: { isLiked: boolean; likeCount: number } }>(
+      `/communities/${id}/posts/${postId}/like`,
+      { method: 'POST' }
+    );
+  },
   async deletePost(id: string, postId: string) {
     return apiFetch<{ data: null }>(`/communities/${id}/posts/${postId}`, { method: 'DELETE' });
   },
@@ -163,6 +179,18 @@ export const communitiesService = {
       method: 'POST',
       body: JSON.stringify({ body }),
     });
+  },
+  async updateComment(commentId: string, body: string) {
+    return apiFetch<{ data: CommunityPostComment }>(`/communities/comments/${commentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ body }),
+    });
+  },
+  async toggleCommentLike(commentId: string) {
+    return apiFetch<{ data: { isLiked: boolean; likeCount: number } }>(
+      `/communities/comments/${commentId}/like`,
+      { method: 'POST' }
+    );
   },
   async deleteComment(commentId: string) {
     return apiFetch<{ data: null }>(`/communities/comments/${commentId}`, { method: 'DELETE' });

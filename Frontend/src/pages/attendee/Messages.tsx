@@ -167,9 +167,23 @@ const MessagesPage = () => {
             <div className="flex flex-1 items-center justify-center">
               <Surface className="text-center" padding="lg">
                 <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Pick a conversation from the left to start chatting.
-                </p>
+                {/* With no conversations there is nothing "on the left" to pick,
+                    so point the user to their connections, the people they can message. */}
+                {!isLoading && convos.length === 0 ? (
+                  <>
+                    <p className="text-sm font-medium text-foreground">No messages yet</p>
+                    <p className="text-sm text-muted-foreground mt-1 mb-3">
+                      Message one of your connections to start chatting.
+                    </p>
+                    <Button size="sm" onClick={() => navigate('/connections')}>
+                      View connections
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Pick a conversation from the left to start chatting.
+                  </p>
+                )}
               </Surface>
             </div>
           )}

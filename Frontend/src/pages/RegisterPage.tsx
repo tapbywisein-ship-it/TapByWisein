@@ -207,7 +207,9 @@ const RegisterPage = () => {
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            By creating an account, you agree to our Terms and Privacy Policy.
+            By creating an account, you agree to our{' '}
+            <Link to="/terms" className="text-primary hover:underline">Terms</Link> and{' '}
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
           </p>
 
           <p className="text-center text-sm text-muted-foreground">

@@ -3,6 +3,7 @@ import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Search, Users } from 'lucide-react';
 import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads';
 import type { ExportedLead } from '@/services/leads.service';
@@ -104,21 +105,27 @@ const LeadsPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search leads..." className="pl-9 h-8 text-sm" />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-8 px-3 text-sm bg-muted/30 border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="">All Status</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}>
+            <SelectTrigger className="h-8 w-[140px] text-sm bg-muted/30 border-border rounded-xl focus:ring-1 focus:ring-primary focus:outline-none">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Surface>
           {leads.length === 0 ? (
-            <div className="text-center py-10">
-              <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No leads yet. They appear when attendees register for your events.</p>
+            <div className="text-center py-16">
+              <Users className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-foreground font-medium">No leads yet</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                They appear when attendees register for your events.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -138,13 +145,16 @@ const LeadsPage = () => {
                         {lead.event?.title && ` · ${lead.event.title}`}
                       </p>
                     </div>
-                    <select
-                      value={lead.status}
-                      onChange={(e) => updateMutation.mutate({ leadId: lead.id, status: e.target.value })}
-                      className={`text-[10px] font-medium px-2 py-1 rounded-full border ${STATUS_COLORS[lead.status]} bg-transparent cursor-pointer focus:outline-none`}
-                    >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <Select value={lead.status} onValueChange={(val) => updateMutation.mutate({ leadId: lead.id, status: val })}>
+                      <SelectTrigger className={`h-6 text-[10px] font-medium px-2 py-0 rounded-full border ${STATUS_COLORS[lead.status]} bg-transparent focus:ring-0 focus:outline-none w-[110px]`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map((s) => (
+                          <SelectItem key={s} value={s} className="text-xs">{s.charAt(0) + s.slice(1).toLowerCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 );
               })}

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import gamificationService from './gamification.service';
 import { sendSuccess, sendPaginated } from '@utils/response';
+import { SCORE_VALUES } from '@config/constants';
 
 export class GamificationController {
   async getMyScore(req: Request, res: Response): Promise<void> {
@@ -44,6 +45,10 @@ export class GamificationController {
     const { id } = req.params as Record<string, string>;
     const score = await gamificationService.getUserScore(id);
     sendSuccess(res, score, 'Score retrieved');
+  }
+
+  async getScoreRules(req: Request, res: Response): Promise<void> {
+    sendSuccess(res, SCORE_VALUES, 'Score rules retrieved');
   }
 }
 

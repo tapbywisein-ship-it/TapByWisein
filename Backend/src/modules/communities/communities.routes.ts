@@ -22,10 +22,14 @@ router.post('/:id/invite', authenticate, communitiesController.invite.bind(commu
 // in, which private communities require); writes are member-gated in the service.
 router.get('/:id/posts', optionalAuthenticate, communitiesController.listPosts.bind(communitiesController));
 router.post('/:id/posts', authenticate, communitiesController.createPost.bind(communitiesController));
+router.patch('/:id/posts/:postId', authenticate, communitiesController.updatePost.bind(communitiesController));
+router.post('/:id/posts/:postId/like', authenticate, communitiesController.toggleLike.bind(communitiesController));
 router.post('/:id/announce', authenticate, communitiesController.announce.bind(communitiesController));
 router.delete('/:id/posts/:postId', authenticate, communitiesController.deletePost.bind(communitiesController));
 router.get('/posts/:postId/comments', optionalAuthenticate, communitiesController.listComments.bind(communitiesController));
 router.post('/posts/:postId/comments', authenticate, communitiesController.addComment.bind(communitiesController));
+router.patch('/comments/:commentId', authenticate, communitiesController.updateComment.bind(communitiesController));
+router.post('/comments/:commentId/like', authenticate, communitiesController.toggleCommentLike.bind(communitiesController));
 router.delete('/comments/:commentId', authenticate, communitiesController.deleteComment.bind(communitiesController));
 
 export default router;

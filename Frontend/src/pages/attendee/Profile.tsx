@@ -343,13 +343,13 @@ const ProfilePage = () => {
                     </span>
                   )}
                   <div className="flex items-center gap-3 pt-1 flex-wrap">
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <a href={`mailto:${email}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                       <Mail className="w-3 h-3" /> {email}
-                    </span>
+                    </a>
                     {profile?.phone && (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <a href={`tel:${profile.phone}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                         <Phone className="w-3 h-3" /> {profile.phone}
-                      </span>
+                      </a>
                     )}
                     {profile?.location && (
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -843,7 +843,7 @@ const ProfilePage = () => {
             <h2 className="text-sm font-semibold text-foreground">
               Events Attending
             </h2>
-            <Link to="/events" className="text-xs text-primary hover:underline">
+            <Link to="/discover" className="text-xs text-primary hover:underline">
               Browse events →
             </Link>
           </div>
@@ -982,3 +982,4 @@ function TagListSurface({ title, editing, values, onChange, chipClass = 'chip', 
 }
 
 export default ProfilePage;
+

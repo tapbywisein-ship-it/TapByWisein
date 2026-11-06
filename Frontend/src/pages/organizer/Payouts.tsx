@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { payoutsService, type OnboardingInput } from '@/services/payouts.service';
-import { formatINR } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 
 const INDIAN_STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat',
@@ -122,10 +122,10 @@ const Payouts = () => {
         {!isLoading && summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Total earned',   value: formatINR(summary.totalEarnings), icon: Wallet,        accent: '' },
-              { label: 'Transferred',    value: formatINR(summary.transferred),   icon: CheckCircle2,  accent: 'text-emerald-600' },
-              { label: 'Pending',        value: formatINR(summary.pending),       icon: Clock,         accent: 'text-amber-600' },
-              { label: 'Platform fee',   value: formatINR(summary.platformFee),   icon: Percent,       accent: 'text-muted-foreground' },
+              { label: 'Total earned',   value: formatAmount(summary.totalEarnings), icon: Wallet,        accent: '' },
+              { label: 'Transferred',    value: formatAmount(summary.transferred),   icon: CheckCircle2,  accent: 'text-emerald-600' },
+              { label: 'Pending',        value: formatAmount(summary.pending),       icon: Clock,         accent: 'text-amber-600' },
+              { label: 'Platform fee',   value: formatAmount(summary.platformFee),   icon: Percent,       accent: 'text-muted-foreground' },
             ].map(({ label, value, icon: Icon, accent }, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
                 <Surface className="text-center py-5">
@@ -213,9 +213,9 @@ const Payouts = () => {
                     <tr key={e.eventId} className="border-b border-border/50">
                       <td className="py-2.5 pr-4 text-foreground font-medium">{e.title}</td>
                       <td className="py-2.5 text-right text-muted-foreground">{e.sales}</td>
-                      <td className="py-2.5 text-right text-muted-foreground">{formatINR(e.gross)}</td>
-                      <td className="py-2.5 text-right text-muted-foreground">−{formatINR(e.fee)}</td>
-                      <td className="py-2.5 text-right font-semibold text-foreground">{formatINR(e.earning)}</td>
+                      <td className="py-2.5 text-right text-muted-foreground">{formatAmount(e.gross)}</td>
+                      <td className="py-2.5 text-right text-muted-foreground">−{formatAmount(e.fee)}</td>
+                      <td className="py-2.5 text-right font-semibold text-foreground">{formatAmount(e.earning)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -240,7 +240,7 @@ const Payouts = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-foreground">{formatINR(Number(t.organizerEarning ?? 0))}</p>
+                      <p className="text-sm font-semibold text-foreground">{formatAmount(Number(t.organizerEarning ?? 0))}</p>
                       <p className={`text-xs font-medium ${ts.color}`}>{ts.label}</p>
                     </div>
                   </div>

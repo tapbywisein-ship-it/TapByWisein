@@ -102,20 +102,32 @@ const MoreTab = () => {
         <h2 className="text-base font-semibold text-foreground mb-4">Event Actions</h2>
 
         <div className="space-y-2">
-          {/* Edit event */}
-          <button
-            type="button"
-            onClick={() => navigate(`/organizer/events/${id}/edit`)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border hover:bg-muted/40 transition-colors text-left group"
-          >
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-              <Pencil className="w-4 h-4 text-primary" />
+          {/* Edit event — only available while still a DRAFT */}
+          {isDraft ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/organizer/events/${id}/edit`)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border hover:bg-muted/40 transition-colors text-left group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Pencil className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Edit Event</p>
+                <p className="text-xs text-muted-foreground">Update event details, dates, and settings</p>
+              </div>
+            </button>
+          ) : (
+            <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-muted/20 text-left opacity-60 cursor-not-allowed">
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Edit Event</p>
+                <p className="text-xs text-muted-foreground">Published events cannot be edited</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Edit Event</p>
-              <p className="text-xs text-muted-foreground">Update event details, dates, and settings</p>
-            </div>
-          </button>
+          )}
 
           {/* Duplicate event */}
           <button

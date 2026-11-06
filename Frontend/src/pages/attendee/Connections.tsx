@@ -191,7 +191,7 @@ const ConnectionsPage = () => {
                           )}
                         </div>
                         <div
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-0.5 sm:gap-1 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
                         >
@@ -217,7 +217,7 @@ const ConnectionsPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-xs text-muted-foreground hover:text-rose-400"
+                            className="hidden sm:inline-flex text-xs text-muted-foreground hover:text-rose-400"
                             onClick={() => {
                               if (window.confirm(`Remove ${name} from your connections?`)) {
                                 removeMutation.mutate(conn.id);
@@ -227,7 +227,7 @@ const ConnectionsPage = () => {
                           >
                             Remove
                           </Button>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                         </div>
                       </Surface>
                     </motion.div>
@@ -243,7 +243,14 @@ const ConnectionsPage = () => {
             {received.length === 0 && sent.length === 0 ? (
               <div className="text-center py-16">
                 <UserPlus className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-muted-foreground">No pending requests.</p>
+                <p className="text-foreground font-medium">No pending requests</p>
+                <p className="text-xs text-muted-foreground/70 mt-1 mb-4">
+                  Incoming connection requests and invites you have sent will appear here.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button size="sm" onClick={() => navigate('/connect')}>Scan to connect</Button>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/discover')}>Discover events</Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">

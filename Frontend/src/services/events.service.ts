@@ -105,9 +105,17 @@ export interface Event {
   updatedAt: string;
   organizerId: string;
   organizer?: EventOrganizer;
+  communityId?: string | null;
+  community?: {
+    id: string;
+    name: string;
+    slug: string;
+    avatar?: string | null;
+  } | null;
   registeredCount?: number;
   spotsLeft?: number;
-  registrationStatus?: 'REGISTERED' | 'ATTENDED' | 'CANCELLED' | 'WAITLISTED' | null;
+  // Includes PENDING_APPROVAL: the backend sends it for events that need the organizer's approval.
+  registrationStatus?: RegistrationStatus | null;
   /** Non-cancelled registration count per ticketTierId (for per-tier sold-out). */
   soldByTier?: Record<string, number>;
   /** Accepted connections made at this event (social proof). */

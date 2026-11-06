@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ const BRANDING_KEYS = [
 ] as const;
 
 const FEATURE_FLAGS = [
-  { key: 'feature.nfc', label: 'NFC tap-to-connect', description: 'Enable NFC card reading on supported devices' },
+  { key: 'feature.nfc', label: 'Tap Card tap-to-connect', description: 'Enable Tap Card reading on supported devices' },
   { key: 'feature.gamification', label: 'Gamification (FK Score & badges)', description: 'Show leaderboard, badges, and score breakdown' },
   { key: 'feature.publicShare', label: 'Public event sharing', description: 'Allow events to be viewable without sign-in' },
   { key: 'feature.csvImport', label: 'CSV bulk invites', description: 'Organizers can import attendees from a CSV' },
@@ -209,3 +209,5 @@ const AdminSettingsPage = () => {
 };
 
 export default AdminSettingsPage;
+
+

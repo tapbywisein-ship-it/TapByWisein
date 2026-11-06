@@ -1,4 +1,4 @@
-import { ReactNode, useState, useRef, useEffect } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
@@ -8,10 +8,10 @@ import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadMessageCount } from '@/hooks/useMessages';
 import { useRequestOrganizer } from '@/hooks/useOrganizer';
 import { VerifyEmailBanner } from '@/components/VerifyEmailBanner';
-import { QuickShareButton } from '@/components/QuickShareButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
+import { SearchDialog } from '@/components/SearchDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,9 +30,9 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-  Bell, Compass, Calendar, Scan, User as UserIcon,
+  Bell, Calendar, Scan, User as UserIcon,
   LogOut, Plus, Search, Trophy, Users, QrCode, MessageCircle, Ticket,
-  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard,
+  Building2, Boxes, X, Menu, Crown, AlertTriangle, LayoutDashboard, CalendarDays,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/services/api';
@@ -42,8 +42,8 @@ import { toast } from 'sonner';
 // Left-sidebar nav (desktop). `badge` keys map to the live unread/pending counts.
 const navItems = [
   { label: 'Dashboard',     icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Discover',      icon: Compass,         path: '/discover' },
   { label: 'Events',        icon: Calendar,        path: '/events' },
+  { label: 'My Calendars',  icon: CalendarDays,    path: '/my-calendar' },
   { label: 'Connect',       icon: Scan,            path: '/connect',        badge: 'connect' as const },
   { label: 'Messages',      icon: MessageCircle,   path: '/messages',       badge: 'messages' as const },
   { label: 'Connections',   icon: Users,           path: '/connections' },
@@ -61,16 +61,12 @@ const navItems = [
 // Four primary tabs; everything else lives in the "More" sheet (same navItems
 // as the desktop sidebar), so 6+ tabs never overflow the bar again.
 const bottomNav = [
-  { label: 'Discover', icon: Compass, path: '/discover' },
   { label: 'Events', icon: Calendar, path: '/events' },
+  // My Tickets holds the QR ticket shown at the door, so keep it one tap away on phones.
+  { label: 'My Tickets', icon: Ticket, path: '/my-tickets' },
   { label: 'Community', icon: Boxes, path: '/communities' },
   { label: 'Connect', icon: Scan, path: '/connect' },
 ];
-
-interface SearchResult {
-  users: Array<{ id: string; username?: string | null; role: string; profile?: { firstName: string; lastName: string; avatar?: string | null; company?: string | null } | null }>;
-  events: Array<{ id: string; title: string; slug?: string | null; startDate: string; coverImage?: string | null; city?: string | null; address?: string | null }>;
-}
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   // Mount the realtime socket once for the whole attendee shell so connection /
@@ -90,10 +86,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
     staleTime: 30_000,
   });
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Organizer request dialog
   const [orgDialogOpen, setOrgDialogOpen] = useState(false);
@@ -110,27 +102,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   };
   const isOrganizer = user?.role === 'organizer';
 
-  // Debounce search input
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchInput]);
-
-  // Focus input when drawer opens
-  useEffect(() => {
-    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
-    else { setSearchInput(''); setDebouncedQ(''); }
-  }, [searchOpen]);
-
-  const { data: searchResults } = useQuery<SearchResult>({
-    queryKey: ['search', debouncedQ],
-    queryFn: () =>
-      apiFetch<{ data: SearchResult }>(`/search?q=${encodeURIComponent(debouncedQ)}`).then((r) => r.data),
-    enabled: debouncedQ.length >= 2,
-    staleTime: 30_000,
-  });
-
   const orgRequestMutation = useRequestOrganizer();
 
   const handleRequestOrganizer = () => {
@@ -144,13 +115,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       },
     });
   };
-
-  const handleSearchSelect = (path: string) => {
-    setSearchOpen(false);
-    navigate(path);
-  };
-
-  const hasResults = (searchResults?.users?.length ?? 0) > 0 || (searchResults?.events?.length ?? 0) > 0;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -180,7 +144,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         </button>
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Primary">
           {navItems.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge =
               item.badge === 'connect'
                 ? pendingRequests ?? 0
@@ -383,9 +347,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         </main>
       </div>
 
-      {/* ── Quick-share own card (floating) ───────────────── */}
-      <QuickShareButton />
-
       {/* ── Install prompt (PWA) ──────────────────────────── */}
       <InstallPrompt />
 
@@ -396,7 +357,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       >
         <div className="flex justify-around py-1.5">
           {bottomNav.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const badge = item.path === '/connect' && pendingRequests ? pendingRequests : 0;
             return (
               <Link
@@ -490,111 +451,8 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
         </div>
       )}
 
-      {/* ── Global search drawer ───────────────────────────── */}
-      {searchOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-start justify-center pt-20"
-          onClick={() => setSearchOpen(false)}
-        >
-          <div
-            className="bg-card border border-border rounded-xl shadow-card w-full max-w-xl mx-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <input
-                ref={searchInputRef}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search events and people…"
-                className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm"
-                onKeyDown={(e) => e.key === 'Escape' && setSearchOpen(false)}
-              />
-              {searchInput && (
-                <button onClick={() => setSearchInput('')} className="text-muted-foreground hover:text-foreground">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {debouncedQ.length >= 2 && !hasResults && (
-              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                No results for "{debouncedQ}"
-              </div>
-            )}
-
-            {hasResults && (
-              <div className="max-h-96 overflow-y-auto divide-y divide-border/50">
-                {(searchResults?.users?.length ?? 0) > 0 && (
-                  <div className="px-2 py-2">
-                    <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">People</p>
-                    {searchResults!.users.map((u) => {
-                      const name = u.profile
-                        ? `${u.profile.firstName} ${u.profile.lastName}`.trim()
-                        : u.username ?? 'Unknown';
-                      return (
-                        <button
-                          key={u.id}
-                          onClick={() => handleSearchSelect(`/card/${u.id}`)}
-                          className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                        >
-                          {u.profile?.avatar ? (
-                            <img src={u.profile.avatar} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">
-                              {name[0]?.toUpperCase()}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{name}</p>
-                            {u.profile?.company && (
-                              <p className="text-xs text-muted-foreground truncate">{u.profile.company}</p>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {(searchResults?.events?.length ?? 0) > 0 && (
-                  <div className="px-2 py-2">
-                    <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Events</p>
-                    {searchResults!.events.map((ev) => (
-                      <button
-                        key={ev.id}
-                        onClick={() => handleSearchSelect(`/e/${ev.slug ?? ev.id}`)}
-                        className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                      >
-                        {ev.coverImage ? (
-                          <img src={ev.coverImage} alt={ev.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(ev.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            {ev.city ? ` · ${ev.city}` : ''}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!debouncedQ && (
-              <div className="px-4 py-3 text-xs text-muted-foreground">
-                Type at least 2 characters to search · <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Esc</kbd> to close
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ── Global search (shared with the organizer layout) ── */}
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* ── Become an organizer dialog ─────────────────────── */}
       <Dialog

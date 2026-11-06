@@ -45,7 +45,7 @@ type Tier = {
  * - Organizer Pro
  * - Enterprise
  *
- * The NFC Founder Card below is still available separately.
+ * The Tap Card below is still available separately.
  * ============================================================
  */
 
@@ -65,7 +65,7 @@ const TIERS: Tier[] = [
       '100 profile views / month',
     ],
     limits: [
-      'No NFC card, lead capture, custom blocks or CRM notes',
+      'No Tap Card, lead capture, custom blocks or CRM notes',
       'Cannot host events',
     ],
   },
@@ -167,7 +167,6 @@ const TIERS: Tier[] = [
 ];
 
 const Pricing = () => {
-  console.log("===== NEW PRICING.TSX LOADED =====");
 
   const [demoOpen, setDemoOpen] = useState(false);
 
@@ -224,7 +223,6 @@ const Pricing = () => {
    *   }
    * };
    */
-console.log("NEW PRICING PAGE LOADED");
   const body = (
     <>
       <motion.div {...fadeUp()} className="text-center mb-12">
@@ -372,15 +370,14 @@ console.log("NEW PRICING PAGE LOADED");
 
       {/*
        * ========================================================
-       * NFC FOUNDER CARD
+       * TAP CARD
        * ========================================================
        *
        * THIS SECTION IS KEPT.
        *
-       * Your NFC card payment remains available here:
+       * Your Tap Card payment remains available here:
        *
        * ₹499 one-time
-       * ₹999 metal
        *
        * The "Get a card" button goes to /apply-card.
        */}
@@ -398,7 +395,7 @@ console.log("NEW PRICING PAGE LOADED");
 
             <div>
               <h3 className="font-semibold text-foreground">
-                NFC Founder Card
+                Tap Card
               </h3>
 
               <p className="text-sm text-muted-foreground">
@@ -410,10 +407,6 @@ console.log("NEW PRICING PAGE LOADED");
           <div className="flex items-center gap-3 shrink-0">
             <p className="text-sm text-foreground">
               <span className="font-bold">₹499</span> one-time
-              <span className="text-muted-foreground">
-                {' '}
-                · ₹999 metal
-              </span>
             </p>
 
             <Button asChild size="sm">

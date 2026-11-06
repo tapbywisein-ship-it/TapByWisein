@@ -1,0 +1,1 @@
+require('dotenv').config({ path: '.env' }); const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.event.findMany({ select: { title: true, coverImage: true } }).then(console.log).finally(() => prisma.$disconnect());

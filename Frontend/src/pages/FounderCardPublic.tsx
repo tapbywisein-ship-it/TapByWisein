@@ -203,8 +203,10 @@ const FounderCardPublic = ({ mode }: FounderCardPublicProps) => {
   const initial = fullName?.charAt(0)?.toUpperCase() ?? '?';
 
   const cardUrl =
-    typeof window !== 'undefined' && card?.slug
-      ? `${window.location.origin}/c/${card.slug}`
+    typeof window !== 'undefined' && card
+      ? card.slug
+        ? `${window.location.origin}/c/${card.slug}`
+        : `${window.location.origin}/card/${card.userId}`
       : '';
 
   // Schema.org Person structured data for the public tap card.
@@ -659,14 +661,17 @@ const FounderCardPublic = ({ mode }: FounderCardPublicProps) => {
             </Surface>
 
             {cardUrl && (
-              <Surface className="flex items-center justify-center">
-                <QRCodeSVG
-                  value={cardUrl}
-                  size={160}
-                  fgColor="#0D0D0D"
-                  bgColor="transparent"
-                  level="M"
-                />
+              <Surface className="flex flex-col items-center justify-center py-4">
+                <div className="bg-white p-3 rounded-xl shadow-sm border border-border inline-block">
+                  <QRCodeSVG
+                    value={cardUrl}
+                    size={160}
+                    fgColor="#000000"
+                    bgColor="#ffffff"
+                    level="M"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">Scan to connect</p>
               </Surface>
             )}
           </div>
