@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { Button } from '@/components/ui/button';
 import { useEvent } from '@/hooks/useEvents';
+import { useAppStore } from '@/store/appStore';
 import type { Event } from '@/services/events.service';
 
 interface EventContextValue {
@@ -59,6 +60,7 @@ export const OrganizerEventLayout = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading } = useEvent(id || '');
+  const user = useAppStore((s) => s.user);
 
   const handleShare = () => {
     if (!id) return;
@@ -68,6 +70,31 @@ export const OrganizerEventLayout = () => {
       .then(() => toast.success('Event link copied'))
       .catch(() => toast.error('Could not copy link'));
   };
+
+  // Another organizer's event: the backend refuses its guests, stats and
+  // actions, so say so instead of showing a management page full of errors.
+  const isOtherOrganizersEvent =
+    !!event && !!user && user.role !== 'admin' && event.organizerId !== user.id;
+  if (isOtherOrganizersEvent) {
+    return (
+      <OrganizerLayout>
+        <div className="max-w-md mx-auto text-center py-16 space-y-4">
+          <h1 className="text-xl font-semibold text-foreground">This isn't one of your events</h1>
+          <p className="text-sm text-muted-foreground">
+            Only the organizer who created “{event.title}” can manage it.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2.5">
+            <Button variant="outline" onClick={() => navigate(`/e/${event.id}`)} className="rounded-xl">
+              View event page
+            </Button>
+            <Button onClick={() => navigate('/organizer/events')} className="rounded-xl">
+              Your events
+            </Button>
+          </div>
+        </div>
+      </OrganizerLayout>
+    );
+  }
 
   return (
     <OrganizerLayout>
