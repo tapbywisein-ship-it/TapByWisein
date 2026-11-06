@@ -47,12 +47,15 @@ disagree, trust the code and fix this file.
 Frontend (`cd Frontend`):
 
 ```sh
-npm run dev                              # http://localhost:8080
+npm run dev                              # http://localhost:5173
 npx tsc --noEmit -p tsconfig.app.json    # the real typecheck (see below)
 npm test                                 # vitest
 npm run lint
 npm run build
 ```
+
+The live backend's CORS allows `http://localhost:8080` but not 5173, so against it every
+request fails ("Unable to load events"). Run `npm run dev -- --port 8080` instead.
 
 Backend (`cd Backend`):
 

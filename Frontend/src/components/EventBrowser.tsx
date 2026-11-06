@@ -616,7 +616,7 @@ export const EventBrowser = ({
                         {/* Guests + days left to register */}
                         <div className="flex flex-wrap items-center justify-between gap-2 mt-[12px] text-[12px] font-[500] text-[color:var(--eb-ink-500)]">
                           <span className="flex items-center gap-[5px] whitespace-nowrap">
-                            <Users className="w-[13px] h-[13px] shrink-0" /> <span><AnimatedCounter value={e.registeredCount ?? 0} />/{e.capacity} attending</span>
+                            <Users className="w-[13px] h-[13px] shrink-0" /> <span>{e.registeredCount ?? 0}/{e.capacity} attending</span>
                           </span>
                           <span className={`flex items-center gap-[5px] whitespace-nowrap ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
                             <Clock className="w-[13px] h-[13px] shrink-0" /> {daysLeftLabel}
