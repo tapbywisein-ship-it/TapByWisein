@@ -57,16 +57,16 @@ const OrganizerDashboard = () => {
     <OrganizerLayout>
       <div className="space-y-3.5 sm:space-y-6 pb-4 sm:pb-8">
         {/* Header */}
-        <div className="flex flex-row items-center justify-between gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-foreground tracking-tight truncate">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-foreground tracking-tight break-words">
               Welcome back, <span className="font-bold text-[#1981FE]">{displayName}</span>
             </h1>
-            <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">Your event performance at a glance</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Your event performance at a glance</p>
           </div>
-          <Button asChild size="sm" className="h-8 sm:h-9 px-3 text-xs sm:text-sm rounded-lg sm:rounded-xl shrink-0 font-medium">
+          <Button asChild size="sm" className="h-8.5 sm:h-9 px-3.5 sm:px-4 text-xs sm:text-sm rounded-lg sm:rounded-xl shrink-0 font-medium w-fit self-start sm:self-auto shadow-xs">
             <Link to="/organizer/events/create">
-              <Plus className="w-3.5 h-3.5 mr-1" /> New Event
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" /> New Event
             </Link>
           </Button>
         </div>
@@ -168,18 +168,18 @@ const OrganizerDashboard = () => {
 
         {/* Second Row: Registration Analytics Graph */}
         <motion.div {...fade(0.06)} className="h-full">
-          <Surface className="p-6 border border-border shadow-sm rounded-2xl bg-card">
-            <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <Surface className="p-3.5 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl bg-card">
+            <div className="flex items-center justify-between mb-3.5 sm:mb-6 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                  <TrendingUp className="w-4.5 h-4.5" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">Registration Analytics</h3>
-                  <p className="text-xs text-muted-foreground">Attendee signups over the last 7 days</p>
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground">Registration Analytics</h3>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">Attendee signups over the last 7 days</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+              <span className="text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
                 {trend.reduce((s, d) => s + d.count, 0)} Total Registrations
               </span>
             </div>
