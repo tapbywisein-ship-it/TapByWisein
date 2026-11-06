@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ArrowLeft, Calendar, Users, AlertCircle, NotebookPen } from 'lucide-react';
+import { ArrowLeft, Calendar, AlertCircle, NotebookPen } from 'lucide-react';
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { ConnectionCRMDrawer } from '@/components/ConnectionCRMDrawer';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { connectionsService, type Connection } from '@/services/connections.service';
 
 interface ConnectionRow {
@@ -58,11 +59,8 @@ const PeopleIMetPage = () => {
         </Button>
 
         <header>
-          <h1 className="text-2xl font-semibold text-foreground">
-            <Users className="mr-2 inline h-6 w-6" />
-            People I met
-          </h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold text-foreground">People I met</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Your network, grouped by where you connected.
           </p>
         </header>
@@ -75,9 +73,7 @@ const PeopleIMetPage = () => {
         )}
 
         {isLoading && (
-          <Surface className="text-center">
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          </Surface>
+          <LoadingSkeleton count={3} itemClassName="h-24" />
         )}
 
         {groups.eventGroups.map(({ event, rows }) =>

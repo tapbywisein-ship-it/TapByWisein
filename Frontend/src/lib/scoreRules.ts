@@ -7,7 +7,7 @@ export const SCORE_RULES = [
   { action: 'Register for an event', points: 20, icon: Ticket },
   { action: 'Attend an event (check-in)', points: 50, icon: CalendarCheck },
   { action: 'Make a connection', points: 10, icon: Handshake },
-  { action: 'Activate your Founder Card', points: 100, icon: CreditCard },
+  { action: 'Activate your Tap Card', points: 100, icon: CreditCard },
   { action: 'Scan a QR code', points: 5, icon: ScanLine },
   { action: 'Earn a badge', points: 25, icon: Award },
   { action: 'First login', points: 10, icon: LogIn },

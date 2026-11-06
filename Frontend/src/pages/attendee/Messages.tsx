@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppStore } from '@/store/appStore';
 import { requireVerifiedEmail } from '@/components/VerifyEmailBanner';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import {
   useConversation,
   useConversations,
@@ -96,7 +97,7 @@ const MessagesPage = () => {
           </div>
           <div className="flex-1 overflow-y-auto">
             {isLoading && (
-              <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+              <div className="p-4"><LoadingSkeleton count={5} /></div>
             )}
             {!isLoading && convos.length === 0 && (
               <div className="p-6 text-center">

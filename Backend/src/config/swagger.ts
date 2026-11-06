@@ -13,7 +13,7 @@ const swaggerDefinition = {
       - Authentication (JWT + Refresh Tokens)
       - User Profiles & Networking
       - Events Management
-      - Founder Cards (QR-based)
+      - Tap Cards (QR-based)
       - Gamification (FK Score, Badges, Leaderboard)
       - Real-time Notifications
       - Organizer Dashboard
