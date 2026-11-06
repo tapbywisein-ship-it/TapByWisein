@@ -1,43 +1,25 @@
-import { useState } from 'react';
-import { CalendarPlus } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { googleCalUrl, downloadIcs, type CalEvent } from '@/lib/calendar';
+import { googleCalUrl, type CalEvent } from '@/lib/calendar';
 
-/** "Add to calendar" split control — Google Calendar link + .ics download. */
+/** Direct Google Calendar integration button with prefilled event details */
 export const AddToCalendar = ({ event, className }: { event: CalEvent; className?: string }) => {
-  const [open, setOpen] = useState(false);
+  const calUrl = googleCalUrl(event);
 
   return (
-    <div className={`relative ${className ?? ''}`}>
-      <Button variant="outline" size="sm" onClick={() => setOpen((o) => !o)}>
-        <CalendarPlus className="w-4 h-4 mr-1.5" /> Add to calendar
+    <div className={`space-y-1.5 ${className ?? ''}`}>
+      <p className="text-xs text-muted-foreground text-center font-medium">
+        Add to calendar to get reminder
+      </p>
+      <Button
+        asChild
+        className="w-full rounded-xl gap-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow-md transition-all"
+      >
+        <a href={calUrl} target="_blank" rel="noopener noreferrer">
+          <Calendar className="w-4 h-4" />
+          <span>Add to Google Calendar</span>
+        </a>
       </Button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 z-20 mt-1 w-52 rounded-xl border border-border bg-card shadow-card p-1">
-            <a
-              href={googleCalUrl(event)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="block px-3 py-2 text-sm rounded-lg hover:bg-muted/50 text-foreground"
-            >
-              Google Calendar
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                downloadIcs(event, `${event.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.ics`);
-                setOpen(false);
-              }}
-              className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted/50 text-foreground"
-            >
-              Apple / Outlook (.ics)
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 };

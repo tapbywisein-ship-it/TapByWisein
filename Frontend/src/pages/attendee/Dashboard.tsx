@@ -211,7 +211,7 @@ const AttendeeDashboard = () => {
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
@@ -448,14 +448,14 @@ const AttendeeDashboard = () => {
                         {r.event?.title ?? 'Event'}
                       </p>
                       {r.event?.startDate && (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(r.event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span>{new Date(r.event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         </p>
                       )}
                       {r.event?.city && (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" /> {r.event.city}
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{r.event.city}</span>
                         </p>
                       )}
                     </Link>

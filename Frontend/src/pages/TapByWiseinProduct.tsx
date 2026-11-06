@@ -143,42 +143,42 @@ const TapByWiseinProduct = () => {
 
         {/* ── Hero ────────────── */}
         <section className="relative flex-1 flex flex-col justify-center overflow-hidden">
-          <div className="max-w-[1280px] w-full mx-auto px-6 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center min-h-[85vh]">
+          <div className="max-w-[1280px] w-full mx-auto px-4 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-4 items-center min-h-[85vh]">
             
             {/* Left — copy */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: EASE_PREMIUM }}
-              className="flex flex-col justify-center py-12 lg:py-0 pr-0 lg:pr-8"
+              className="flex flex-col justify-center py-8 lg:py-0 pr-0 lg:pr-8 text-center lg:text-left items-center lg:items-start"
             >
-              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2563EB] mb-5 flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2563EB] mb-4 sm:mb-5 flex items-center gap-2">
                 <span className="w-4 h-[1px] bg-[#3B82F6]"></span>
                 NFC Tap Card
               </p>
               <h1
                 className="font-extrabold tracking-tight"
-                style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', lineHeight: 1.05, letterSpacing: '-0.03em' }}
+                style={{ fontSize: 'clamp(2rem, 7.5vw, 4.5rem)', lineHeight: 1.08, letterSpacing: '-0.03em' }}
               >
                 <span className="text-[#212529]">TAP</span>
                 <span className="text-[#ADB5BD] font-medium mx-1 lg:mx-2" style={{ letterSpacing: '0' }}>BY</span>
                 <span className="text-[#212529]">WISEIN</span>
               </h1>
-              <p className="mt-6 max-w-[420px] text-[17px] text-[#343A40]" style={{ lineHeight: 1.6 }}>
+              <p className="mt-4 sm:mt-6 max-w-[420px] text-[15px] sm:text-[17px] text-[#343A40]" style={{ lineHeight: 1.6 }}>
                 TapByWisein helps founders, professionals, and event attendees instantly exchange
                 details, build meaningful connections, and grow their network with NFC-powered smart
                 cards.
               </p>
-              <div className="mt-10 flex flex-wrap items-center gap-4">
+              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <button 
                   onClick={goCreate}
-                  className="btn-premium group h-12 px-6 rounded-lg font-semibold text-sm text-white flex items-center gap-2 transition-transform active:scale-[0.98]"
+                  className="btn-premium group h-12 px-6 rounded-lg font-semibold text-sm text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98] w-full sm:w-auto"
                 >
                   Create Event <ArrowRight className="w-4 h-4 opacity-80 group-hover:translate-x-0.5 transition-transform" />
                 </button>
                 <Link 
                   to="/discover"
-                  className="btn-glass group h-12 px-6 rounded-lg font-semibold text-sm text-[#343A40] transition-all active:scale-[0.98] flex items-center gap-2"
+                  className="btn-glass group h-12 px-6 rounded-lg font-semibold text-sm text-[#343A40] transition-all active:scale-[0.98] flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   Explore events <ArrowDown className="w-4 h-4 opacity-70 group-hover:translate-y-0.5 transition-transform" />
                 </Link>
@@ -190,12 +190,12 @@ const TapByWiseinProduct = () => {
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.1, ease: EASE_PREMIUM }}
-              className="relative flex justify-center items-center min-h-[420px] lg:min-h-0"
+              className="relative flex justify-center items-center min-h-[360px] sm:min-h-[420px] lg:min-h-0 w-full overflow-hidden"
             >
-            <div className="relative w-full max-w-[1050px] flex justify-center lg:justify-end items-center lg:pr-12">
-              <NfcTapHeroAnimation />
-            </div>
-          </motion.div>
+              <div className="relative w-full max-w-[1050px] flex justify-center lg:justify-end items-center lg:pr-12">
+                <NfcTapHeroAnimation />
+              </div>
+            </motion.div>
           </div>
         </section>
       </div>

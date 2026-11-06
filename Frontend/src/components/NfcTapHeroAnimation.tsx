@@ -675,13 +675,13 @@ export const NfcTapHeroAnimation: React.FC<{ className?: string }> = ({ classNam
 
   return (
     <div 
-      className={`relative w-full h-[500px] lg:h-[650px] overflow-visible ${className}`} 
+      className={`relative w-full h-[400px] sm:h-[500px] lg:h-[650px] overflow-hidden ${className}`} 
       ref={mountRef}
       aria-label="3D cinematic animation: a TapByWisein Tap Card taps the back of a phone, lighting up with a blue signal and connecting."
     >
       <div 
         ref={haloRef} 
-        className="absolute left-[18%] right-[-6%] top-[8%] bottom-[4%] rounded-full pointer-events-none transition-transform"
+        className="absolute left-[10%] sm:left-[18%] right-0 sm:right-[-6%] top-[8%] bottom-[4%] rounded-full pointer-events-none transition-transform"
         style={{
           background: 'radial-gradient(closest-side, rgba(59,130,246,0.18), rgba(59,130,246,0.06) 55%, transparent)',
           opacity: 'calc(0.55 + var(--pulse, 0) * 0.45)', 
@@ -690,7 +690,7 @@ export const NfcTapHeroAnimation: React.FC<{ className?: string }> = ({ classNam
       />
       <canvas 
         ref={canvasRef} 
-        className="absolute top-[-90px] bottom-[-40px] left-[-16px] lg:left-[-180px] right-[-16px] lg:right-[-80px] w-[calc(100%+32px)] lg:w-[calc(100%+260px)] h-[calc(100%+130px)] block opacity-0 transition-opacity duration-1000 pointer-events-none" 
+        className="absolute top-[-60px] sm:top-[-90px] bottom-[-20px] sm:bottom-[-40px] left-0 lg:left-[-180px] right-0 lg:right-[-80px] w-full lg:w-[calc(100%+260px)] h-[calc(100%+80px)] sm:h-[calc(100%+130px)] block opacity-0 transition-opacity duration-1000 pointer-events-none" 
       />
     </div>
   );

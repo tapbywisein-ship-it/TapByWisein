@@ -203,7 +203,7 @@ const OrganizerDashboard = () => {
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Events</h2>
               <Button asChild variant="outline" size="sm" className="h-7 sm:h-8 px-2.5 sm:px-3 text-[11px] sm:text-xs rounded-lg font-medium">
-                <Link to="/events">
+                <Link to="/organizer/events">
                   <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" /> Browse Events
                 </Link>
               </Button>

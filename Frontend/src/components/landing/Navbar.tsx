@@ -1,4 +1,5 @@
 import { LINKS } from "../../config/links";
+import { Logo } from "@/components/Logo";
 
 /** Monogram "T" mark. Placeholder for the official TAP logo asset —
  *  replace the <svg> with the brand file when it's available. */
@@ -29,9 +30,10 @@ export default function Navbar() {
   return (
     <header className="nav">
       <div className="nav-inner">
-        <a className="nav-brand" href={LINKS.tapbywisein ?? undefined} aria-label="TapByWiseIN home">
-        </a>
-        <a className="nav-signin" href={LINKS.signIn ?? undefined} aria-disabled={LINKS.signIn ? undefined : true}>
+        <div className="nav-brand">
+          <Logo size="sm" clickable={false} />
+        </div>
+        <a className="nav-signin" href={LINKS.signIn ?? "/login"} aria-disabled={LINKS.signIn ? undefined : true}>
           Sign in
         </a>
       </div>

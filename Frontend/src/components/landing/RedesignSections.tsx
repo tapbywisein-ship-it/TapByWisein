@@ -515,10 +515,17 @@ export function AnimatedFooterSection() {
       if (entries[0].isIntersecting) {
         setIsVisible(true);
       }
-    }, { threshold: 0.3 });
+    }, { threshold: 0.05 });
     
     if (footerRef.current) observer.observe(footerRef.current);
-    return () => observer.disconnect();
+
+    // Fallback so it is never permanently hidden if scrolled quickly
+    const fallbackTimer = setTimeout(() => setIsVisible(true), 2500);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return (

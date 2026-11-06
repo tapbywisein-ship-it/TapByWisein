@@ -191,7 +191,7 @@ const ConnectionsPage = () => {
                           )}
                         </div>
                         <div
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-0.5 sm:gap-1 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
                         >
@@ -217,7 +217,7 @@ const ConnectionsPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-xs text-muted-foreground hover:text-rose-400"
+                            className="hidden sm:inline-flex text-xs text-muted-foreground hover:text-rose-400"
                             onClick={() => {
                               if (window.confirm(`Remove ${name} from your connections?`)) {
                                 removeMutation.mutate(conn.id);
@@ -227,7 +227,7 @@ const ConnectionsPage = () => {
                           >
                             Remove
                           </Button>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                         </div>
                       </Surface>
                     </motion.div>

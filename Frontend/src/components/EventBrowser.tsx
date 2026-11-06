@@ -361,6 +361,7 @@ export const EventBrowser = ({
         
         {/* Date */}
         <div className="w-full lg:w-[170px] flex items-center px-5 h-[52px] lg:h-full group relative">
+          <Calendar className="w-[18px] h-[18px] text-[color:var(--eb-ink-500)] group-focus-within:text-[#2563EB] shrink-0 transition-colors mr-2" />
           <input
             type="date"
             value={dateFrom}
@@ -613,12 +614,12 @@ export const EventBrowser = ({
                         </div>
 
                         {/* Guests + days left to register */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-[12px] text-[12px] font-[500] text-[color:var(--eb-ink-500)] whitespace-nowrap">
-                          <span className="flex items-center gap-[5px]">
-                            <Users className="w-[13px] h-[13px]" /> <span>{e.registeredCount ?? 0}/{e.capacity} attending</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mt-[12px] text-[12px] font-[500] text-[color:var(--eb-ink-500)]">
+                          <span className="flex items-center gap-[5px] whitespace-nowrap">
+                            <Users className="w-[13px] h-[13px] shrink-0" /> <span><AnimatedCounter value={e.registeredCount ?? 0} />/{e.capacity} attending</span>
                           </span>
-                          <span className={`ml-auto flex items-center gap-[5px] ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
-                            <Clock className="w-[13px] h-[13px]" /> {daysLeftLabel}
+                          <span className={`flex items-center gap-[5px] whitespace-nowrap ${urgent ? 'text-[#D97706] font-[600]' : ''}`}>
+                            <Clock className="w-[13px] h-[13px] shrink-0" /> {daysLeftLabel}
                           </span>
                         </div>
 

@@ -28,7 +28,23 @@ export function googleCalUrl(e: CalEvent): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-/** RFC-5545 VCALENDAR text for Apple Calendar / Outlook / etc. */
+/** "Add to Outlook Web Calendar" prefilled-event URL. */
+export function outlookCalUrl(e: CalEvent): string {
+  const startIso = new Date(e.start).toISOString();
+  const endIso = new Date(e.end).toISOString();
+  const params = new URLSearchParams({
+    path: '/calendar/action/compose',
+    rru: 'addevent',
+    subject: e.title,
+    startdt: startIso,
+    enddt: endIso,
+    body: [e.description, e.url].filter(Boolean).join('\n\n'),
+    location: e.location ?? '',
+  });
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+}
+
+/** RFC-5545 VCALENDAR text for Apple Calendar / Android / Outlook with 24h & 1h mobile alarms. */
 export function buildIcs(e: CalEvent): string {
   const uid = `${toUtcStamp(e.start)}-${Math.random().toString(36).slice(2)}@tapbywisein`;
   return [
@@ -36,6 +52,7 @@ export function buildIcs(e: CalEvent): string {
     'VERSION:2.0',
     'PRODID:-//TapByWisein//EN',
     'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${toUtcStamp(new Date())}`,
@@ -45,6 +62,18 @@ export function buildIcs(e: CalEvent): string {
     e.description ? `DESCRIPTION:${icsEscape([e.description, e.url].filter(Boolean).join('\n\n'))}` : '',
     e.location ? `LOCATION:${icsEscape(e.location)}` : '',
     e.url ? `URL:${e.url}` : '',
+    /* ── 24-Hour Mobile Lockscreen Notification Alarm ── */
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${icsEscape(`Reminder: ${e.title} starts in 24 hours!`)}`,
+    'TRIGGER:-PT24H',
+    'END:VALARM',
+    /* ── 1-Hour Mobile Lockscreen Notification Alarm ── */
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${icsEscape(`Starting Soon: ${e.title} starts in 1 hour!`)}`,
+    'TRIGGER:-PT1H',
+    'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR',
   ]
