@@ -16,31 +16,29 @@ import { useMyCommunities } from '@/hooks/useCommunities';
 import { useAppStore } from '@/store/appStore';
 import { payoutsService } from '@/services/payouts.service';
 import { EVENT_THEMES, THEME_IDS } from '@/lib/eventThemes';
+import { EVENT_CATEGORIES } from '@/constants/categories';
 import { getCountryOptions, getStateOptions, getCityOptions, type GeoOption } from '@/lib/geo';
-import { googleCalUrl } from '@/lib/calendar';
 import { apiUpload } from '@/services/api';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 import {
-  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle,
-  Sparkles, ShieldCheck, Ticket, Users, ArrowLeft, Clock, Timer, Cpu, TrendingUp, Palette, Heart, Music,
-  Trophy, UtensilsCrossed, Tag,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Calendar, Check, MapPin, Upload, X, Plus, Trash2, Shuffle, Globe, Building2, Loader2, AlertTriangle, ChevronDown, ChevronUp, Sparkles,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const EVENT_CATEGORIES = [
-  { id: 'Tech',     label: 'Tech',     icon: Cpu },
-  { id: 'Business', label: 'Business', icon: TrendingUp },
-  { id: 'Design',   label: 'Design',   icon: Palette },
-  { id: 'Health',   label: 'Health',   icon: Heart },
-  { id: 'Social',   label: 'Social',   icon: Sparkles },
-  { id: 'Arts',     label: 'Arts',     icon: Music },
-  { id: 'Sports',   label: 'Sports',   icon: Trophy },
-  { id: 'Food',     label: 'Food',     icon: UtensilsCrossed },
-  { id: 'Other',    label: 'Other',    icon: Tag },
-];
-
-const STANDARD_CATEGORY_IDS = ['Tech', 'Business', 'Design', 'Health', 'Social', 'Arts', 'Sports', 'Food'];
 
 const TIMEZONES = [
   { value: 'UTC',                 label: 'UTC (Coordinated Universal Time)' },
@@ -60,7 +58,7 @@ const TIMEZONES = [
 const DEFAULT_TICKET_TYPES: TicketType[] = [
   {
     id: 'premium',
-    name: 'Premium VIP',
+    name: 'Premium',
     price: 5000,
     count: 10,
     benefits: ['VIP seating', 'Networking dinner', 'Speaker meet & greet', 'Swag bag'],
@@ -69,7 +67,7 @@ const DEFAULT_TICKET_TYPES: TicketType[] = [
   },
   {
     id: 'silver',
-    name: 'Standard Access',
+    name: 'Silver',
     price: 2000,
     count: 30,
     benefits: ['Reserved seating', 'Lunch included', 'Networking session'],
@@ -78,7 +76,7 @@ const DEFAULT_TICKET_TYPES: TicketType[] = [
   },
   {
     id: 'basic',
-    name: 'General Entry',
+    name: 'Basic',
     price: 500,
     count: 60,
     benefits: ['General admission', 'Coffee breaks'],
@@ -119,7 +117,9 @@ interface FormState {
   locationType: 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
   address: string;
   city: string;
+  /** ISO state code, e.g. "TG" — converted to the full state name on submit. */
   state: string;
+  /** ISO country code, e.g. "IN" — converted to the full country name on submit. */
   country: string;
   pincode: string;
   latitude: number | null;
@@ -141,36 +141,7 @@ interface FormState {
   communityId: string;
 }
 
-// ─── Helper for Tomorrow's Date ────────────────────────────────────────────────
-function getTomorrowDateStr(addDays = 1): string {
-  const d = new Date();
-  d.setDate(d.getDate() + addDays);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function getEventDurationText(startDate: string, startTime: string, endDate: string, endTime: string): string {
-  if (!startDate || !endDate) return '';
-  const sStr = `${startDate}T${startTime || '00:00'}:00`;
-  const eStr = `${endDate}T${endTime || '00:00'}:00`;
-  const s = new Date(sStr);
-  const e = new Date(eStr);
-  if (isNaN(s.getTime()) || isNaN(e.getTime())) return '';
-  const diffMs = e.getTime() - s.getTime();
-  if (diffMs <= 0) return 'End time must be after start time';
-
-  const totalMinutes = Math.floor(diffMs / (1000 * 60));
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const mins = totalMinutes % 60;
-
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
-  if (hours > 0) parts.push(`${hours} hr${hours > 1 ? 's' : ''}`);
-  if (mins > 0) parts.push(`${mins} min${mins > 1 ? 's' : ''}`);
-
-  return parts.join(' ') || '0 mins';
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const BECOME_ORGANIZER_STEPS = [
   'Click "Become an organizer" below',
@@ -181,6 +152,8 @@ const BECOME_ORGANIZER_STEPS = [
 
 const CreateEventPage = () => {
   const navigate = useNavigate();
+  // Edit mode: this same form powers `/organizer/events/:id/edit`. When an id is
+  // present we load the event, pre-fill the form once, and submit via updateEvent.
   const { id: editEventId } = useParams<{ id: string }>();
   const isEdit = !!editEventId;
   const { data: editEvent } = useEvent(editEventId ?? '');
@@ -191,11 +164,18 @@ const CreateEventPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefilledRef = useRef(false);
 
+  // Luma pattern: render the form for signed-out visitors too. The modal
+  // overlays the page, so they can see what they're signing in for. Form
+  // state persists across the auth round-trip because we don't unmount.
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const userRole = useAppStore((s) => s.user?.role);
   const [orgName, setOrgName] = useState('');
 
   // ─── Auth gate ───────────────────────────────────────────────────────────
+  // All gate hooks live ABOVE the early returns below so hook order stays stable
+  // regardless of auth/role state (Rules of Hooks).
+
+  // Signed-out visitors first pick a path (organize vs attend), then sign in.
   const [gateStep, setGateStep] = useState<'choose' | 'organizer' | 'attendee' | null>(
     isAuthenticated ? null : 'choose'
   );
@@ -203,6 +183,11 @@ const CreateEventPage = () => {
     setGateStep(isAuthenticated ? null : 'choose');
   }, [isAuthenticated]);
 
+  // Organizer path: users who explicitly chose "Organize" carry a pending-upgrade
+  // flag (set in SignInModal). The backend starts everyone as ATTENDEE, so we
+  // auto-run the instant self-serve upgrade here instead of making them click the
+  // manual "Become an organizer" card. Seeded from the flag at mount so the manual
+  // card never flashes.
   const [autoUpgrading, setAutoUpgrading] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('fk-pending-organizer-upgrade') === '1'
   );
@@ -214,32 +199,35 @@ const CreateEventPage = () => {
       setAutoUpgrading(true);
       requestOrgMutation.mutate('', { onError: () => setAutoUpgrading(false) });
     } else if (userRole && userRole !== 'attendee') {
+      // Already elevated (or admin) — drop any stale flag.
       localStorage.removeItem('fk-pending-organizer-upgrade');
       setAutoUpgrading(false);
     }
+    // requestOrgMutation is stable from react-query; excluded to avoid re-runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, userRole]);
 
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [locationExpanded, setLocationExpanded] = useState(true);
+  const [locationExpanded, setLocationExpanded] = useState(false);
+  // Open by default: description is required, so it shouldn't look optional.
   const [descExpanded, setDescExpanded] = useState(true);
 
-  // Initialize form with robust smart defaults so submission never fails on blank fields
   const [form, setForm] = useState<FormState>({
     title: '',
     description: '',
-    category: 'Tech',
-    startDate: getTomorrowDateStr(1),
-    startTime: '18:00',
-    endDate: getTomorrowDateStr(1),
+    category: '',
+    startDate: '',
+    startTime: '19:00',
+    endDate: '',
     endTime: '20:00',
     timezone: 'Asia/Kolkata',
     locationType: 'IN_PERSON',
-    address: 'T-Hub Phase 2, Madhapur',
-    city: 'Hyderabad',
-    state: 'TG',
-    country: 'IN',
-    pincode: '500081',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    pincode: '',
     latitude: null,
     longitude: null,
     placeId: '',
@@ -262,42 +250,9 @@ const CreateEventPage = () => {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const [customCategoryMode, setCustomCategoryMode] = useState(false);
-  const [customCategoryInput, setCustomCategoryInput] = useState('');
-
-  const handleCategorySelectChange = (val: string) => {
-    if (val === 'Other') {
-      setCustomCategoryMode(true);
-      set('category', customCategoryInput.trim() || 'Other');
-    } else {
-      setCustomCategoryMode(false);
-      set('category', val);
-    }
-  };
-
-  const applyTenurePreset = (hoursToAdd: number, daysToAdd: number = 0) => {
-    const sDate = form.startDate || getTomorrowDateStr(1);
-    const sTime = form.startTime || '18:00';
-    const startDt = new Date(`${sDate}T${sTime}:00`);
-    if (isNaN(startDt.getTime())) return;
-
-    const newEndMs = startDt.getTime() + (hoursToAdd * 3600 * 1000) + (daysToAdd * 86400 * 1000);
-    const endDt = new Date(newEndMs);
-
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const eDateStr = `${endDt.getFullYear()}-${pad(endDt.getMonth() + 1)}-${pad(endDt.getDate())}`;
-    const eTimeStr = `${pad(endDt.getHours())}:${pad(endDt.getMinutes())}`;
-
-    setForm((f) => ({
-      ...f,
-      endDate: eDateStr,
-      endTime: eTimeStr,
-    }));
-  };
-
-  const eventDurationText = getEventDurationText(form.startDate, form.startTime, form.endDate, form.endTime);
-
   // ── Payout gate ─────────────────────────────────────────────────────────────
+  // Warn organizers who are selling paid tickets but have no verified payout
+  // account — otherwise their ticket revenue sits held until they onboard.
   const isPaidEvent =
     (!form.useTicketTypes && form.isPaid && Number(form.ticketPrice) > 0) ||
     (form.useTicketTypes && form.ticketTypes.some((t) => (t.isEnabled ?? true) && Number(t.price) > 0));
@@ -311,6 +266,8 @@ const CreateEventPage = () => {
   const payoutReady = payoutData?.account?.razorpayAccountStatus === 'activated';
 
   // ── Location cascade: country → state → city ────────────────────────────────
+  // The geo dataset (7.7 MB of cities) loads as a separate async chunk on first
+  // use, so these resolve asynchronously rather than synchronously in render.
   const [countryOptions, setCountryOptions] = useState<GeoOption[]>([]);
   const [stateOptions, setStateOptions] = useState<GeoOption[]>([]);
   const [cityOptions, setCityOptions] = useState<GeoOption[]>([]);
@@ -335,7 +292,10 @@ const CreateEventPage = () => {
     };
   }, [form.country, form.state]);
 
-  // ── Edit mode: pre-fill form ────────────────────────────────────────────────
+  // ── Edit mode: pre-fill the form from the loaded event (once) ────────────────
+  // Country/state are stored as full names but the pickers key on ISO codes, so
+  // we reverse-map name → code. The values round-trip exactly because they were
+  // saved from this same geo dataset, so an exact name match always resolves.
   useEffect(() => {
     if (!isEdit || !editEvent || prefilledRef.current) return;
     prefilledRef.current = true;
@@ -348,37 +308,32 @@ const CreateEventPage = () => {
     const tiers = ev.ticketTypes ?? [];
 
     (async () => {
-      let country = 'IN';
-      let state = 'TG';
+      let country = '';
+      let state = '';
       if (ev.country) {
         const countries = await getCountryOptions();
-        country = countries.find((c) => c.name === ev.country)?.code ?? country;
+        country = countries.find((c) => c.name === ev.country)?.code ?? '';
         if (country && ev.state) {
           const states = await getStateOptions(country);
-          state = states.find((s) => s.name === ev.state)?.code ?? state;
+          state = states.find((s) => s.name === ev.state)?.code ?? '';
         }
       }
-      if (ev.category && !STANDARD_CATEGORY_IDS.includes(ev.category)) {
-        setCustomCategoryMode(true);
-        setCustomCategoryInput(ev.category);
-      }
-
       setForm((f) => ({
         ...f,
         title: ev.title ?? '',
         description: ev.description ?? '',
-        category: ev.category ?? 'Tech',
+        category: ev.category ?? '',
         startDate: dateStr(sd),
         startTime: timeStr(sd),
         endDate: dateStr(ed),
         endTime: timeStr(ed),
         timezone: ev.timezone ?? f.timezone,
-        locationType: ev.locationType ?? 'IN_PERSON',
-        address: ev.address ?? f.address,
-        city: ev.city ?? f.city,
-        state: state || f.state,
-        country: country || f.country,
-        pincode: ev.pincode ?? f.pincode,
+        locationType: ev.locationType,
+        address: ev.address ?? '',
+        city: ev.city ?? '',
+        state,
+        country,
+        pincode: ev.pincode ?? '',
         latitude: ev.latitude ?? null,
         longitude: ev.longitude ?? null,
         placeId: ev.placeId ?? '',
@@ -411,12 +366,30 @@ const CreateEventPage = () => {
     })();
   }, [isEdit, editEvent]);
 
-  // ── Role guards ─────────────────────────────────────────────────────────────
+  // Must run before the early returns below (Rules of Hooks): it used to be
+  // called further down, after them, so some renders skipped it.
+  const { resolvedTheme } = useTheme();
+
+  // ─── Role guards ───────────────────────────────────────────────────────────
+  // Kept below all hooks so hook order stays stable across renders (Rules of Hooks).
+
+  // Admins manage events via /admin — bounce them to their dashboard.
   if (isAuthenticated && userRole === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
+  // Published (or cancelled) events cannot be edited — redirect back to the
+  // event overview so even a direct URL visit (/edit) is blocked.
+  if (isEdit && editEvent && editEvent.status !== 'DRAFT') {
+    return <Navigate to={`/organizer/events/${editEventId}`} replace />;
+  }
+
+  // Attendees can't create events — offer the instant self-serve upgrade instead
+  // of silently bouncing them away. Once the mutation flips their role, this same
+  // component re-renders past this guard and shows the real form, no navigation needed.
   if (isAuthenticated && userRole === 'attendee') {
+    // Organizer path: instant self-serve upgrade is running — show a brief
+    // loading state instead of the manual card.
     if (autoUpgrading) {
       return (
         <PortalLayout>
@@ -491,6 +464,7 @@ const CreateEventPage = () => {
   }
 
   // ── Ticket allocation ─────────────────────────────────────────────────────
+
   const allocateTicketSeats = (totalCapacity: number, currentTypes: TicketType[]) => {
     const cap = Math.max(0, Math.floor(totalCapacity));
     const premiumCount = Math.floor(cap * 0.1);
@@ -509,96 +483,123 @@ const CreateEventPage = () => {
     }));
   };
 
-  const toISO = (date: string, time: string) => {
-    if (!date) return '';
-    const timeVal = time || '18:00';
-    try {
-      return new Date(`${date}T${timeVal}:00`).toISOString();
-    } catch {
-      return new Date().toISOString();
-    }
-  };
+  const toISO = (date: string, time: string) =>
+    date ? new Date(`${date}T${time}:00`).toISOString() : '';
 
   // ── Image upload ──────────────────────────────────────────────────────────
+
   const handleFileSelect = async (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
 
+    // Show local preview immediately
     const localUrl = URL.createObjectURL(file);
     setImagePreview(localUrl);
 
+    // Upload to backend
     setUploading(true);
     try {
       const res = await apiUpload<{ data: { url: string } }>('/media/upload', file);
       set('coverImage', res.data.url);
-      toast.success('Cover image uploaded');
+      toast.success('Image uploaded');
     } catch {
+      // Keep local preview, store data URL as fallback
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
         set('coverImage', dataUrl);
       };
       reader.readAsDataURL(file);
-      toast.error('Upload failed, image saved as data URL');
+      toast.error('Upload failed, image will be embedded as data URL');
     } finally {
       setUploading(false);
     }
   };
 
+  // ── Ticket type helpers ───────────────────────────────────────────────────
+
+  const updateTicket = (id: string, patch: Partial<TicketType>) =>
+    setForm((prev) => ({
+      ...prev,
+      ticketTypes: prev.ticketTypes.map((t) =>
+        t.id === id ? { ...t, ...patch } : t
+      ),
+    }));
+
+  const addBenefit = (id: string) =>
+    updateTicket(id, { benefits: [...(form.ticketTypes.find((t) => t.id === id)?.benefits ?? []), ''] });
+
+  const updateBenefit = (ticketId: string, idx: number, val: string) =>
+    updateTicket(ticketId, {
+      benefits: (form.ticketTypes.find((t) => t.id === ticketId)?.benefits ?? []).map((b, i) => i === idx ? val : b),
+    });
+
+  const removeBenefit = (ticketId: string, idx: number) =>
+    updateTicket(ticketId, {
+      benefits: (form.ticketTypes.find((t) => t.id === ticketId)?.benefits ?? []).filter((_, i) => i !== idx),
+    });
+
+  const handleTicketCountChange = (id: string, newCount: number) => {
+    updateTicket(id, { count: Math.max(0, newCount) });
+  };
+
+  // Capacity tracking for multi-tier mode
+  const usedCapacity = form.ticketTypes.filter((t) => t.isEnabled).reduce((s, t) => s + t.count, 0);
+  const remainingCapacity = form.capacity - usedCapacity;
+
   // ── Submit ────────────────────────────────────────────────────────────────
+
   const handleSubmit = async () => {
+    // Auth gate: if the visitor isn't signed in, prompt sign-in instead of
+    // hitting the API. Their form state stays intact behind the modal, so
+    // they can submit immediately after signing in.
     if (!isAuthenticated) {
+      // Open the organizer sign-in gate (the create form is an organizer intent).
+      // Their form state stays intact behind the modal.
       setGateStep('organizer');
       return;
     }
 
-    const titleTrimmed = form.title.trim();
-    if (!titleTrimmed || titleTrimmed.length < 3) {
+    if (!form.title || form.title.trim().length < 3) {
       toast.error('Event name must be at least 3 characters.');
       return;
     }
 
-    const descTrimmed = form.description.trim();
-    if (!descTrimmed || descTrimmed.length < 10) {
+    // Backend requires a description (min 10 chars) — enforce it here too so the
+    // user gets a clear message instead of a server-side validation error.
+    if (!form.description || form.description.trim().length < 10) {
       toast.error('Description must be at least 10 characters.');
       return;
     }
 
-    const categoryVal = form.category || 'Tech';
-
-    // Start & End dates with intelligent fallback
-    let sDate = form.startDate;
-    let sTime = form.startTime || '18:00';
-    let eDate = form.endDate || sDate;
-    let eTime = form.endTime || '20:00';
-
-    if (!sDate) sDate = getTomorrowDateStr(1);
-    if (!eDate) eDate = sDate;
-
-    let startISO = toISO(sDate, sTime);
-    let endISO   = toISO(eDate, eTime);
-
-    let startDt = new Date(startISO);
-    let endDt   = new Date(endISO);
-
-    // If start date is in the past for new events, set it to tomorrow
-    if (!isEdit && startDt <= new Date()) {
-      const tomorrow = getTomorrowDateStr(1);
-      sDate = tomorrow;
-      eDate = tomorrow;
-      startISO = toISO(sDate, sTime);
-      endISO   = toISO(eDate, eTime);
-      startDt  = new Date(startISO);
-      endDt    = new Date(endISO);
+    if (!form.category) {
+      toast.error('Please pick a category.');
+      return;
     }
 
-    if (endDt <= startDt) {
-      endDt = new Date(startDt.getTime() + 2 * 60 * 60 * 1000);
-      const pad = (n: number) => String(n).padStart(2, '0');
-      eDate = `${endDt.getFullYear()}-${pad(endDt.getMonth() + 1)}-${pad(endDt.getDate())}`;
-      eTime = `${pad(endDt.getHours())}:${pad(endDt.getMinutes())}`;
-      endISO = toISO(eDate, eTime);
+    if (!form.country || !form.state || !form.city || !form.address) {
+      toast.error('Please complete the event location: country, state, city, and address.');
+      return;
     }
+
+    if (!form.pincode.trim()) {
+      toast.error('Pincode is required.');
+      return;
+    }
+
+    const startISO = toISO(form.startDate, form.startTime);
+    const endISO   = toISO(form.endDate, form.endTime);
+
+    if (!startISO) { toast.error('Please set a start date.'); return; }
+    if (!endISO)   { toast.error('Please set an end date.'); return; }
+
+    const startDt = new Date(startISO);
+    const endDt   = new Date(endISO);
+
+    // Only new events must start in the future — an event being edited may
+    // already have started (or ended), and blocking that would make it uneditable.
+    if (!isEdit && startDt <= new Date()) { toast.error('Start date must be in the future.'); return; }
+    if (endDt <= startDt)     { toast.error('End date must be after the start date.'); return; }
 
     if (form.useTicketTypes && usedCapacity > form.capacity) {
       toast.error('Ticket tier seats exceed total capacity.');
@@ -606,48 +607,40 @@ const CreateEventPage = () => {
     }
 
     if (!form.useTicketTypes && form.isPaid && !(Number(form.ticketPrice) > 0)) {
-      toast.error('Please enter a valid ticket price.');
+      toast.error('Please enter a ticket price.');
       return;
     }
-
-    // Smart location fallback so location validation NEVER fails backend schema
-    const countryName = countryOptions.find((c) => c.code === form.country)?.name || form.country || 'India';
-    const stateName   = stateOptions.find((s) => s.code === form.state)?.name || form.state || 'Telangana';
-    const cityName    = form.city.trim() || 'Hyderabad';
-    const addressName = form.address.trim() || 'Venue Location';
-    const pincodeName = form.pincode.trim() || '500081';
 
     const meetingUrl = form.locationType !== 'IN_PERSON' ? (form.meetingUrl || undefined) : undefined;
     const activeTickets = form.useTicketTypes ? form.ticketTypes.filter((t) => t.isEnabled) : undefined;
 
     const payload = {
-      title: titleTrimmed,
-      description: descTrimmed,
-      category: categoryVal,
+      title: form.title,
+      description: form.description,
+      category: form.category,
       startDate: startISO,
       endDate: endISO,
-      // Backend createEventSchema mandates type: 'IN_PERSON'
-      type: 'IN_PERSON' as const,
+      type: form.locationType,
       location: {
-        address: addressName,
-        city: cityName,
-        state: stateName,
-        country: countryName,
-        pincode: pincodeName,
+        address: form.address,
+        city: form.city,
+        state: stateOptions.find((s) => s.code === form.state)?.name ?? form.state,
+        country: countryOptions.find((c) => c.code === form.country)?.name ?? form.country,
+        pincode: form.pincode.trim(),
         meetingUrl,
         latitude: form.latitude ?? undefined,
         longitude: form.longitude ?? undefined,
         placeId: form.placeId || undefined,
       },
       coverImage: form.coverImage || undefined,
-      theme: form.theme || 'indigo',
-      timezone: form.timezone || 'Asia/Kolkata',
-      capacity: Math.max(1, form.capacity || 100),
+      theme: form.theme,
+      timezone: form.timezone,
+      capacity: form.capacity,
       ticketPrice: (!form.useTicketTypes && form.isPaid && form.ticketPrice) ? Number(form.ticketPrice) : undefined,
       ticketTypes: activeTickets,
       requiresApproval: form.requiresApproval,
       waitlistEnabled: form.waitlistEnabled,
-      visibility: form.visibility || 'PUBLIC',
+      visibility: form.visibility,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       slug: form.slug || undefined,
       communityId: form.communityId || undefined,
@@ -656,113 +649,71 @@ const CreateEventPage = () => {
     try {
       if (isEdit && editEventId) {
         await updateMutation.mutateAsync({ id: editEventId, payload });
-        toast.success('Event updated successfully!');
         navigate(`/organizer/events/${editEventId}`);
       } else {
         const res = await createMutation.mutateAsync(payload);
-        toast.success('Event created successfully!');
-        const newId = (res as { data?: { id?: string } })?.data?.id;
-        if (newId) {
-          navigate(`/organizer/events/${newId}`);
-        } else {
-          navigate('/organizer/dashboard');
-        }
+        navigate(`/organizer/events/${(res as { data: { id: string } }).data.id}`);
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create event. Please check all fields.');
+    } catch {
+      // Error is already shown by the mutation's onError toast
     }
   };
 
+  // The button stays clickable; handleSubmit toasts the specific error for any
+  // missing/invalid field (name, description, category, dates, ticket math) so
+  // users always learn what to fix instead of facing a dead disabled button.
+
+  // Inline hint under the submit button — surfaces what's still required so
+  // users can see what's left before they even click.
   const missingHints: string[] = [];
-  if (form.title.trim().length < 3) missingHints.push('Event Name (min 3 chars)');
-  if (form.description.trim().length < 10) missingHints.push('Description (min 10 chars)');
+  if (form.title.trim().length < 3) missingHints.push('Event name (3+ chars)');
+  if (form.description.trim().length < 10) missingHints.push('Description (10+ chars)');
+  if (!form.category) missingHints.push('Category');
+  if (!form.startDate) missingHints.push('Start date');
+  if (!form.endDate) missingHints.push('End date');
+
+  // ── Theme randomizer ──────────────────────────────────────────────────────
 
   const randomizeTheme = () => {
     const idx = Math.floor(Math.random() * THEME_IDS.length);
     set('theme', THEME_IDS[idx]);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const isDark = resolvedTheme !== 'light';
   const activeTheme = EVENT_THEMES[form.theme] ?? EVENT_THEMES.indigo;
 
   return (
     <OrganizerLayout>
-      {/* ── Luma Ambient Light Blue Bokeh Background Overlay ───────────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-gradient-to-b from-[#08152e] via-[#0d2247] to-[#061024] text-foreground">
-        {/* Soft Ambient Light Blue & Ocean Blue Floating Glow Blobs */}
-        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-sky-400/25 blur-[130px] animate-pulse transition-all duration-1000" />
-        <div className="absolute top-[35%] right-[-5%] w-[700px] h-[700px] rounded-full bg-blue-500/25 blur-[150px] animate-pulse delay-1000 transition-all duration-1000" />
-        <div className="absolute bottom-[-10%] left-[25%] w-[620px] h-[620px] rounded-full bg-cyan-400/20 blur-[130px] animate-pulse delay-500 transition-all duration-1000" />
-        <div className="absolute top-[20%] right-[30%] w-[450px] h-[450px] rounded-full bg-indigo-400/20 blur-[110px] animate-pulse delay-700 transition-all duration-1000" />
-        <div className="absolute top-[-5%] right-[15%] w-[500px] h-[500px] rounded-full bg-sky-300/20 blur-[120px] animate-pulse delay-300 transition-all duration-1000" />
+      <div
+        className={`min-h-screen -m-4 md:-m-8 p-4 md:p-8 antialiased transition-colors duration-500 relative ${
+          isDark ? 'text-[#ECECEC]' : 'text-neutral-900'
+        }`}
+        style={{
+          background: isDark
+            ? `radial-gradient(ellipse 80% 50% at 50% -10%, ${activeTheme.accent}26 0%, transparent 65%)`
+            : undefined,
+        }}
+      >
+        <div className="max-w-[960px] mx-auto pb-16 relative z-10">
 
-        {/* Floating Light Blue Bokeh Bubbles - Slow Motion */}
-        <div className="absolute top-[18%] left-[20%] w-48 h-48 rounded-full bg-sky-300/25 blur-2xl animate-pulse delay-300" />
-        <div className="absolute top-[55%] left-[6%] w-64 h-64 rounded-full bg-blue-400/20 blur-3xl animate-pulse delay-700" />
-        <div className="absolute top-[32%] right-[16%] w-52 h-52 rounded-full bg-cyan-300/25 blur-2xl animate-pulse delay-500" />
-        <div className="absolute bottom-[18%] right-[22%] w-72 h-72 rounded-full bg-sky-400/20 blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-[75%] left-[40%] w-56 h-56 rounded-full bg-blue-300/20 blur-2xl animate-pulse delay-200" />
-
-        {/* Bokeh Circular Texture Grid */}
-        <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#38bdf8_1.5px,transparent_1.5px)] [background-size:32px_32px]" />
-      </div>
-
-      <div className="max-w-[980px] mx-auto pb-24 space-y-8 relative z-10">
-
-        {/* ── Top Header Navigation ────────────────────────────────────────── */}
-        <div className="flex items-center justify-between border-b border-border/80 pb-6 flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="rounded-2xl border-border hover:bg-muted text-xs sm:text-sm font-bold shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
-                {isEdit ? 'Edit Event' : 'Create New Event'}
-                <Sparkles className="w-6 h-6 text-primary animate-bounce hidden sm:inline-block" />
-              </h1>
-              <p className="text-xs sm:text-base text-muted-foreground font-medium mt-1">
-                Configure event details, dates, venue location, and ticketing.
+          {isEdit && (
+            <div className="mb-6">
+              <h1 className={`text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Edit Event</h1>
+              <p className={`text-sm mt-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Update the details below and save your changes.
               </p>
             </div>
-          </div>
+          )}
 
-          {/* 1-Click Add to Google Calendar Link */}
-          <a
-            href={googleCalUrl({
-              title: form.title || 'New Event',
-              description: form.description || 'TapByWisein Event',
-              start: form.startDate ? `${form.startDate}T${form.startTime || '12:00'}:00` : new Date(),
-              end: form.endDate ? `${form.endDate}T${form.endTime || '13:00'}:00` : new Date(Date.now() + 3600000),
-              location: [form.address, form.city, form.state, form.country].filter(Boolean).join(', '),
-            })}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md hover:bg-muted/80 text-foreground transition-all cursor-pointer shadow-md active:scale-95"
-            title="Add to Google Calendar to get reminders"
-          >
-            <Calendar className="w-5 h-5 text-primary shrink-0" />
-            <div className="flex flex-col text-left">
-              <span className="text-xs sm:text-sm font-extrabold leading-tight">Add to Google Calendar</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Add to calendar to get reminders</span>
-            </div>
-          </a>
-        </div>
+          {/* ── Two-column grid ────────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-[340px,1fr] gap-8 items-start">
 
-        {/* ── Main Two-Column Card Grid ────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[360px,1fr] gap-8 items-start">
+            {/* ── LEFT: Cover picker + Theme (sticky on wide screens, so it stays in view) */}
+            <div className="space-y-4 lg:sticky lg:top-6">
 
-          {/* ── LEFT COLUMN: Cover Image & Theme Selection ─────────────────── */}
-          <div className="space-y-6">
-
-            {/* Cover Image Uploader Card */}
-            <Surface className="p-6 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-4">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                Event Poster / Cover Image
-              </Label>
+              {/* Cover image preview & picker — square container with rounded corners */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
@@ -771,41 +722,54 @@ const CreateEventPage = () => {
                   const file = e.dataTransfer.files[0];
                   if (file) void handleFileSelect(file);
                 }}
-                className="relative w-full aspect-square rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all overflow-hidden group shadow-inner"
+                className={`group relative w-full aspect-square rounded-[14px] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                  isDark
+                    ? 'bg-[#2a2a2d]/80 border border-white/10 hover:border-white/20'
+                    : 'bg-white border border-neutral-200/80 hover:border-neutral-300 shadow-md'
+                }`}
                 style={(!imagePreview && !form.coverImage) ? { background: activeTheme.bannerGradient } : undefined}
               >
                 {uploading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="w-9 h-9 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs text-white/90 font-medium">Uploading image...</p>
+                  <div className="flex flex-col items-center gap-2.5">
+                    <div className="w-8 h-8 border-2 border-white/90 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs font-medium text-white/80">Uploading image...</p>
                   </div>
                 ) : (imagePreview || form.coverImage) ? (
                   <>
                     <img
                       src={imagePreview || form.coverImage}
                       alt="Cover preview"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); set('coverImage', ''); setImagePreview(''); }}
-                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90 transition-colors z-10 text-white"
+                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white/80 hover:text-white flex items-center justify-center transition-colors z-10"
                       title="Remove image"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-xs font-bold text-white bg-black/60 px-3.5 py-2 rounded-xl border border-white/20">
-                        Change Image
+                    {/* Bottom-right change button overlay */}
+                    <div className="absolute bottom-3 right-3 z-10">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-xs font-medium text-white border border-white/10 transition-all shadow-sm">
+                        <Upload className="w-3.5 h-3.5" /> Change
                       </span>
                     </div>
                   </>
                 ) : (
-                  <div className="p-4 text-center space-y-2">
-                    <Upload className="w-9 h-9 text-white/90 mx-auto" />
-                    <p className="text-base font-extrabold text-white drop-shadow">Upload Cover Photo</p>
-                    <p className="text-xs text-white/80">JPG, PNG, WEBP - Max 5MB</p>
-                  </div>
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white mb-2 group-hover:scale-105 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm font-medium text-white drop-shadow-sm">Add Event Cover</p>
+                    <p className="text-[11px] text-white/80 mt-0.5">JPG, PNG, WEBP · up to 5MB</p>
+                    {/* Bottom-right corner trigger pill */}
+                    <div className="absolute bottom-3 right-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm text-[11px] font-medium text-white/90 border border-white/10">
+                        <Upload className="w-3 h-3" /> Upload
+                      </span>
+                    </div>
+                  </>
                 )}
               </div>
               <input
@@ -815,516 +779,990 @@ const CreateEventPage = () => {
                 className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFileSelect(f); }}
               />
-            </Surface>
 
-            {/* Theme Picker Card */}
-            <Surface className="p-6 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Event Color Theme
-                </Label>
-                <button
-                  type="button"
-                  onClick={randomizeTheme}
-                  className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline"
-                >
-                  <Shuffle className="w-3.5 h-3.5" /> Randomize
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-2.5">
-                {THEME_IDS.map((id) => {
-                  const theme = EVENT_THEMES[id];
-                  const isActive = form.theme === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => set('theme', id)}
-                      className="flex flex-col items-center gap-1.5 group"
-                      title={theme.label}
-                    >
-                      <div
-                        className={`w-full aspect-square rounded-2xl border-2 transition-all relative overflow-hidden ${
-                          isActive ? 'border-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background scale-105' : 'border-transparent hover:border-border'
-                        }`}
-                        style={{ background: theme.bannerGradient }}
+              {/* Theme selector card */}
+              <div
+                className="p-3.5 rounded-[14px] flex items-center justify-between gap-3 premium-glass-card"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-7 h-7 rounded-lg border border-black/10 shrink-0 shadow-sm"
+                    style={{ background: activeTheme.bannerGradient }}
+                  />
+                  <div className="min-w-0">
+                    <span className={`text-[11px] uppercase tracking-wider block font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                      Theme
+                    </span>
+                    <span className={`text-sm font-medium truncate block ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+                      {activeTheme.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium premium-glass-chip focus:outline-none"
                       >
-                        {isActive && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-5 h-5 text-white drop-shadow" />
-                          </div>
-                        )}
+                        <span>Change</span>
+                        <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className={`w-56 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
+                        isDark
+                          ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                          : 'border border-neutral-200 bg-white text-neutral-900'
+                      }`}
+                    >
+                      <div className={`text-[11px] font-semibold px-2 py-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                        Available Themes
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground truncate w-full text-center">
-                        {theme.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                      <div className="grid grid-cols-2 gap-1.5 mt-1 max-h-60 overflow-y-auto">
+                        {THEME_IDS.map((id) => {
+                          const theme = EVENT_THEMES[id];
+                          const isActive = form.theme === id;
+                          return (
+                            <DropdownMenuItem
+                              key={id}
+                              onClick={() => set('theme', id)}
+                              className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
+                                isActive
+                                  ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                                  : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                              }`}
+                            >
+                              <div
+                                className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+                                style={{ background: theme.bannerGradient }}
+                              />
+                              <span className="text-xs truncate">{theme.label}</span>
+                              {isActive && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <button
+                    type="button"
+                    onClick={randomizeTheme}
+                    className="p-1.5 rounded-lg premium-glass-chip"
+                    title="Randomize Theme"
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </Surface>
 
-          </div>
+            </div>
 
-          {/* ── RIGHT COLUMN: Main Inputs & Event Settings ─────────────────── */}
-          <div className="space-y-6">
+            {/* ── RIGHT: Event Details ─────────────────────────────────────── */}
+            <div className="space-y-4">
 
-            {/* 1. Title & Host Community Section */}
-            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="event-title" className="text-base sm:text-lg font-bold text-foreground block">
-                  Event Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
+              {/* Top row: Calendar dropdown + Visibility toggle */}
+              <div className="flex items-center justify-between gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
+                    >
+                      <Calendar className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      <span>
+                        {form.communityId && myCommunities?.find((c) => c.id === form.communityId)
+                          ? `${myCommunities.find((c) => c.id === form.communityId)?.name} Calendar`
+                          : 'Personal Calendar'}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className={`w-64 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    <div className={`text-[11px] font-semibold px-2 py-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                      Select Calendar
+                    </div>
+                    <DropdownMenuItem
+                      onClick={() => set('communityId', '')}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                        !form.communityId
+                          ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                        <span className="text-xs truncate">Personal Calendar</span>
+                      </div>
+                      {!form.communityId && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    </DropdownMenuItem>
+
+                    {(myCommunities ?? []).length > 0 && (
+                      <>
+                        <div className={`text-[10px] font-semibold px-2 pt-2 pb-1 uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Communities
+                        </div>
+                        {myCommunities!.map((c) => {
+                          const isActive = form.communityId === c.id;
+                          return (
+                            <DropdownMenuItem
+                              key={c.id}
+                              onClick={() => set('communityId', c.id)}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                                isActive
+                                  ? (isDark ? 'bg-white/15 text-white font-medium' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                                  : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Building2 className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                                <span className="text-xs truncate">{c.name} Calendar</span>
+                              </div>
+                              {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium premium-glass-chip focus:outline-none"
+                    >
+                      {form.visibility === 'PRIVATE' ? (
+                        <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      ) : (
+                        <Globe className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                      )}
+                      <span>{form.visibility === 'PRIVATE' ? 'Private' : 'Public'}</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className={`w-72 p-2 rounded-xl shadow-2xl z-50 backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PUBLIC')}
+                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
+                        form.visibility === 'PUBLIC'
+                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <Globe className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Public</p>
+                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Shown on your calendar and discoverable by anyone.
+                        </p>
+                      </div>
+                      {form.visibility === 'PUBLIC' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => set('visibility', 'PRIVATE')}
+                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer mt-1 transition-colors ${
+                        form.visibility === 'PRIVATE'
+                          ? (isDark ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-950 font-semibold')
+                          : (isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-neutral-700 hover:bg-neutral-100')
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className={`text-xs font-medium leading-tight ${isDark ? 'text-white' : 'text-neutral-900'}`}>Private</p>
+                        <p className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Unlisted. Only people with the link can register.
+                        </p>
+                      </div>
+                      {form.visibility === 'PRIVATE' && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Event Name Card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                </label>
+                {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
+                <input
                   id="event-title"
                   value={form.title}
-                  maxLength={100}
                   onChange={(e) => set('title', e.target.value)}
-                  placeholder="e.g. AI & Startup Founder Meetup 2026"
-                  className="text-lg sm:text-xl font-bold h-13 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                  placeholder="Enter event name..."
+                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                    isDark
+                      ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
+                      : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
+                  }`}
                 />
               </div>
 
-              {/* Community Host Option */}
+              {/* Community Card (optional) */}
               {(myCommunities?.length ?? 0) > 0 && (
-                <div className="space-y-2 pt-3 border-t border-border/60">
-                  <Label htmlFor="event-community" className="text-sm font-semibold text-muted-foreground">
-                    Host Under Community (Optional)
-                  </Label>
-                  <select
-                    id="event-community"
-                    value={form.communityId}
-                    onChange={(e) => set('communityId', e.target.value)}
-                    className="w-full h-12 px-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                  >
-                    <option value="">No community (Personal Event)</option>
-                    {myCommunities!.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.memberCount ?? 0} members)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </Surface>
-
-            {/* 2. Date, Time & Timezone Section */}
-            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Calendar className="w-6 h-6 text-primary" />
-                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Date & Time</h3>
-                </div>
-                {eventDurationText && !eventDurationText.includes('must be after') && (
-                  <span className="text-xs sm:text-sm font-extrabold px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
-                    <Timer className="w-4 h-4" />
-                    Tenure: {eventDurationText}
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-5">
-                {/* Row 1: Start Date & Start Time */}
-                <div className="space-y-2">
-                  <Label className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4.5 h-4.5 text-primary" /> Start Date & Time <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3.5">
-                    <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        type="date"
-                        value={form.startDate}
-                        onChange={(e) => set('startDate', e.target.value)}
-                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        type="time"
-                        value={form.startTime}
-                        onChange={(e) => set('startTime', e.target.value)}
-                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 2: End Date & End Time */}
-                <div className="space-y-2">
-                  <Label className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4.5 h-4.5 text-primary" /> End Date & Time <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3.5">
-                    <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        type="date"
-                        value={form.endDate}
-                        onChange={(e) => set('endDate', e.target.value)}
-                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        type="time"
-                        value={form.endTime}
-                        onChange={(e) => set('endTime', e.target.value)}
-                        className="h-13 text-base sm:text-lg font-bold pl-12 rounded-2xl bg-background border-border focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Duration / Tenure Calculator & Preset Buttons */}
-                <div className="p-4 rounded-2xl border border-border/80 bg-muted/30 space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                      <Timer className="w-4.5 h-4.5 text-primary" />
-                      <span>Event Tenure:</span>
-                      <span className="text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 font-extrabold">
-                        {eventDurationText || 'Select dates & times'}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground font-semibold">Quick Tenure Presets:</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {[
-                      { label: '+1 hr', hours: 1, days: 0 },
-                      { label: '+2 hrs', hours: 2, days: 0 },
-                      { label: '+3 hrs', hours: 3, days: 0 },
-                      { label: '+4 hrs', hours: 4, days: 0 },
-                      { label: '+8 hrs', hours: 8, days: 0 },
-                      { label: '+1 Day', hours: 0, days: 1 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => applyTenurePreset(preset.hours, preset.days)}
-                        className="px-3.5 py-2 text-xs font-bold rounded-xl border border-border bg-background hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-95 shadow-xs"
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Timezone */}
-              <div className="space-y-2 pt-3 border-t border-border/60">
-                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                  <Globe className="w-4.5 h-4.5 text-primary" /> Event Timezone
-                </Label>
-                <select
-                  value={form.timezone}
-                  onChange={(e) => set('timezone', e.target.value)}
-                  className="w-full h-13 px-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                <div
+                  className="p-4 rounded-[14px] space-y-1.5 premium-glass-card"
                 >
-                  {TIMEZONES.map((tz) => (
-                    <option key={tz.value} value={tz.value}>{tz.label}</option>
-                  ))}
-                </select>
-              </div>
-            </Surface>
-
-            {/* 3. Location & Address Section */}
-            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
-              <div className="flex items-center gap-2.5 border-b border-border/60 pb-3.5">
-                <MapPin className="w-6 h-6 text-primary" />
-                <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Event Location</h3>
-              </div>
-
-              {/* Google Places Search & Interactive Map */}
-              <LocationPicker
-                latitude={form.latitude}
-                longitude={form.longitude}
-                placeId={form.placeId}
-                onPick={(loc: PickedLocation) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    address: loc.address || prev.address,
-                    city: loc.city || prev.city,
-                    state: loc.state || prev.state,
-                    country: loc.country || prev.country,
-                    pincode: loc.pincode || prev.pincode,
-                    latitude: loc.latitude,
-                    longitude: loc.longitude,
-                    placeId: loc.placeId,
-                  }))
-                }
-              />
-
-              {/* Address Cascade Fields */}
-              <div className="space-y-3.5 pt-3 border-t border-border/60">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                  Venue Details
-                </Label>
-
-                <Input
-                  value={form.address}
-                  onChange={(e) => set('address', e.target.value)}
-                  placeholder="Venue Name / Street Address (e.g. T-Hub Phase 2, Madhapur)"
-                  className="h-12 text-base font-semibold rounded-2xl bg-background"
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <select
-                    value={form.country}
-                    onChange={(e) => {
-                      const country = e.target.value;
-                      setForm((prev) => ({ ...prev, country, state: '', city: '' }));
-                    }}
-                    className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                  <label htmlFor="event-community" className={`block text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                    Community (optional)
+                  </label>
+                  <Select
+                    value={form.communityId || 'none'}
+                    onValueChange={(val) => set('communityId', val === 'none' ? '' : val)}
                   >
-                    <option value="">Select Country…</option>
-                    {countryOptions.map((c) => (
-                      <option key={c.code} value={c.code}>{c.name}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={form.state}
-                    onChange={(e) => {
-                      const state = e.target.value;
-                      setForm((prev) => ({ ...prev, state, city: '' }));
-                    }}
-                    disabled={!form.country}
-                    className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 shadow-sm"
-                  >
-                    <option value="">Select State…</option>
-                    {stateOptions.map((s) => (
-                      <option key={s.code} value={s.code}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {cityOptions.length > 0 ? (
-                    <select
-                      value={form.city}
-                      onChange={(e) => set('city', e.target.value)}
-                      disabled={!form.state}
-                      className="h-12 px-3.5 text-base font-semibold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 shadow-sm"
+                    <SelectTrigger
+                      id="event-community"
+                      className={`w-full h-10 px-3 text-sm rounded-xl focus:ring-1 focus:ring-primary ${
+                        isDark
+                          ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                          : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
+                      }`}
                     >
-                      <option value="">Select City…</option>
-                      {cityOptions.map((c) => (
-                        <option key={c.code} value={c.code}>{c.name}</option>
+                      <SelectValue placeholder="No community" />
+                    </SelectTrigger>
+                    <SelectContent
+                      className={`rounded-xl shadow-2xl backdrop-blur-xl ${
+                        isDark
+                          ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                          : 'border border-neutral-200 bg-white text-neutral-900'
+                      }`}
+                    >
+                      <SelectItem value="none">No community</SelectItem>
+                      {myCommunities!.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
                       ))}
-                    </select>
-                  ) : (
-                    <Input
-                      value={form.city}
-                      onChange={(e) => set('city', e.target.value)}
-                      placeholder="City (e.g. Hyderabad)"
-                      className="h-12 text-base font-semibold rounded-2xl bg-background"
-                    />
-                  )}
-
-                  <Input
-                    value={form.pincode}
-                    onChange={(e) => set('pincode', e.target.value)}
-                    placeholder="Pincode (e.g. 500081)"
-                    className="h-12 text-base font-semibold rounded-2xl bg-background"
-                  />
-                </div>
-              </div>
-            </Surface>
-
-            {/* 4. Description & Category Section */}
-            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-5">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="event-desc" className="text-base sm:text-lg font-bold text-foreground">
-                    Event Description <span className="text-red-500">*</span>
-                  </Label>
-                  <span className="text-xs text-muted-foreground font-semibold">Min 10 characters</span>
-                </div>
-                <textarea
-                  id="event-desc"
-                  value={form.description}
-                  onChange={(e) => set('description', e.target.value)}
-                  placeholder="Provide details about your event, schedule highlights, target audience, or special instructions for attendees..."
-                  rows={5}
-                  className="w-full p-4 text-base font-semibold bg-background border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none shadow-sm"
-                />
-              </div>
-
-              {/* Category Section: Dropdown Only + Custom Input when 'Other' */}
-              <div className="space-y-3 pt-3 border-t border-border/60">
-                <Label htmlFor="event-category" className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Tag className="w-4.5 h-4.5 text-primary" /> Event Category <span className="text-red-500">*</span>
-                </Label>
-
-                {/* Clean Dropdown Select */}
-                <select
-                  id="event-category"
-                  value={customCategoryMode || !STANDARD_CATEGORY_IDS.includes(form.category) ? 'Other' : form.category}
-                  onChange={(e) => handleCategorySelectChange(e.target.value)}
-                  className="w-full h-13 px-4 text-base sm:text-lg font-bold bg-background border border-border rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
-                >
-                  {EVENT_CATEGORIES.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                  ))}
-                </select>
-
-                {/* Custom Category Typed Input Field if 'Other' is selected */}
-                {(customCategoryMode || form.category === 'Other' || (!STANDARD_CATEGORY_IDS.includes(form.category) && form.category !== '')) && (
-                  <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <Label htmlFor="custom-category-input" className="text-sm font-bold text-foreground">
-                      Type Custom Event Category <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="custom-category-input"
-                      value={customCategoryInput || (STANDARD_CATEGORY_IDS.includes(form.category) ? '' : form.category)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCustomCategoryInput(val);
-                        set('category', val.trim() || 'Other');
-                      }}
-                      placeholder="Enter custom category (e.g. Web3, Robotics, AI, Gaming...)"
-                      className="h-13 text-base sm:text-lg font-semibold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-2 focus-visible:ring-primary"
-                    />
-                  </div>
-                )}
-              </div>
-            </Surface>
-
-            {/* 5. Tickets & Capacity Settings Section */}
-            <Surface className="p-7 sm:p-8 border border-border/80 dark:border-primary/20 shadow-xl rounded-3xl bg-card/90 dark:bg-card/80 backdrop-blur-xl space-y-6 hover:border-primary/40 transition-all">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Ticket className="w-6 h-6 text-primary" />
-                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Tickets & Capacity Settings</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground font-semibold">Visibility:</span>
-                  <select
-                    value={form.visibility}
-                    onChange={(e) => set('visibility', e.target.value as any)}
-                    className="h-9 px-3 text-xs font-bold bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="PUBLIC">Public</option>
-                    <option value="PRIVATE">Private Link Only</option>
-                    <option value="UNLISTED">Unlisted</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Payout Warning Alert */}
-              {isPaidEvent && !payoutReady && (
-                <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-                  <div className="text-xs sm:text-sm text-amber-600 dark:text-amber-400 space-y-1">
-                    <p className="font-bold">Set up payouts to collect ticket revenue</p>
-                    <p className="opacity-90 leading-relaxed text-xs">
-                      You are selling paid tickets. Add and verify your bank account details so ticket earnings can be deposited cleanly.
-                    </p>
-                    <Link to="/organizer/payouts" className="inline-block font-semibold underline text-xs pt-1">
-                      Setup Payout Bank Account →
-                    </Link>
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
-              {/* Ticket Price Selection */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <Label className="text-sm sm:text-base font-bold text-foreground">Ticket Type</Label>
-                  <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-2xl border border-border/60">
-                    {[false, true].map((isPaid) => (
-                      <button
-                        key={String(isPaid)}
-                        type="button"
-                        onClick={() => {
-                          if (!isPaid) set('ticketPrice', '');
-                          set('isPaid', isPaid);
-                        }}
-                        className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                          form.isPaid === isPaid
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        {isPaid ? 'Paid Ticket' : 'Free Entry'}
-                      </button>
-                    ))}
+              {/* Date & Time Card */}
+              <div
+                className="p-4 rounded-[14px] space-y-3.5 premium-glass-card"
+              >
+                {/* Start */}
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                  <div className="flex-1">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="date"
+                      value={form.startDate}
+                      onChange={(e) => set('startDate', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="time"
+                      value={form.startTime}
+                      onChange={(e) => set('startTime', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
                   </div>
                 </div>
 
-                {form.isPaid && (
-                  <div className="space-y-2 pt-1">
-                    <Label htmlFor="ticket-price" className="text-sm font-semibold text-foreground">
-                      Ticket Price (₹ INR)
-                    </Label>
-                    <Input
-                      id="ticket-price"
+                {/* End */}
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                  <div className="flex-1">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="date"
+                      value={form.endDate}
+                      onChange={(e) => set('endDate', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                    </span>
+                    <input
+                      type="time"
+                      value={form.endTime}
+                      onChange={(e) => set('endTime', e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+
+                {/* Timezone */}
+                <div className="pt-1 flex items-center gap-2.5">
+                  <Globe className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                  <div className="flex-1">
+                    <Select
+                      value={form.timezone}
+                      onValueChange={(val) => set('timezone', val)}
+                    >
+                      <SelectTrigger className="w-full h-9 px-3 text-xs rounded-xl">
+                        <SelectValue placeholder="Select timezone…" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value} className="text-xs">
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Where ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                Where
+              </p>
+
+              {/* Location — expandable card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <button
+                  type="button"
+                  onClick={() => setLocationExpanded((v) => !v)}
+                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                >
+                  <MapPin className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                  <span className={form.address ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
+                    {form.address ? form.address : 'Add Event Location - In Person'}
+                  </span>
+                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{locationExpanded ? '▲' : '▼'}</span>
+                </button>
+
+                {locationExpanded && (
+                  <div className={`mt-4 pt-3 space-y-3 ${isDark ? 'border-t border-white/10' : 'border-t border-neutral-150'}`}>
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs ${
+                        isDark ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-neutral-100 border border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      <MapPin className="w-3.5 h-3.5 opacity-70" />
+                      <span>In Person</span>
+                    </div>
+
+                    {/* Google Places search */}
+                    <LocationPicker
+                      latitude={form.latitude}
+                      longitude={form.longitude}
+                      placeId={form.placeId}
+                      onPick={(loc: PickedLocation) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          address: loc.address || prev.address,
+                          city: loc.city || prev.city,
+                          state: loc.state || prev.state,
+                          country: loc.country || prev.country,
+                          pincode: loc.pincode || prev.pincode,
+                          latitude: loc.latitude,
+                          longitude: loc.longitude,
+                          placeId: loc.placeId,
+                        }))
+                      }
+                    />
+
+                    {form.placeId ? (
+                      <div className={`p-3 rounded-lg text-xs space-y-1 ${isDark ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15' : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15'}`}>
+                        <div className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>
+                          {[form.city, form.state, form.country].filter(Boolean).join(', ') || 'Location selected'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              latitude: null,
+                              longitude: null,
+                              placeId: '',
+                              country: '',
+                              state: '',
+                              city: '',
+                            }))
+                          }
+                          className="text-primary hover:underline text-[11px]"
+                        >
+                          Change / enter manually
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Or enter it manually:</p>
+
+                        <Select
+                          value={form.country}
+                          onValueChange={(country) => {
+                            setForm((prev) => ({ ...prev, country, state: '', city: '' }));
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                            <SelectValue placeholder="Select country…" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {countryOptions.map((c) => (
+                              <SelectItem key={c.code} value={c.code} className="text-xs">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            value={form.state}
+                            onValueChange={(state) => {
+                              setForm((prev) => ({ ...prev, state, city: '' }));
+                            }}
+                            disabled={!form.country}
+                          >
+                            <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                              <SelectValue placeholder="Select state…" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {stateOptions.map((s) => (
+                                <SelectItem key={s.code} value={s.code} className="text-xs">
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {cityOptions.length > 0 ? (
+                            <Select
+                              value={form.city}
+                              onValueChange={(city) => set('city', city)}
+                              disabled={!form.state}
+                            >
+                              <SelectTrigger className="w-full h-10 px-3 text-xs rounded-xl">
+                                <SelectValue placeholder="Select city…" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {cityOptions.map((c) => (
+                                  <SelectItem key={c.code} value={c.code} className="text-xs">
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <input
+                              value={form.city}
+                              onChange={(e) => set('city', e.target.value)}
+                              placeholder="City"
+                              disabled={!form.state}
+                              className="h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
+                            />
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="sm:col-span-2">
+                        <input
+                          value={form.address}
+                          onChange={(e) => set('address', e.target.value)}
+                          placeholder="Venue / local address *"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          value={form.pincode}
+                          onChange={(e) => set('pincode', e.target.value)}
+                          placeholder="Pincode *"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── About ── */}
+              <p className={`pt-2 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                About
+              </p>
+
+              {/* Description — expandable card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <button
+                  type="button"
+                  onClick={() => setDescExpanded((v) => !v)}
+                  className={`w-full flex items-center gap-2.5 text-sm text-left font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                >
+                  <span className={form.description ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
+                    {form.description ? form.description.slice(0, 60) + (form.description.length > 60 ? '…' : '') : 'Add Description'}
+                  </span>
+                  <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{descExpanded ? '▲' : '▼'}</span>
+                </button>
+                {descExpanded && (
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
+                    rows={4}
+                    className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
+                      isDark
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                    }`}
+                  />
+                )}
+              </div>
+
+              {/* Category Card */}
+              <div
+                className="p-4 rounded-[14px] premium-glass-card"
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Category</span>
+                  <span className="text-xs text-red-500">*</span>
+                </div>
+                <Select
+                  value={form.category}
+                  onValueChange={(val) => set('category', val)}
+                >
+                  <SelectTrigger
+                    className={`w-full h-9 px-3 text-xs rounded-lg focus:ring-1 focus:ring-primary ${
+                      isDark
+                        ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                        : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-800'
+                    }`}
+                  >
+                    <SelectValue placeholder="Select a category…" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className={`rounded-xl shadow-2xl backdrop-blur-xl ${
+                      isDark
+                        ? 'border border-white/15 bg-[#252528] text-neutral-100'
+                        : 'border border-neutral-200 bg-white text-neutral-900'
+                    }`}
+                  >
+                    {EVENT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.id} value={c.label}>
+                        <div className="flex items-center gap-2">
+                          <c.icon className="w-3.5 h-3.5 transition-colors text-muted-foreground group-hover/item:text-primary group-focus/item:text-primary group-data-[highlighted]/item:text-primary" />
+                          <span>{c.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Event Options Card */}
+              <div
+                className="p-4 rounded-[14px] space-y-4 premium-glass-card"
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                    Event Options
+                  </span>
+                </div>
+
+                {/* Payout gate banner */}
+                {isPaidEvent && !payoutReady && (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div className="text-xs text-amber-600 dark:text-amber-300">
+                      <p className="font-medium">Set up payouts to receive money</p>
+                      <p className="mt-0.5 opacity-85">
+                        You're selling paid tickets but haven't added a verified bank account. Ticket revenue is held until verified.
+                      </p>
+                      <Link to="/organizer/payouts" className="inline-block mt-1 font-medium underline text-amber-600 dark:text-amber-400">
+                        Set up payouts →
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ticket Price (single-tier mode) */}
+                {!form.useTicketTypes && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>Tickets</span>
+                      <div className="inline-flex rounded-full p-1 premium-glass-chip border border-border/80">
+                        {([false, true] as const).map((isPaid) => {
+                          const active = form.isPaid === isPaid;
+                          return (
+                            <button
+                              key={String(isPaid)}
+                              type="button"
+                              onClick={() => {
+                                if (!isPaid) set('ticketPrice', '');
+                                set('isPaid', isPaid);
+                              }}
+                              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                                active
+                                  ? 'bg-[#1981FE] text-white shadow-sm shadow-[#1981FE]/30'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              }`}
+                            >
+                              {isPaid ? 'Paid' : 'Free'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {form.isPaid && (
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.ticketPrice}
+                        onChange={(e) => set('ticketPrice', e.target.value)}
+                        placeholder="Price in ₹"
+                        className={`w-full h-9 px-3 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                          isDark
+                            ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                            : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                        }`}
+                      />
+                    )}
+                  </div>
+                )}
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Require Approval */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Require Approval</p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Review and approve guests before confirmation</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set('requiresApproval', !form.requiresApproval)}
+                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
+                      form.requiresApproval
+                        ? 'bg-primary'
+                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.requiresApproval ? 'right-0.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Capacity */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>Capacity</p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Maximum attendees allowed</p>
+                  </div>
+                  <div className="inline-flex items-center rounded-full premium-glass-chip px-1.5 py-0.5 border border-border/80 shadow-sm gap-1">
+                    <input
                       type="number"
                       min={0}
-                      value={form.ticketPrice}
-                      onChange={(e) => set('ticketPrice', e.target.value)}
-                      placeholder="Price in ₹ (e.g. 499)"
-                      className="h-13 text-base sm:text-lg font-semibold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-primary"
+                      value={form.capacity === 0 ? '' : form.capacity}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                        set('capacity', cap);
+                        if (form.useTicketTypes) {
+                          setForm((prev) => ({
+                            ...prev,
+                            capacity: cap,
+                            ticketTypes: allocateTicketSeats(cap, prev.ticketTypes),
+                          }));
+                        }
+                      }}
+                      placeholder="Unlimited"
+                      className="w-16 h-7 text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
                     />
+                    <div className="flex flex-col -space-y-0.5 border-l border-border/60 pl-1 pr-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = (form.capacity || 0) + 1;
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Increase capacity"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = Math.max(0, (form.capacity || 0) - 1);
+                          set('capacity', next);
+                          if (form.useTicketTypes) {
+                            setForm((prev) => ({
+                              ...prev,
+                              capacity: next,
+                              ticketTypes: allocateTicketSeats(next, prev.ticketTypes),
+                            }));
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 hover:bg-muted/60 rounded"
+                        title="Decrease capacity"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <div className={isDark ? 'h-px bg-white/10' : 'h-px bg-neutral-150'} />
+
+                {/* Multiple ticket tiers toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className={`text-xs font-medium cursor-pointer select-none ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}
+                      onClick={() => {
+                        const next = !form.useTicketTypes;
+                        setForm((prev) => ({
+                          ...prev,
+                          useTicketTypes: next,
+                          ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
+                        }));
+                      }}
+                    >
+                      Multiple ticket tiers
+                    </p>
+                    <p className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Offer VIP, General, and Early bird passes</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !form.useTicketTypes;
+                      setForm((prev) => ({
+                        ...prev,
+                        useTicketTypes: next,
+                        ticketTypes: next ? allocateTicketSeats(prev.capacity, prev.ticketTypes) : prev.ticketTypes,
+                      }));
+                    }}
+                    className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
+                      form.useTicketTypes
+                        ? 'bg-primary'
+                        : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all bg-white shadow-sm ${form.useTicketTypes ? 'right-0.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
               </div>
 
-              {/* Total Event Capacity */}
-              <div className="space-y-2 pt-3 border-t border-border/60">
-                <Label htmlFor="capacity-input" className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" /> Total Event Capacity <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="capacity-input"
-                  type="number"
-                  min={1}
-                  value={form.capacity === 0 ? '' : form.capacity}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const cap = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
-                    set('capacity', cap);
-                  }}
-                  placeholder="e.g. 100"
-                  className="h-13 text-base sm:text-lg font-bold rounded-2xl bg-background border-border shadow-sm focus-visible:ring-primary"
-                />
-              </div>
-            </Surface>
+              {/* Multi-tier ticket cards */}
+              {form.useTicketTypes && (
+                <div className="space-y-3">
+                  <div
+                    className="px-4 py-3 rounded-[14px] space-y-2 premium-glass-card"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className={isDark ? 'text-neutral-400' : 'text-neutral-500'}>
+                        Allocated: <span className={`font-semibold ${isDark ? 'text-white' : 'text-neutral-900'}`}>{usedCapacity.toLocaleString()}</span> / {form.capacity.toLocaleString()}
+                      </span>
+                      <span className={remainingCapacity < 0 ? 'text-red-500 font-semibold' : remainingCapacity === 0 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>
+                        {remainingCapacity < 0
+                          ? `⚠ ${Math.abs(remainingCapacity)} over limit`
+                          : remainingCapacity === 0
+                          ? '✓ Fully allocated'
+                          : `${remainingCapacity.toLocaleString()} unallocated`}
+                      </span>
+                    </div>
+                    <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-black/30' : 'bg-neutral-100'}`}>
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${remainingCapacity < 0 ? 'bg-red-500' : 'bg-primary'}`}
+                        style={{ width: `${Math.min(100, form.capacity > 0 ? (usedCapacity / form.capacity) * 100 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
 
-            {/* ── Main Create Event Submit Button ──────────────────────────────── */}
-            <div className="space-y-3 pt-4">
-              <Button
-                className="w-full h-14 text-lg sm:text-xl font-extrabold rounded-2xl shadow-xl shadow-primary/25 gap-2.5 bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-[0.99]"
+                  {form.ticketTypes.map((ticket) => {
+                    const otherUsed = form.ticketTypes
+                      .filter((t) => t.id !== ticket.id && t.isEnabled)
+                      .reduce((s, t) => s + t.count, 0);
+                    const maxForThisTier = Math.max(0, form.capacity - otherUsed);
+
+                    return (
+                      <div
+                        key={ticket.id}
+                        className={`rounded-[14px] p-3.5 space-y-3 transition-all premium-glass-card ${ticket.isEnabled ? '' : 'opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateTicket(ticket.id, { isEnabled: !ticket.isEnabled })}
+                              className={`w-8 h-4.5 rounded-full relative transition-colors flex-shrink-0 ${
+                                ticket.isEnabled
+                                  ? 'bg-primary'
+                                  : (isDark ? 'bg-black/40 border border-white/20' : 'bg-neutral-200 border border-neutral-300')
+                              }`}
+                            >
+                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all bg-white shadow-sm ${ticket.isEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                            </button>
+                            <input
+                              value={ticket.name}
+                              onChange={(e) => updateTicket(ticket.id, { name: e.target.value })}
+                              className={`text-xs font-semibold bg-transparent border-none focus:outline-none px-1 w-32 ${isDark ? 'text-white' : 'text-neutral-900'}`}
+                              placeholder="Tier name"
+                            />
+                          </div>
+                          <div className="flex gap-1.5">
+                            {Object.keys(TICKET_COLORS).map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => updateTicket(ticket.id, { color: c })}
+                                className={`w-3.5 h-3.5 rounded-full border transition-all ${ticket.color === c ? 'border-foreground scale-125' : 'border-transparent'}`}
+                                style={{ background: c === 'gold' ? '#D4A853' : c === 'silver' ? '#9CA3AF' : c === 'blue' ? '#3B82F6' : c === 'green' ? '#10B981' : '#8B5CF6' }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div>
+                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Price (₹)</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={ticket.price === 0 ? '' : String(ticket.price)}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') { updateTicket(ticket.id, { price: 0 }); return; }
+                                const digitsOnly = raw.replace(/[^\d]/g, '');
+                                const nextPrice = digitsOnly === '' ? 0 : parseInt(digitsOnly, 10);
+                                updateTicket(ticket.id, { price: nextPrice });
+                              }}
+                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                                isDark
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                              }`}
+                              placeholder="0 = free"
+                            />
+                          </div>
+                          <div>
+                            <span className={`text-[11px] block mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Seats</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={ticket.count === 0 ? '' : ticket.count}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const nextCount = raw === '' ? 0 : (Number.isFinite(Number.parseInt(raw, 10)) ? Number.parseInt(raw, 10) : 0);
+                                handleTicketCountChange(ticket.id, nextCount);
+                              }}
+                              className={`w-full h-8 px-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 ${
+                                isDark
+                                  ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200'
+                                  : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900'
+                              } ${ticket.isEnabled && ticket.count > maxForThisTier ? 'border-red-400' : ''}`}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className={`text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>Benefits</span>
+                            <button
+                              type="button"
+                              onClick={() => addBenefit(ticket.id)}
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                            >
+                              <Plus className="w-3 h-3" /> Add
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {ticket.benefits.map((benefit, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                <span className="text-primary text-xs">✓</span>
+                                <input
+                                  value={benefit}
+                                  onChange={(e) => updateBenefit(ticket.id, idx, e.target.value)}
+                                  className={`h-7 px-2 text-xs flex-1 rounded-md focus:outline-none focus:border-primary/50 ${
+                                    isDark
+                                      ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
+                                      : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
+                                  }`}
+                                  placeholder="e.g. VIP seating"
+                                />
+                                <button type="button" onClick={() => removeBenefit(ticket.id, idx)} className="text-neutral-400 hover:text-red-500 p-1">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Submit button dynamically themed to selected event theme */}
+              <button
+                type="button"
+                style={{
+                  background: activeTheme.gradient,
+                  boxShadow: `0 4px 14px -2px ${activeTheme.accent}55, inset 0 1px 1px rgba(255, 255, 255, 0.4)`,
+                  borderColor: activeTheme.accentHover,
+                }}
+                className="w-full h-11 rounded-xl font-semibold text-sm active:scale-[0.99] transition-all border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white hover:brightness-105"
                 onClick={handleSubmit}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
-                {createMutation.isPending || updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    {isEdit ? 'Saving Event Changes…' : 'Creating Event…'}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-6 h-6" />
-                    {isEdit ? 'Save Event Changes' : 'Create Event'}
-                  </>
-                )}
-              </Button>
+                {isEdit
+                  ? (updateMutation.isPending ? 'Saving…' : 'Save Changes')
+                  : (createMutation.isPending ? 'Creating…' : 'Create Event')}
+              </button>
 
               {missingHints.length > 0 && (
-                <p className="text-center text-xs sm:text-sm text-muted-foreground font-semibold">
-                  Still needed: <span className="text-amber-500 font-bold">{missingHints.join(' · ')}</span>
+                <p className={`text-center text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                  Still needed: {missingHints.join(' · ')}
                 </p>
               )}
-            </div>
 
+            </div>
           </div>
         </div>
-
       </div>
-
+      {/* Signed-out gate: pick a path, then sign in. Both steps are locked
+          (no dismiss) — auth is required to use this page. */}
       <RoleChoiceModal
         open={gateStep === 'choose'}
         onOpenChange={() => {}}

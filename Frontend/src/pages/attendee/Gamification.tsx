@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
+import { LeaderboardRow } from '@/components/LeaderboardRow';
 import { useMyScore, useMyBadges, useAllBadges, useLeaderboard, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
 import { useAppStore } from '@/store/appStore';
 import { Trophy, Zap, Lock, Crown, Star, Users, Medal, ArrowUpRight, Info, AlertCircle, Sparkles } from 'lucide-react';
@@ -17,7 +18,7 @@ const GamificationPage = () => {
   const { data: gamification, isLoading: scoreLoading, isError: scoreError, refetch: refetchScore } = useMyScore();
   const { data: badges, isLoading: badgesLoading } = useMyBadges();
   const { data: allBadges } = useAllBadges();
-  const { data: leaderboardData } = useLeaderboard(1, 10);
+  const { data: leaderboardData, isLoading: leaderboardLoading, isError: leaderboardError } = useLeaderboard(1, 10);
   const { data: historyData } = useScoreHistory(1, 10);
   const { data: scoreRules = [] } = useScoreRules();
 
@@ -29,9 +30,9 @@ const GamificationPage = () => {
   // doubles as the unlock condition.
   const lockedBadges = (allBadges ?? []).filter((b) => !earnedIds.has(b.id));
   const leaderboard = leaderboardData?.leaderboard ?? [];
-  const history = historyData?.history ?? [];
-  const myRank = leaderboard.findIndex((e) => e.userId === user?.id);
-  const myRankDisplay = myRank >= 0 ? myRank + 1 : null;
+  // useScoreHistory returns the list itself; reading `.history` made it always empty.
+  const history = historyData ?? [];
+  const myEntry = leaderboard.find((e) => e.userId === user?.id);
 
   // Track newly earned badges for the celebration animation
   const prevBadgeIdsRef = useRef<Set<string>>(new Set());
@@ -241,60 +242,63 @@ const GamificationPage = () => {
           )}
         </Surface>
 
-        {/* Leaderboard */}
-        {leaderboard.length > 0 && (
-          <Surface>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Leaderboard</h2>
-              <Trophy className="w-4 h-4 text-muted-foreground" />
-            </div>
+        {/* Leaderboard — always shown with loading / error / empty states */}
+        <Surface>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Leaderboard</h2>
+            <Link to="/leaderboard" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              View all <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-            {/* Your rank banner */}
-            {myRankDisplay !== null && (
-              <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 mb-3">
-                <div className="flex items-center gap-2">
-                  <Medal className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Your rank</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{score} pts</span>
-                  <span className="text-lg font-bold text-primary">#{myRankDisplay}</span>
-                </div>
-              </div>
-            )}
+          {leaderboardLoading ? (
             <div className="space-y-2">
-              {leaderboard.map((entry, i) => {
-                const isMe = entry.userId === user?.id;
-                const name = entry.profile
-                  ? `${entry.profile.firstName} ${entry.profile.lastName}`
-                  : 'User';
-                return (
-                  <div
-                    key={entry.userId}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/40'}`}
-                  >
-                    <span className={`w-6 text-center text-sm font-bold ${i < 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {i + 1}
-                    </span>
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground flex-shrink-0">
-                      {name[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{name} {isMe && '(you)'}</p>
-                      {entry.profile?.company && (
-                        <p className="text-[11px] text-muted-foreground truncate">{entry.profile.company}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-foreground">{entry.fkScore}</p>
-                      <p className="text-[10px] text-muted-foreground">Lv.{entry.level}</p>
-                    </div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl animate-pulse">
+                  <div className="w-6 h-4 bg-muted/50 rounded" />
+                  <div className="w-8 h-8 rounded-full bg-muted/50 flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 bg-muted/50 rounded w-32" />
+                    <div className="h-2.5 bg-muted/40 rounded w-20" />
                   </div>
-                );
-              })}
+                  <div className="w-10 h-4 bg-muted/50 rounded" />
+                </div>
+              ))}
             </div>
-          </Surface>
-        )}
+          ) : leaderboardError ? (
+            <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              Failed to load leaderboard. Please try again later.
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-2 border border-dashed border-border/70 rounded-xl bg-muted/20">
+              <Trophy className="w-8 h-8 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">No leaderboard data yet</p>
+              <p className="text-xs text-muted-foreground">Earn FK Score by networking and attending events to appear here.</p>
+            </div>
+          ) : (
+            <>
+              {/* Your rank banner */}
+              {myEntry && (
+                <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Medal className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Your rank</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">{score} pts</span>
+                    <span className="text-lg font-bold text-primary">#{myEntry.rank}</span>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                {leaderboard.map((entry) => (
+                  <LeaderboardRow key={entry.userId} entry={entry} isMe={entry.userId === user?.id} />
+                ))}
+              </div>
+            </>
+          )}
+        </Surface>
       </div>
     </PortalLayout>
   );

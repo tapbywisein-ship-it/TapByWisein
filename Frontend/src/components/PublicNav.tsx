@@ -71,7 +71,7 @@ export function PublicNav({ loginFrom }: { loginFrom?: string }) {
         <div className="hidden md:flex items-center gap-6">{links}</div>
         <div className="hidden md:flex items-center gap-2">{cta}</div>
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden -mr-2.5 p-2.5 text-foreground"
           aria-label={open ? 'Close menu' : 'Open menu'}
           onClick={() => setOpen(!open)}
         >

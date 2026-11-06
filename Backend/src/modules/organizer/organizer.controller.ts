@@ -5,6 +5,13 @@ import razorpayRouteService, {
   type OnboardingInput,
 } from '@modules/payments/razorpay-route.service';
 import prisma from '@config/database';
+import type {
+  AddCoorganizerDto,
+  CreateSpeakerDto,
+  CreateAgendaItemDto,
+  CreateQuestionDto,
+  UpdateQuestionDto,
+} from './organizer.validation';
 
 export class OrganizerController {
   async getDashboardStats(req: Request, res: Response): Promise<void> {
@@ -221,7 +228,7 @@ export class OrganizerController {
   async addCoorganizer(req: Request, res: Response): Promise<void> {
     const callerId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
-    const data = await organizerService.addCoorganizer(id, callerId, req.body);
+    const data = await organizerService.addCoorganizer(id, callerId, req.body as AddCoorganizerDto);
     sendSuccess(res, data, 'Co-host added');
   }
   async removeCoorganizer(req: Request, res: Response): Promise<void> {
@@ -234,7 +241,11 @@ export class OrganizerController {
   async createSpeaker(req: Request, res: Response): Promise<void> {
     const organizerId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
-    const data = await organizerService.createSpeaker(id, organizerId, req.body);
+    const data = await organizerService.createSpeaker(
+      id,
+      organizerId,
+      req.body as CreateSpeakerDto
+    );
     sendSuccess(res, data, 'Speaker added');
   }
   async deleteSpeaker(req: Request, res: Response): Promise<void> {
@@ -246,7 +257,11 @@ export class OrganizerController {
   async createAgendaItem(req: Request, res: Response): Promise<void> {
     const organizerId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
-    const data = await organizerService.createAgendaItem(id, organizerId, req.body);
+    const data = await organizerService.createAgendaItem(
+      id,
+      organizerId,
+      req.body as CreateAgendaItemDto
+    );
     sendSuccess(res, data, 'Agenda item added');
   }
   async deleteAgendaItem(req: Request, res: Response): Promise<void> {
@@ -259,14 +274,23 @@ export class OrganizerController {
   async createEventQuestion(req: Request, res: Response): Promise<void> {
     const organizerId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
-    const data = await organizerService.createQuestion(id, organizerId, req.body);
+    const data = await organizerService.createQuestion(
+      id,
+      organizerId,
+      req.body as CreateQuestionDto
+    );
     sendSuccess(res, data, 'Question added');
   }
 
   async updateEventQuestion(req: Request, res: Response): Promise<void> {
     const organizerId = req.user!.userId;
     const { id, questionId } = req.params as Record<string, string>;
-    const data = await organizerService.updateQuestion(id, organizerId, questionId, req.body);
+    const data = await organizerService.updateQuestion(
+      id,
+      organizerId,
+      questionId,
+      req.body as UpdateQuestionDto
+    );
     sendSuccess(res, data, 'Question updated');
   }
 

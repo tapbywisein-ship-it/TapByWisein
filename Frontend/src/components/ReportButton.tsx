@@ -49,7 +49,7 @@ export const ReportButton = ({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className={`inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${triggerClass || 'h-8 w-8'}`}
+          className={`inline-flex shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${triggerClass || 'h-8 w-8'}`}
           aria-label="More actions"
         >
           <MoreHorizontal className="h-4 w-4" />

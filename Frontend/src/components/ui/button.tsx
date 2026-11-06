@@ -4,36 +4,37 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  // Pill shape, generous padding, Inter bold — spec: border-radius 9999px, 16px v / 32px h
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-pill text-sm font-semibold transition-all duration-200 ease-luma focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // Primary CTA — solid accent blue, white text; hover: subtle brightness lift
+        // Primary CTA — matches the Discover page gradient + specular top border & glow
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:brightness-110 active:scale-[0.98]",
-        // Primary on dark — solid white bg, dark text
+          "bg-gradient-to-b from-[#1981FE] to-[#1673e6] text-white shadow-[0_2px_8px_rgba(25,129,254,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-[#1673e6] hover:brightness-105",
+        // Primary on dark
         "primary-invert":
-          "bg-white text-navy font-bold shadow-sm hover:bg-brand-blue-lighter active:scale-[0.98]",
-        // Secondary CTA — transparent with border + subtle hover
+          "bg-white text-navy font-bold shadow-sm hover:bg-brand-blue-lighter",
+        // Outline CTA — premium glass chip look with subtle specular border & hover
         outline:
-          "border border-border bg-transparent text-foreground hover:bg-muted active:scale-[0.98]",
+          "premium-glass-chip text-foreground hover:text-foreground",
         // Ghost — for nav/icon buttons
         ghost:
-          "text-foreground hover:bg-muted active:scale-[0.98]",
+          "text-foreground hover:bg-muted/60",
         destructive:
-          "bg-destructive text-destructive-foreground hover:brightness-110 active:scale-[0.98]",
+          "bg-destructive text-destructive-foreground hover:brightness-110 shadow-sm",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-[0.98]",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         link:
           "text-primary underline-offset-4 hover:underline rounded-none",
+        glass:
+          "premium-glass-chip text-foreground",
       },
       size: {
-        default: "h-11 px-8 py-4 text-sm",        /* spec: ~16px v, 32px h */
-        sm:      "h-9 px-5 py-2 text-xs",
-        lg:      "h-12 px-10 py-4 text-base",
-        xl:      "h-14 px-12 py-5 text-base",
-        icon:    "h-10 w-10 p-0",
+        default: "h-10 px-5 py-2 text-sm",
+        sm:      "h-8 px-3.5 py-1.5 text-xs rounded-lg",
+        lg:      "h-12 px-8 py-3 text-base rounded-xl",
+        xl:      "h-14 px-10 py-4 text-base rounded-2xl",
+        icon:    "h-9 w-9 p-0 rounded-lg",
       },
     },
     defaultVariants: {

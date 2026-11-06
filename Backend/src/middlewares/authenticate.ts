@@ -6,38 +6,63 @@ import logger from '@utils/logger';
 import gamificationService from '@modules/gamification/gamification.service';
 import { SCORE_VALUES } from '@config/constants';
 
+// getClaims throws a plain Error for an expired token or one with no expiry,
+// instead of returning it as `error`. Without this, the error handler would
+// answer 500, and the frontend treats only a 401 as "your session ended".
+async function verifyToken(token: string) {
+  try {
+    return await supabaseAdmin.auth.getClaims(token);
+  } catch {
+    throw new UnauthorizedError('Invalid or expired token');
+  }
+}
+
+// Only the fields this middleware reads. The profile, card and score used to be
+// loaded here too, on every signed-in request, and nothing used them.
+const userSelect = {
+  id: true,
+  email: true,
+  role: true,
+  tier: true,
+  isActive: true,
+  deletedAt: true,
+  authProvider: true,
+} as const;
+
 async function resolveUser(token: string) {
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !data.user) {
+  // getClaims checks the token's signature on this server against Supabase's
+  // public signing keys (fetched once, then cached for 10 minutes), so a request
+  // no longer waits on a call to Supabase. getUser made that call every time.
+  // Trade-off: a token stays valid until it expires even after sign-out;
+  // deactivated accounts are still refused by the isActive check below.
+  const { data, error } = await verifyToken(token);
+  if (error || !data) {
     throw new UnauthorizedError('Invalid or expired token');
   }
 
-  const supabaseUser = data.user;
-  const email = supabaseUser.email;
+  const claims = data.claims;
+  const email = claims.email;
   if (!email) throw new UnauthorizedError('Token has no email');
 
-  const include = {
-    profile: true,
-    founderCard: { select: { id: true, status: true, qrCodeUrl: true, memberId: true } },
-    gamification: { select: { fkScore: true, level: true } },
-  } as const;
-
   // Try supabaseId first, then fall back to email
-  let user = await prisma.user.findUnique({ where: { supabaseId: supabaseUser.id }, include });
+  let user = await prisma.user.findUnique({
+    where: { supabaseId: claims.sub },
+    select: userSelect,
+  });
 
   if (!user) {
-    user = await prisma.user.findUnique({ where: { email }, include });
+    user = await prisma.user.findUnique({ where: { email }, select: userSelect });
 
     if (user) {
       // Link supabaseId on first login
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
-          supabaseId: supabaseUser.id,
+          supabaseId: claims.sub,
           isEmailVerified: true,
-          authProvider: supabaseUser.app_metadata?.provider ?? user.authProvider,
+          authProvider: claims.app_metadata?.provider ?? user.authProvider,
         },
-        include,
+        select: userSelect,
       });
       // Award first-login bonus now that we've linked the account
       gamificationService
@@ -47,7 +72,7 @@ async function resolveUser(token: string) {
         );
     } else {
       // Auto-create user from Supabase profile (Google OAuth new user)
-      const meta = supabaseUser.user_metadata ?? {};
+      const meta = claims.user_metadata ?? {};
       const fullName: string = meta.full_name ?? meta.name ?? '';
       const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
       const firstName = meta.given_name ?? nameParts[0] ?? 'User';
@@ -63,9 +88,9 @@ async function resolveUser(token: string) {
       user = await prisma.user.create({
         data: {
           email,
-          supabaseId: supabaseUser.id,
-          googleId: supabaseUser.app_metadata?.provider === 'google' ? supabaseUser.id : undefined,
-          authProvider: supabaseUser.app_metadata?.provider ?? 'email',
+          supabaseId: claims.sub,
+          googleId: claims.app_metadata?.provider === 'google' ? claims.sub : undefined,
+          authProvider: claims.app_metadata?.provider ?? 'email',
           password: null,
           isEmailVerified: true,
           role: 'ATTENDEE',
@@ -74,7 +99,7 @@ async function resolveUser(token: string) {
           },
           gamification: { create: { fkScore: 0, level: 1 } },
         },
-        include,
+        select: userSelect,
       });
 
       logger.info('Auto-created user from Supabase auth', { userId: user.id, email });

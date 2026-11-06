@@ -84,20 +84,15 @@ const MyCalendarPage = () => {
   // Fetch hosted events (if organizer/admin)
   const { data: orgEventsData } = useMyOrgEvents(1, 100, isOrganizer);
 
-  // Fetch user's communities (owned + joined)
+  // Names of your own and followed communities, to label community calendars.
   const { data: myCommunities = [] } = useMyCommunities();
   const { data: followedCommunities = [] } = useFollowedCommunities();
-
-  // Unified unique list of user's communities
-  const availableCommunities = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; avatar?: string | null }>();
-    myCommunities.forEach((c) => {
-      if (c && c.id) map.set(c.id, { id: c.id, name: c.name, avatar: c.avatar });
+  const communityNames = useMemo(() => {
+    const map = new Map<string, { name: string; avatar?: string | null }>();
+    [...myCommunities, ...followedCommunities].forEach((c) => {
+      if (c?.id && !map.has(c.id)) map.set(c.id, { name: c.name, avatar: c.avatar });
     });
-    followedCommunities.forEach((c) => {
-      if (c && c.id && !map.has(c.id)) map.set(c.id, { id: c.id, name: c.name, avatar: c.avatar });
-    });
-    return Array.from(map.values());
+    return map;
   }, [myCommunities, followedCommunities]);
 
   // Combine and normalize events
@@ -197,33 +192,28 @@ const MyCalendarPage = () => {
       },
     ];
 
+    // A community gets a calendar only when you have events in it. Every
+    // followed community used to get one (usually with 0 events), and it
+    // popped in a few seconds late, after the community lists loaded.
+    // Registrations don't include the event's community, so its name comes
+    // from the event when present, else from your own/followed communities.
     const addedIds = new Set<string>();
-    availableCommunities.forEach((c) => {
-      addedIds.add(c.id);
+    allEvents.forEach((e) => {
+      if (!e.communityId || addedIds.has(e.communityId)) return;
+      const known = e.community ?? communityNames.get(e.communityId);
+      if (!known) return;
+      addedIds.add(e.communityId);
       options.push({
-        id: c.id,
-        name: c.name,
+        id: e.communityId,
+        name: known.name,
         isCommunity: true,
-        avatar: c.avatar,
-        count: commCounts.get(c.id) || 0,
+        avatar: known.avatar,
+        count: commCounts.get(e.communityId) || 0,
       });
     });
 
-    allEvents.forEach((e) => {
-      if (e.communityId && e.community && !addedIds.has(e.communityId)) {
-        addedIds.add(e.communityId);
-        options.push({
-          id: e.communityId,
-          name: e.community.name,
-          isCommunity: true,
-          avatar: e.community.avatar,
-          count: commCounts.get(e.communityId) || 0,
-        });
-      }
-    });
-
     return options;
-  }, [allEvents, availableCommunities]);
+  }, [allEvents, communityNames]);
 
   const activeCalendar = calendarOptions.find((c) => c.id === selectedCalendarId) || calendarOptions[0];
 
@@ -314,7 +304,7 @@ const MyCalendarPage = () => {
     <PortalLayout>
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 space-y-6 animate-fade-in">
         {/* ── Page Header ────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">My Calendars</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -435,14 +425,14 @@ const MyCalendarPage = () => {
             )}
           </div>
 
-          <div className="relative w-full md:w-64">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative w-full md:w-64 group">
+            <Search className="w-4 h-4 text-foreground/70 group-focus-within:text-primary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors z-10" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search title, location, community..."
-              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-card border border-border focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              className="w-full h-9 pl-9 pr-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
@@ -450,7 +440,7 @@ const MyCalendarPage = () => {
         {/* ── Main Grid: Calendar & Day Agenda ───────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-6 items-start">
           {/* ── LEFT: Interactive Calendar Grid ──────────────────────── */}
-          <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm">
+          <div className="premium-glass-card rounded-2xl p-5 md:p-6 shadow-sm">
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -479,7 +469,7 @@ const MyCalendarPage = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                    className="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Previous month"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -487,7 +477,7 @@ const MyCalendarPage = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                    className="p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Next month"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -603,7 +593,7 @@ const MyCalendarPage = () => {
 
           {/* ── RIGHT: Selected Day Agenda ────────────────────────────── */}
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <div className="premium-glass-card rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-border/80">
                 <div>
                   <h3 className="font-semibold text-foreground text-sm">
@@ -748,7 +738,7 @@ const MyCalendarPage = () => {
             </div>
 
             {/* ── Upcoming Quick List ──────────────────────────────────── */}
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="premium-glass-card rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-foreground text-sm">Next Upcoming</h3>
                 <span className="text-[11px] text-muted-foreground font-medium">
@@ -768,7 +758,9 @@ const MyCalendarPage = () => {
                           const d = parseISO(ev.startDate);
                           setCurrentDate(d);
                           setSelectedDay(d);
-                        } catch {}
+                        } catch {
+                          // Ignore an unparsable date and stay on the current view.
+                        }
                       }}
                       className="p-2.5 rounded-xl border border-border/70 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between gap-3 text-xs"
                     >

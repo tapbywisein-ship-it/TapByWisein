@@ -1028,7 +1028,6 @@
   flex-direction: column;
   gap: 6px;
   letter-spacing: -0.02em;
-  text-wrap: balance;
 }
 
 .fcs-line1 { color: #3b82f6; }
@@ -1085,6 +1084,7 @@
 
 .afs-links a:hover { color: white; }
 .afs-legal { color: #64748b; font-size: 13px; font-weight: 500; }
+@media (max-width: 768px) { .afs-footer-nav { flex-direction: column; gap: 24px; text-align: center; } .afs-links { flex-direction: column; gap: 0; } .afs-links a { display: inline-block; padding: 10px 0; } }
 
 @media (max-width: 768px) {
   .animated-footer-section {

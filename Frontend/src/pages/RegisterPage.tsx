@@ -32,6 +32,14 @@ const RegisterPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const currentRole = useAppStore((s) => s.user?.role);
 
+  // Hooks must run before the early return below, or React sees fewer hooks
+  // once sign-up succeeds and isAuthenticated flips to true.
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   // Already signed in? Skip the signup form.
   if (isAuthenticated) {
     return <Navigate to={ROLE_HOME[currentRole ?? 'attendee'] ?? '/dashboard'} replace />;
@@ -46,12 +54,6 @@ const RegisterPage = () => {
   };
   const intendedRoute = navState.from?.pathname;
   const signupRole = navState.signupRole;
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -176,7 +178,7 @@ const RegisterPage = () => {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9 pr-9"
+                  className="pl-9 pr-11"
                   disabled={submitting}
                   required
                   minLength={8}
@@ -185,7 +187,7 @@ const RegisterPage = () => {
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center rounded-lg hover:bg-muted/60"
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -214,7 +216,7 @@ const RegisterPage = () => {
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary hover:underline">
+            <Link to="/login" className="inline-block py-2 -my-2 text-primary hover:underline">
               Sign in →
             </Link>
           </p>

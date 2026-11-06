@@ -67,7 +67,7 @@ export const SearchDialog = ({ open, onClose }: { open: boolean; onClose: () => 
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search events and people…"
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm"
+            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base sm:text-sm"
             onKeyDown={(e) => e.key === 'Escape' && onClose()}
           />
           {searchInput && (

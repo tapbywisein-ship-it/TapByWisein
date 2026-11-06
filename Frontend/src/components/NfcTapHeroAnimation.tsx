@@ -219,9 +219,9 @@ export const NfcTapHeroAnimation: React.FC<{ className?: string }> = ({ classNam
       x.fillStyle = '#6C757D'; 
       x.font = '600 44px "Inter", sans-serif'; 
       x.textAlign = 'center';
-      if ('letterSpacing' in x) (x as any).letterSpacing = '6px';
+      if ('letterSpacing' in x) x.letterSpacing = '6px';
       x.fillText('TAP TO CONNECT', 760, 810);
-      if ('letterSpacing' in x) (x as any).letterSpacing = '0px';
+      if ('letterSpacing' in x) x.letterSpacing = '0px';
     }
     const backPrint = new THREE.Mesh(new THREE.PlaneGeometry(KW, KH), new THREE.MeshStandardMaterial({ map: canvasTex(bc), transparent: true, roughness: 0.45, metalness: 0.4, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
     backPrint.rotation.y = Math.PI; 
@@ -256,9 +256,9 @@ export const NfcTapHeroAnimation: React.FC<{ className?: string }> = ({ classNam
       x.fillText('Santhosh', 70, 740);
       x.fillStyle = '#495057'; 
       x.font = '600 40px "Inter", monospace';
-      if ('letterSpacing' in x) (x as any).letterSpacing = '16px';
+      if ('letterSpacing' in x) x.letterSpacing = '16px';
       x.fillText('FOUNDER', 76, 840);
-      if ('letterSpacing' in x) (x as any).letterSpacing = '0px';
+      if ('letterSpacing' in x) x.letterSpacing = '0px';
       x.font = '600 34px "Inter", sans-serif'; 
       x.fillStyle = '#6C757D'; 
       x.textAlign = 'right'; 

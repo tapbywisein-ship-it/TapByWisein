@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Search, Users } from 'lucide-react';
 import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads';
-import type { ExportedLead } from '@/services/leads.service';
+import type { ExportedLead, Lead } from '@/services/leads.service';
 import { leadsService } from '@/services/leads.service';
 import { toast } from 'sonner';
 

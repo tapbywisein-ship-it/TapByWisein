@@ -3,6 +3,21 @@ import organizerController from './organizer.controller';
 import { authenticate } from '@middlewares/authenticate';
 import { authorize } from '@middlewares/authorize';
 import { uploadCsvSingle } from '@middlewares/upload';
+import { validate } from '@middlewares/validate';
+import {
+  updateLeadStatusSchema,
+  sendEventBlastSchema,
+  sendAttendeeBlastSchema,
+  checkInAttendeeSchema,
+  createCouponSchema,
+  addCoorganizerSchema,
+  createSpeakerSchema,
+  createAgendaItemSchema,
+  createQuestionSchema,
+  updateQuestionSchema,
+  registrationActionSchema,
+  setEventRoleSchema,
+} from './organizer.validation';
 
 const router = Router();
 
@@ -11,10 +26,18 @@ router.use(authenticate, authorize('ORGANIZER', 'ADMIN'));
 
 router.get('/dashboard', organizerController.getDashboardStats.bind(organizerController));
 router.get('/leads', organizerController.getLeads.bind(organizerController));
-router.put('/leads/:id', organizerController.updateLeadStatus.bind(organizerController));
+router.put(
+  '/leads/:id',
+  validate(updateLeadStatusSchema),
+  organizerController.updateLeadStatus.bind(organizerController)
+);
 router.get('/leads/export', organizerController.exportLeads.bind(organizerController));
 router.get('/attendees', organizerController.getAttendeeDirectory.bind(organizerController));
-router.post('/attendees/blast', organizerController.sendAttendeeBlast.bind(organizerController));
+router.post(
+  '/attendees/blast',
+  validate(sendAttendeeBlastSchema),
+  organizerController.sendAttendeeBlast.bind(organizerController)
+);
 
 // Razorpay Route payout account
 router.get('/payouts/account', organizerController.getRouteAccount.bind(organizerController));
@@ -27,8 +50,16 @@ router.get(
   '/events/:id/analytics',
   organizerController.getEventAnalytics.bind(organizerController)
 );
-router.post('/events/:id/blast', organizerController.sendEventBlast.bind(organizerController));
-router.post('/events/:id/checkin', organizerController.checkInAttendee.bind(organizerController));
+router.post(
+  '/events/:id/blast',
+  validate(sendEventBlastSchema),
+  organizerController.sendEventBlast.bind(organizerController)
+);
+router.post(
+  '/events/:id/checkin',
+  validate(checkInAttendeeSchema),
+  organizerController.checkInAttendee.bind(organizerController)
+);
 router.get('/events/:id/guests', organizerController.getEventGuests.bind(organizerController));
 
 // Phase 5 — co-organizers
@@ -38,6 +69,7 @@ router.get(
 );
 router.post(
   '/events/:id/coorganizers',
+  validate(addCoorganizerSchema),
   organizerController.addCoorganizer.bind(organizerController)
 );
 router.delete(
@@ -46,12 +78,20 @@ router.delete(
 );
 
 // Phase 5 — speakers + agenda
-router.post('/events/:id/speakers', organizerController.createSpeaker.bind(organizerController));
+router.post(
+  '/events/:id/speakers',
+  validate(createSpeakerSchema),
+  organizerController.createSpeaker.bind(organizerController)
+);
 router.delete(
   '/events/:id/speakers/:speakerId',
   organizerController.deleteSpeaker.bind(organizerController)
 );
-router.post('/events/:id/agenda', organizerController.createAgendaItem.bind(organizerController));
+router.post(
+  '/events/:id/agenda',
+  validate(createAgendaItemSchema),
+  organizerController.createAgendaItem.bind(organizerController)
+);
 router.delete(
   '/events/:id/agenda/:itemId',
   organizerController.deleteAgendaItem.bind(organizerController)
@@ -60,10 +100,12 @@ router.delete(
 // Phase 5 — custom registration questions
 router.post(
   '/events/:id/questions',
+  validate(createQuestionSchema),
   organizerController.createEventQuestion.bind(organizerController)
 );
 router.patch(
   '/events/:id/questions/:questionId',
+  validate(updateQuestionSchema),
   organizerController.updateEventQuestion.bind(organizerController)
 );
 router.delete(
@@ -78,12 +120,14 @@ router.get(
 );
 router.post(
   '/events/:id/registrations/:regId/action',
+  validate(registrationActionSchema),
   organizerController.actionPendingRegistration.bind(organizerController)
 );
 
 // Phase 3 — event-scoped role management
 router.patch(
   '/events/:id/attendees/:userId/role',
+  validate(setEventRoleSchema),
   organizerController.setEventRole.bind(organizerController)
 );
 
@@ -107,21 +151,22 @@ router.get(
 );
 
 // Curated intros — best attendee pairs to introduce
-router.get(
-  '/events/:id/matchmaking',
-  organizerController.getMatchmaking.bind(organizerController)
-);
+router.get('/events/:id/matchmaking', organizerController.getMatchmaking.bind(organizerController));
 
 // Past email blasts for an event
-router.get(
-  '/events/:id/blasts',
-  organizerController.getEventBlasts.bind(organizerController)
-);
+router.get('/events/:id/blasts', organizerController.getEventBlasts.bind(organizerController));
 
 // Coupon CRUD (per-event % discount codes)
 router.get('/events/:id/coupons', organizerController.listCoupons.bind(organizerController));
-router.post('/events/:id/coupons', organizerController.createCoupon.bind(organizerController));
-router.delete('/events/:id/coupons/:couponId', organizerController.deleteCoupon.bind(organizerController));
+router.post(
+  '/events/:id/coupons',
+  validate(createCouponSchema),
+  organizerController.createCoupon.bind(organizerController)
+);
+router.delete(
+  '/events/:id/coupons/:couponId',
+  organizerController.deleteCoupon.bind(organizerController)
+);
 
 // Duplicate event + export attendees CSV
 router.post('/events/:id/duplicate', organizerController.duplicateEvent.bind(organizerController));

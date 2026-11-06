@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
 import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
@@ -22,7 +23,7 @@ import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2, MessageCircle,
 } from 'lucide-react';
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
@@ -189,6 +190,8 @@ const AttendeeDashboard = () => {
     { icon: CreditCard, label: 'My Card', to: '/apply-card' },
     { icon: Users, label: 'Network', to: '/connections' },
     { icon: Calendar, label: 'Events', to: '/events' },
+    // Share Card is already at the top of the page, so this slot opens Messages.
+    { icon: MessageCircle, label: 'Messages', to: '/messages' },
   ];
 
   return (
@@ -203,33 +206,63 @@ const AttendeeDashboard = () => {
         <LiveEventBanner />
 
         {/* Greeting */}
-        <motion.div {...fade(0)} className="pt-1 flex items-start justify-between">
+        <motion.div {...fade(0)} className="pt-1 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
+          <div className="self-start sm:self-auto shrink-0 flex items-center gap-2">
+            {/* Phones already have profile and the bell in the top bar, so only show them here on wider screens. */}
+            <Link
+              to="/profile"
+              aria-label="My profile"
+              title="My profile"
+              className="hidden md:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-border overflow-hidden bg-muted text-foreground text-sm font-semibold hover:border-primary/50 transition-colors"
+            >
+              {user?.photoUrl || user?.avatar ? (
+                <img
+                  src={user.photoUrl || user.avatar}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  // Broken photo link: fall back to the initial, like the sidebar does.
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = (user?.name?.[0] ?? 'U').toUpperCase(); }}
+                />
+              ) : (
+                (user?.name?.[0] ?? 'U').toUpperCase()
+              )}
+            </Link>
+            <NotificationBell className="hidden md:inline-flex rounded-xl border border-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xl h-9"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share Card
+            </Button>
+          </div>
         </motion.div>
 
         {/* Stats row */}
-        <motion.div {...fade(0.06)} className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* undefined = still loading, so the counter rolls digits instead of showing 0. */}
+        <motion.div {...fade(0.06)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {[
             { label: 'Registered', value: registrations ? myEvents.length : undefined, sub: 'Events', icon: Calendar },
             { label: 'FK Score', value: gamification ? score : undefined, sub: `Level ${level}`, icon: Trophy, gold: true },
             { label: 'Connections', value: connData ? connectionCount : undefined, sub: 'People', icon: Users },
             { label: 'Upcoming', value: registrations ? allUpcoming.length : undefined, sub: 'Events', icon: Sparkles },
           ].map(({ label, value, sub, icon: Icon, gold }) => (
-            <Surface key={label} padding="md" className="text-center">
-              <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-3" />
-              <p className={`text-3xl font-bold mb-0.5 ${gold ? 'text-primary' : 'text-foreground'}`}>
+            <Surface key={label} padding="none" className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1.5 sm:mb-2" />
+              <p className={`text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 tracking-tight ${gold ? 'text-primary' : 'text-foreground'}`}>
+                {/* undefined = still loading, so the counter rolls digits instead of showing 0. */}
                 <AnimatedCounter value={value} />
               </p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</p>
+              <p className="text-[9px] sm:text-[11px] text-muted-foreground/60 mt-0.5">{sub}</p>
             </Surface>
           ))}
         </motion.div>
@@ -356,13 +389,6 @@ const AttendeeDashboard = () => {
                     <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">{a.label}</span>
                   </Link>
                 ))}
-                <button
-                  onClick={() => setShareOpen(true)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors group"
-                >
-                  <Share2 className="w-5 h-5 text-primary" />
-                  <span className="text-[11px] font-medium text-primary text-center leading-tight">Share Card</span>
-                </button>
               </div>
             </Surface>
           </motion.div>
@@ -471,7 +497,7 @@ const AttendeeDashboard = () => {
                             {name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                         {(p?.position || p?.company) && (
                           <p className="text-[11px] text-muted-foreground truncate w-full mb-1">
                             {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -521,7 +547,7 @@ const AttendeeDashboard = () => {
                               {name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                           {(p?.position || p?.company) && (
                             <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
                               {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -538,7 +564,7 @@ const AttendeeDashboard = () => {
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7 mt-auto"
+                          className="w-full text-xs h-8 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >
@@ -551,33 +577,6 @@ const AttendeeDashboard = () => {
               </Surface>
             </motion.div>
           )}
-
-          {/* ── Discover ── */}
-          <motion.div {...fade(0.18)}>
-            <Surface hover className="h-full">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                  <span className="section-label">Discover</span>
-                </div>
-                <Link to="/discover" className="flex items-center gap-0.5 text-[11px] text-primary font-medium hover:underline">
-                  Explore <ArrowUpRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">Events tailored to your interests.</p>
-              <div className="grid grid-cols-2 gap-2">
-                {['Tech', 'Business', 'Design', 'Startup'].map((label) => (
-                  <Link
-                    key={label}
-                    to={`/discover?category=${label.toLowerCase()}`}
-                    className="py-3 rounded-xl bg-muted/40 hover:bg-secondary transition-colors text-center"
-                  >
-                    <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                  </Link>
-                ))}
-              </div>
-            </Surface>
-          </motion.div>
 
         </div>
       </div>

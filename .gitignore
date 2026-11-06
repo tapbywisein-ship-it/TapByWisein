@@ -7,3 +7,6 @@ docker-compose.yml
 .DS_Store
 
 Frontend/.env
+
+# Personal Claude Code instructions (each person keeps their own)
+CLAUDE.local.md

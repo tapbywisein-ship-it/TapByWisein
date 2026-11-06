@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { NavbarThemeToggle, ThemeToggle } from '@/components/ThemeToggle';
+import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import {
@@ -108,7 +109,8 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      <AppBackgroundGrid />
       <NavbarThemeToggle />
       <aside className="group hidden md:flex flex-col w-16 hover:w-60 transition-[width] duration-200 ease-out overflow-hidden border-r border-border px-2 py-4 fixed h-full z-40 bg-background">
         <div className="mb-1 px-1"><Logo collapsible /></div>
@@ -173,7 +175,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </aside>
 
-      <div className="flex-1 md:ml-16 min-h-screen min-w-0">
+      <div className="flex-1 md:ml-16 min-h-screen min-w-0 relative z-10">
         <main className="p-4 md:p-8 max-w-xwide mx-auto pb-24 md:pb-8">{children}</main>
       </div>
 
@@ -215,11 +217,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-muted-foreground/20 text-foreground font-semibold text-xs flex items-center justify-center overflow-hidden border border-border">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{getInitials(user?.name, user?.email)}</span>
-                  )}
+                  <UserAvatar avatar={user?.avatar} name={user?.name} email={user?.email} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground leading-tight">{displayName}</p>

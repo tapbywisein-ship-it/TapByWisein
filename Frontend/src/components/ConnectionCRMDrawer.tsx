@@ -202,7 +202,7 @@ export const ConnectionCRMDrawer = ({ connectionId, name, onClose }: Props) => {
                     onChange={(e) => setNoteBody(e.target.value)}
                     placeholder="What did you talk about? What's the follow-up?"
                     rows={3}
-                    className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                    className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                   />
                   <Button size="sm" className="self-end" onClick={addNote} disabled={!noteBody.trim() || createNote.isPending}>
                     {createNote.isPending ? 'Saving…' : 'Add note'}
