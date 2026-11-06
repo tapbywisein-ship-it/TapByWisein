@@ -144,6 +144,9 @@
 
 @layer base {
   * { @apply border-border; }
+  /* Sideways scrolling is stopped on html only. Putting overflow-x: hidden on
+     body as well turns body into a scroll box, and then sticky headers
+     (position: sticky) scroll away with the page instead of staying on top. */
   html {
     scroll-behavior: smooth;
     overflow-x: hidden;
@@ -155,9 +158,6 @@
     font-family: 'Inter Variable', Inter, 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "cv11", "ss01";
     font-optical-sizing: auto;
-    overflow-x: hidden;
-    max-width: 100vw;
-    -webkit-overflow-scrolling: touch;
   }
 
   h1, h2, h3, h4, h5, h6 {

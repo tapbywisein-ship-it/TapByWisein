@@ -86,13 +86,16 @@ export const OrganizerEventLayout = () => {
               <Button variant="outline" size="sm" onClick={handleShare} className="rounded-xl font-semibold border-border">
                 <Share2 className="w-4 h-4 mr-1.5" /> Share
               </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate(`/organizer/events/${id}/edit`)}
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
-              >
-                <Pencil className="w-4 h-4 mr-1.5" /> Edit Event
-              </Button>
+              {/* Only drafts can be edited: the edit page sends any other event back here. */}
+              {event?.status === 'DRAFT' && (
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/organizer/events/${id}/edit`)}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
+                >
+                  <Pencil className="w-4 h-4 mr-1.5" /> Edit Event
+                </Button>
+              )}
             </div>
           </div>
 

@@ -1,8 +1,11 @@
 name: CI
 
-# Catch broken builds and type errors before they merge. This exists because a
-# JSX syntax error shipped to main once — vite build strips types without
-# typechecking, so a dedicated tsc step is the safety net.
+# Catch broken builds, type errors and failing tests before they merge. This
+# exists because a JSX syntax error shipped to main once — vite build strips
+# types without typechecking, so a dedicated tsc step is the safety net.
+# The frontend typecheck must point at tsconfig.app.json: the root tsconfig.json
+# lists no files, so plain `tsc --noEmit` passed while an undefined component
+# crashed /events in production (#108, fixed in #109).
 on:
   push:
     branches: [main]
@@ -27,6 +30,12 @@ jobs:
         run: npx prisma generate
       - name: Typecheck & build
         run: npm run build
+      # Integration tests are skipped here: they need a real Postgres, and
+      # tests/integration/auth.test.ts still tests the old /auth/register,
+      # /login, /refresh-token and /logout endpoints, which were removed when
+      # sign-in moved to Supabase. Unit tests mock the database and run here.
+      - name: Tests (unit)
+        run: npm test -- --testPathIgnorePatterns=tests/integration
 
   frontend:
     name: Frontend — typecheck & build
@@ -42,7 +51,9 @@ jobs:
           cache: npm
           cache-dependency-path: Frontend/package-lock.json
       - run: npm ci
-      - name: Typecheck (tsc --noEmit)
+      - name: Typecheck (tsconfig.app.json + tsconfig.node.json)
         run: npm run typecheck
+      - name: Tests
+        run: npm test
       - name: Production build
         run: npm run build

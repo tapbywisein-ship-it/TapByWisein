@@ -19,6 +19,32 @@ disagree, trust the code and fix this file.
 - The backend runs on Render's free tier: after a restart or idle period, the first
   request can take about 50 seconds.
 
+## Never bring back old code
+
+**Don't put back code that `main` has removed or replaced, unless it fixes a serious
+problem.** Bugs we had already fixed have come back this way. #108 was built on a copy
+of the project from a month earlier, and when its conflicts were resolved, older code
+replaced newer fixes:
+
+- `<AnimatedCounter>` on `/events`, removed on 24 Oct, came back without its import and
+  crashed `/events` for every visitor (fixed again in #109).
+- "Edit Event", limited to draft events on 14 Oct, came back for every event and did
+  nothing on published ones (fixed again in #110).
+
+How to avoid it:
+
+- **Treat `main` as the truth.** Your copy of a file that someone else changed is out of
+  date. When resolving a conflict, keep `main`'s version of every line you didn't mean to
+  change, and add only your own change on top.
+- **Before restoring removed code, find out why it was removed:**
+  `git log -p -S '<a line of the code>' -- <file>` shows the commit that removed it and
+  its reason. If it was removed on purpose, leave it out.
+- **Check your branch shows only your work:** after merging `main` into your branch,
+  `git diff origin/main...HEAD` must contain only the changes you intended. Any line in
+  it that turns newer code back into older code is a revert by accident: undo it.
+- **If old code really must come back** (for example, a new change is breaking
+  production), say so in the PR description: which commit you're undoing and why.
+
 ## Layout
 
 - `Frontend/`: React 18 + Vite + TypeScript SPA, Tailwind, TanStack Query,
@@ -48,7 +74,7 @@ Frontend (`cd Frontend`):
 
 ```sh
 npm run dev                              # http://localhost:5173
-npx tsc --noEmit -p tsconfig.app.json    # the real typecheck (see below)
+npm run typecheck                        # tsc on tsconfig.app.json + tsconfig.node.json
 npm test                                 # vitest
 npm run lint
 npm run build
@@ -61,17 +87,24 @@ Backend (`cd Backend`):
 
 ```sh
 npm run build    # tsc + tsc-alias; this is CI's backend typecheck
-npm test         # jest; tests mock external services and need no .env
+npm test -- --testPathIgnorePatterns=tests/integration   # unit tests, as CI runs them
 npm run lint
 ```
 
-### `npm run typecheck` checks nothing
+Unit tests mock the database and external services, so they need no `.env`. If your
+`Backend/.env` holds production credentials, move it aside while testing: `dotenv` loads
+it into the test run. `tests/integration/` needs a real Postgres and still tests the old
+`/auth/register`, `/login`, `/refresh-token` and `/logout` endpoints, which were removed
+when sign-in moved to Supabase, so it fails and CI skips it.
 
-In `Frontend/`, `npm run typecheck` runs `tsc --noEmit` against the root `tsconfig.json`,
-which has `"files": []` and only references, so it always passes. `vite build` doesn't
-typecheck either. Run `npx tsc --noEmit -p tsconfig.app.json` before calling frontend
-work done. CI currently runs the empty check, so a green CI is not enough: a merge with
-undefined components has already crashed live pages this way.
+### Typecheck before you push
+
+`vite build` doesn't typecheck, so an undefined component builds fine and only crashes
+in the browser. That's how `/events` went down after #108. In `Frontend/`,
+`npm run typecheck` points `tsc` at `tsconfig.app.json` and `tsconfig.node.json`. Don't
+change it back to plain `tsc --noEmit`: the root `tsconfig.json` has `"files": []`, so
+that checks nothing. CI runs the typecheck, the build and the tests for both halves
+(backend unit tests only).
 
 ## Safety
 
@@ -147,12 +180,20 @@ Any PR that touches `Backend/prisma/schema.prisma`:
 
 ## Pull requests
 
-- One branch per change. Group related fixes into one PR rather than many small ones.
+- Start every branch from the latest `main` (`git fetch origin`, then
+  `git switch -c <branch> origin/main`). Don't keep working in an old branch or a
+  separate copy of the project: a branch that started a month earlier is how #108 undid
+  newer fixes when its conflicts were resolved.
+- Merge `main` into a long-running branch at least daily, so conflicts stay small.
 - Resolve conflicts by merging `main` into the branch. Don't force-push or rewrite history.
+  After resolving conflicts, run the typecheck and tests again before pushing.
+- One branch per change, kept small enough to review. Group related fixes into one PR,
+  but don't mix unrelated work (styling, schema changes, new endpoints) in one PR.
 - The PR description says the problem, the cause, the fix, and what was tested,
   including what couldn't be tested. Call out any database or env var step.
-- Before opening a PR: the real frontend typecheck, frontend and backend tests,
-  `npm run build` in each changed half, and a browser check of anything visible.
+- Before opening a PR: `npm run typecheck` and `npm test` in `Frontend/`, the backend
+  unit tests (see Commands), `npm run build` in each changed half, and a browser check of
+  anything visible.
 
 ## Personal settings
 

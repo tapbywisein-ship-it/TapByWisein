@@ -113,16 +113,30 @@ const OrgEventDetail = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate(`/organizer/events/${id}/edit`)}
-              className="rounded-xl border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 shadow-sm"
+              onClick={() => duplicate.mutate()}
+              disabled={duplicate.isPending}
+              title="Clone this event into a new draft — run it again"
+              className="rounded-xl font-semibold px-4 shadow-sm"
             >
-              <Pencil className="w-4 h-4 mr-1.5" />
-              Edit Event
+              <CopyPlus className="w-4 h-4 mr-1.5" />
+              {duplicate.isPending ? 'Duplicating…' : 'Duplicate'}
             </Button>
+            {/* Only drafts can be edited: the edit page sends any other event back here. */}
+            {event.status === 'DRAFT' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/organizer/events/${id}/edit`)}
+                className="rounded-xl border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 shadow-sm"
+              >
+                <Pencil className="w-4 h-4 mr-1.5" />
+                Edit Event
+              </Button>
+            )}
             {event.status === 'DRAFT' && (
               <Button
                 size="sm"
