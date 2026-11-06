@@ -53,6 +53,15 @@ vi.mock('@/hooks/useOrganizer', () => ({
   useRequestOrganizer: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+// The page also loads data (your communities, payout status). A real request
+// fails late in CI, after the test environment is gone, and React then crashes
+// with "window is not defined", failing the whole run. These tests only check
+// the form, so requests simply never answer.
+vi.mock('@/services/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/api')>()),
+  apiFetch: () => new Promise(() => {}),
+}));
+
 vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(),

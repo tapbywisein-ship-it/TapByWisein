@@ -25,7 +25,7 @@ import { ReportButton } from '@/components/ReportButton';
 import { EventFeedbackCard } from '@/components/EventFeedbackCard';
 import { AddToCalendar } from '@/components/AddToCalendar';
 import { requireVerifiedEmail } from '@/components/VerifyEmailBanner';
-import { eventsService } from '@/services/events.service';
+import { eventsService, type EventQuestion } from '@/services/events.service';
 import { useAppStore } from '@/store/appStore';
 import { ApiError } from '@/services/api';
 import {
@@ -73,9 +73,9 @@ const EventDetailUnified = () => {
   // links and guest RSVP never worked.
   const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
   const registerMutation = useRegisterForEvent();
-  // The host's custom questions, asked before a signed-in Register. Guests use
-  // the RSVP form, which doesn't ask them yet.
-  const { data: questions } = useEventQuestions(id ?? '', !!id && isAuthenticated);
+  // The host's custom questions, asked before Register: above the button when
+  // signed in, and in the guest RSVP form otherwise.
+  const { data: questions } = useEventQuestions(id ?? '', !!id);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const missingRequired = unansweredRequired(questions, answers);
   const cancelMutation = useCancelRegistration();
@@ -1013,6 +1013,7 @@ const EventDetailUnified = () => {
         onOpenChange={setGuestRsvpOpen}
         eventId={event.id}
         eventTitle={event.title}
+        questions={questions}
       />
 
       {/* Post-payment confirmation — shown after Razorpay checkout succeeds. */}
@@ -1050,6 +1051,7 @@ interface GuestRsvpModalProps {
   onOpenChange: (open: boolean) => void;
   eventId: string;
   eventTitle: string;
+  questions: EventQuestion[] | undefined;
 }
 
 const GuestRsvpModal = ({
@@ -1057,6 +1059,7 @@ const GuestRsvpModal = ({
   onOpenChange,
   eventId,
   eventTitle,
+  questions,
 }: GuestRsvpModalProps) => {
   const navigate = useNavigate();
   const homePath = useHomePath();
@@ -1069,10 +1072,15 @@ const GuestRsvpModal = ({
   // True when the email is a claimed (password-protected) account — backend
   // declined to auto-sign-in and we should send them to /login instead.
   const [requiresSignIn, setRequiresSignIn] = useState(false);
+  // The host's questions, same form and rules as a signed-in registration.
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
+  const canSubmit = !!name.trim() && !!email && missingRequired.length === 0;
 
   const reset = () => {
     setName('');
     setEmail('');
+    setAnswers({});
     setDone(false);
     setDoneMessage('');
     setRequiresSignIn(false);
@@ -1080,16 +1088,18 @@ const GuestRsvpModal = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email) return;
+    if (!canSubmit) return;
     setLoading(true);
     try {
       // Backend silently finds-or-creates the user. If the email isn't
       // already a password-protected account, it also returns auth tokens
       // and we auto-sign-in (Luma flow). If it IS claimed, we just confirm
       // the RSVP and prompt the visitor to sign in normally.
+      const answerList = toAnswerList(answers);
       const res = await eventsService.rsvpAsGuest(eventId, {
         name: name.trim(),
         email,
+        answers: answerList.length > 0 ? answerList : undefined,
       });
       if (res.user && res.tokens) {
         login(res.user);
@@ -1155,11 +1165,13 @@ const GuestRsvpModal = ({
                 />
               </div>
 
+              <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} />
+
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !name.trim() || !email}
+                disabled={loading || !canSubmit}
               >
                 {loading ? 'Confirming…' : 'One-Click RSVP'}
               </Button>

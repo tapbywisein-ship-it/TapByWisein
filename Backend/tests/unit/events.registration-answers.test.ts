@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const prisma: any = {
   event: { findFirst: jest.fn() },
+  user: { findUnique: jest.fn(), create: jest.fn() },
   eventQuestion: { findMany: jest.fn() },
   eventRegistration: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
   registrationAnswer: { createMany: jest.fn() },
@@ -24,6 +25,12 @@ jest.mock('@modules/notifications/notifications.service', () => ({
 jest.mock('@modules/gamification/gamification.service', () => ({
   __esModule: true,
   default: { addScore: jest.fn(async () => undefined) },
+}));
+// Guest RSVP sends a confirmation email; never send real mail from tests.
+jest.mock('@utils/email', () => ({
+  __esModule: true,
+  ...(jest.requireActual('@utils/email') as object),
+  sendEmail: jest.fn(async () => undefined),
 }));
 jest.mock('@modules/payments/payments.service', () => ({
   __esModule: true,
@@ -108,12 +115,45 @@ describe('registerForEvent and the host\'s questions', () => {
     expect(prisma.registrationAnswer.createMany).toHaveBeenCalledTimes(1);
   });
 
-  it('still lets guest RSVP register without answers (requireAnswers: false)', async () => {
+});
+
+describe('guest RSVP and the host\'s questions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  it('rejects a guest who skips a required question, before creating an account', async () => {
     setUp();
-    const result = await eventsService.registerForEvent(EVENT_ID, USER_ID, undefined, undefined, {
-      requireAnswers: false,
+    await expect(
+      eventsService.rsvpGuest(EVENT_ID, { name: 'New Guest', email: 'guest@example.com' })
+    ).rejects.toThrow('Please answer required question: "Your company?"');
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.user.create).not.toHaveBeenCalled();
+    expect(prisma.eventRegistration.create).not.toHaveBeenCalled();
+  });
+
+  it("passes the guest's answers on to the registration", async () => {
+    setUp();
+    prisma.user.findUnique.mockResolvedValue({
+      id: USER_ID,
+      email: 'guest@example.com',
+      password: null,
+      isActive: true,
+      deletedAt: null,
+      profile: { firstName: 'New', lastName: 'Guest' },
     });
-    expect(result.registration.status).toBe('REGISTERED');
-    expect(prisma.registrationAnswer.createMany).not.toHaveBeenCalled();
+    // Registration itself is covered above; check only what the guest path hands it.
+    const register = jest
+      .spyOn(eventsService, 'registerForEvent')
+      .mockResolvedValue({ registration: { id: 'reg-1', status: 'REGISTERED' } } as never);
+    const answers = [{ questionId: 'q-required', answer: 'Acme' }];
+
+    await eventsService.rsvpGuest(EVENT_ID, { name: 'New Guest', email: 'guest@example.com', answers }).catch(
+      // The confirmation email and sign-in details after registering aren't under test.
+      () => undefined
+    );
+
+    expect(register).toHaveBeenCalledWith(EVENT_ID, USER_ID, answers);
   });
 });
