@@ -19,6 +19,32 @@ disagree, trust the code and fix this file.
 - The backend runs on Render's free tier: after a restart or idle period, the first
   request can take about 50 seconds.
 
+## Never bring back old code
+
+**Don't put back code that `main` has removed or replaced, unless it fixes a serious
+problem.** Bugs we had already fixed have come back this way. #108 was built on a copy
+of the project from a month earlier, and when its conflicts were resolved, older code
+replaced newer fixes:
+
+- `<AnimatedCounter>` on `/events`, removed on 24 Oct, came back without its import and
+  crashed `/events` for every visitor (fixed again in #109).
+- "Edit Event", limited to draft events on 14 Oct, came back for every event and did
+  nothing on published ones (fixed again in #110).
+
+How to avoid it:
+
+- **Treat `main` as the truth.** Your copy of a file that someone else changed is out of
+  date. When resolving a conflict, keep `main`'s version of every line you didn't mean to
+  change, and add only your own change on top.
+- **Before restoring removed code, find out why it was removed:**
+  `git log -p -S '<a line of the code>' -- <file>` shows the commit that removed it and
+  its reason. If it was removed on purpose, leave it out.
+- **Check your branch shows only your work:** after merging `main` into your branch,
+  `git diff origin/main...HEAD` must contain only the changes you intended. Any line in
+  it that turns newer code back into older code is a revert by accident: undo it.
+- **If old code really must come back** (for example, a new change is breaking
+  production), say so in the PR description: which commit you're undoing and why.
+
 ## Layout
 
 - `Frontend/`: React 18 + Vite + TypeScript SPA, Tailwind, TanStack Query,
