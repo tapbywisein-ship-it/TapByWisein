@@ -52,8 +52,9 @@ export async function startSubscription(
     const rzp = new (window as any).Razorpay({
       key: data.keyId,
       subscription_id: data.subscriptionId,
-      name: 'TapByWisein',
+      name: 'TapByWiseIN',
       description: 'Plan subscription',
+      image: `${window.location.origin}/logo-mark.png`,
       prefill,
       theme: { color: '#1981FE' },
       handler: (resp: RzpSubResponse) => {
