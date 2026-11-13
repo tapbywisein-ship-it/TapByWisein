@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LeaveCommunityDialog } from '@/components/LeaveCommunityDialog';
 import { usePublicCommunities, useJoinLeaveCommunity } from '@/hooks/useCommunities';
 import { useConnections } from '@/hooks/useConnections';
 import { getTheme } from '@/lib/eventThemes';
@@ -21,6 +22,8 @@ export const AllCommunitiesSection = () => {
   const [category, setCategory] = useState('');
   const { data: communities, isLoading, isError, refetch } = usePublicCommunities(search);
   const joinLeave = useJoinLeaveCommunity();
+  // The community the user tapped "Joined" on; leaving waits for them to confirm.
+  const [leaveTarget, setLeaveTarget] = useState<PublicCommunity | null>(null);
 
   const categories = [...new Set((communities ?? []).map((c) => c.category).filter(Boolean))] as string[];
   const shown = category ? (communities ?? []).filter((c) => c.category === category) : (communities ?? []);
@@ -49,7 +52,8 @@ export const AllCommunitiesSection = () => {
   const toggleSelect = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
 
@@ -116,7 +120,7 @@ export const AllCommunitiesSection = () => {
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             Failed to load communities. Check your connection and try again.
           </span>
-          <button onClick={() => refetch()} className="shrink-0 text-xs font-medium underline underline-offset-2 hover:opacity-80">
+          <button onClick={() => refetch()} className="shrink-0 px-2 py-2 -mx-2 -my-2 text-xs font-medium underline underline-offset-2 hover:opacity-80">
             Retry
           </button>
         </div>
@@ -197,7 +201,7 @@ export const AllCommunitiesSection = () => {
                         <Button
                           variant="outline" size="sm" className="flex-1"
                           disabled={pending}
-                          onClick={() => joinLeave.mutate({ id: c.id, join: false })}
+                          onClick={() => setLeaveTarget(c)}
                         >
                           {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Joined'}
                         </Button>
@@ -307,6 +311,15 @@ export const AllCommunitiesSection = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LeaveCommunityDialog
+        communityName={leaveTarget?.name ?? null}
+        onCancel={() => setLeaveTarget(null)}
+        onConfirm={() => {
+          if (leaveTarget) joinLeave.mutate({ id: leaveTarget.id, join: false });
+          setLeaveTarget(null);
+        }}
+      />
     </div>
   );
 };

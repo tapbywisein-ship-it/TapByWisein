@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { LiveEventBanner } from '@/components/LiveEventBanner';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAppStore } from '@/store/appStore';
 import { Link } from 'react-router-dom';
 import { useMyScore, useScoreHistory, useScoreRules } from '@/hooks/useGamification';
@@ -22,7 +23,7 @@ import {
   QrCode, Scan, CreditCard, Share2, Calendar, Users,
   Trophy, ChevronRight, Sparkles, Zap, MapPin, ArrowUpRight,
   CheckCircle2, Circle, Camera, Tag, Heart, Target,
-  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2,
+  UserPlus, Eye, Award, TrendingUp, Copy, X, Loader2, MessageCircle,
 } from 'lucide-react';
 
 /* ─── share sheet ───────────────────────────────────────────────────── */
@@ -209,18 +210,40 @@ const AttendeeDashboard = () => {
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Welcome back, {user?.name || user?.username || user?.email?.split('@')[0] || 'there'}
             </h1>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="self-start sm:self-auto shrink-0 gap-1.5 rounded-xl h-9"
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 className="w-3.5 h-3.5" /> Share Card
-          </Button>
+          <div className="self-start sm:self-auto shrink-0 flex items-center gap-2">
+            {/* Phones already have profile and the bell in the top bar, so only show them here on wider screens. */}
+            <Link
+              to="/profile"
+              aria-label="My profile"
+              title="My profile"
+              className="hidden md:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-border overflow-hidden bg-muted text-foreground text-sm font-semibold hover:border-primary/50 transition-colors"
+            >
+              {user?.photoUrl || user?.avatar ? (
+                <img
+                  src={user.photoUrl || user.avatar}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  // Broken photo link: fall back to the initial, like the sidebar does.
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.textContent = (user?.name?.[0] ?? 'U').toUpperCase(); }}
+                />
+              ) : (
+                (user?.name?.[0] ?? 'U').toUpperCase()
+              )}
+            </Link>
+            <NotificationBell className="hidden md:inline-flex rounded-xl border border-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xl h-9"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share Card
+            </Button>
+          </div>
         </motion.div>
 
         {/* Stats row */}
@@ -364,13 +387,6 @@ const AttendeeDashboard = () => {
                     <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">{a.label}</span>
                   </Link>
                 ))}
-                <button
-                  onClick={() => setShareOpen(true)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors group"
-                >
-                  <Share2 className="w-5 h-5 text-primary" />
-                  <span className="text-[11px] font-medium text-primary text-center leading-tight">Share Card</span>
-                </button>
               </div>
             </Surface>
           </motion.div>
@@ -430,14 +446,14 @@ const AttendeeDashboard = () => {
                         {r.event?.title ?? 'Event'}
                       </p>
                       {r.event?.startDate && (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(r.event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span>{new Date(r.event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         </p>
                       )}
                       {r.event?.city && (
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" /> {r.event.city}
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{r.event.city}</span>
                         </p>
                       )}
                     </Link>
@@ -479,7 +495,7 @@ const AttendeeDashboard = () => {
                             {name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                        <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                         {(p?.position || p?.company) && (
                           <p className="text-[11px] text-muted-foreground truncate w-full mb-1">
                             {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -529,7 +545,7 @@ const AttendeeDashboard = () => {
                               {name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                          <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                           {(p?.position || p?.company) && (
                             <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
                               {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -546,7 +562,7 @@ const AttendeeDashboard = () => {
                         <Button
                           size="sm"
                           variant={sent ? 'outline' : 'default'}
-                          className="w-full text-xs h-7 mt-auto"
+                          className="w-full text-xs h-8 mt-auto"
                           disabled={sent || sendRequest.isPending}
                           onClick={() => handleConnect(s.id)}
                         >

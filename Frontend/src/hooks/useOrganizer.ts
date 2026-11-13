@@ -65,8 +65,9 @@ export function useEventBlasts(eventId: string) {
     enabled: !!eventId,
     // Poll while any blast is still delivering so "Sending…" flips to a real
     // sent/failed count without the organizer having to refresh the page.
+    // query.state.data is the raw response, before `select` unwraps it.
     refetchInterval: (query) =>
-      query.state.data?.some((b) => b.status === 'sending') ? 4000 : false,
+      query.state.data?.data?.some((b) => b.status === 'sending') ? 4000 : false,
   });
 }
 

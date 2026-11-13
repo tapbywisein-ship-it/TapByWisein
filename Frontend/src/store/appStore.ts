@@ -70,14 +70,18 @@ const loadFromStorage = (): Partial<AppState> => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // Storage blocked or corrupt: start signed out.
+  }
   return {};
 };
 
 const saveToStorage = (state: Partial<AppState>) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: state.user, isAuthenticated: state.isAuthenticated, activeRole: state.activeRole }));
-  } catch {}
+  } catch {
+    // Storage full or blocked (e.g. private mode): keep the in-memory state only.
+  }
 };
 
 const persisted = loadFromStorage();

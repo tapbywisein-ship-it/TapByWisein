@@ -26,17 +26,33 @@ export interface Badge {
   earnedAt?: string;
 }
 
+// Matches what GET /gamification/leaderboard sends: the person's public
+// details are nested under `user`, with their name in `user.profile`.
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
   fkScore: number;
   level: number;
-  profile?: {
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-    company?: string;
+  levelLabel?: string;
+  user?: {
+    id: string;
+    username?: string | null;
+    profile?: {
+      firstName: string;
+      lastName: string;
+      avatar?: string | null;
+      company?: string | null;
+    } | null;
   };
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 export interface ScoreHistoryEntry {
@@ -53,7 +69,8 @@ export const gamificationService = {
   },
 
   async getLeaderboard(page = 1, limit = 20) {
-    return apiFetch<{ data: { leaderboard: LeaderboardEntry[]; pagination: unknown } }>(
+    // A paginated response: `data` is the list itself, next to `pagination`.
+    return apiFetch<{ data: LeaderboardEntry[]; pagination: PaginationMeta }>(
       `/gamification/leaderboard?page=${page}&limit=${limit}`
     );
   },
@@ -67,7 +84,8 @@ export const gamificationService = {
   },
 
   async getScoreHistory(page = 1, limit = 20) {
-    return apiFetch<{ data: { history: ScoreHistoryEntry[]; pagination: unknown } }>(
+    // A paginated response: `data` is the list itself (sendPaginated).
+    return apiFetch<{ data: ScoreHistoryEntry[]; pagination: unknown }>(
       `/gamification/history?page=${page}&limit=${limit}`
     );
   },
@@ -82,7 +100,7 @@ export const gamificationService = {
         'Register for an event': 'EVENT_REGISTERED',
         'Attend an event (check-in)': 'EVENT_ATTENDED',
         'Make a connection': 'CONNECTION_MADE',
-        'Activate your Founder Card': 'FOUNDER_CARD_ACTIVE',
+        'Activate your Tap Card': 'FOUNDER_CARD_ACTIVE',
         'Scan a QR code': 'QR_SCAN',
         'Earn a badge': 'BADGE_EARNED',
         'First login': 'FIRST_LOGIN',
@@ -95,7 +113,7 @@ export const gamificationService = {
     } catch (error) {
       // Fallback to local rules if backend is unavailable
       console.warn('Failed to fetch score rules from backend, using local fallback');
-      return LOCAL_SCORE_RULES;
+      return [...LOCAL_SCORE_RULES];
     }
   },
 };

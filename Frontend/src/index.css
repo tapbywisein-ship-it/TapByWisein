@@ -144,7 +144,14 @@
 
 @layer base {
   * { @apply border-border; }
-  html { scroll-behavior: smooth; }
+  /* Sideways scrolling is stopped on html only. Putting overflow-x: hidden on
+     body as well turns body into a scroll box, and then sticky headers
+     (position: sticky) scroll away with the page instead of staying on top. */
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
 
   body {
     @apply bg-background text-foreground antialiased;

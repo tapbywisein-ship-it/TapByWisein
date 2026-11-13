@@ -12,7 +12,7 @@ export default function Hero() {
         
         <div className="hero-actions">
           <Link className="cta" to="/tapbywisein/product">
-            EXPLORE TAPWISEIN
+            EXPLORE TAPBYWISEIN
             <Arrow />
           </Link>
         </div>

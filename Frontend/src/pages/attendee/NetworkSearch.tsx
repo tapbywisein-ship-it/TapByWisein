@@ -26,9 +26,7 @@ const NetworkSearchPage = () => {
     <PortalLayout>
       <div className="space-y-6 pb-24 md:pb-8 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-            <Search className="w-5 h-5" /> Network Search
-          </h1>
+          <h1 className="text-3xl font-semibold text-foreground">Network Search</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Find anyone in your network by name, company, role, skill, or event you met at.
           </p>

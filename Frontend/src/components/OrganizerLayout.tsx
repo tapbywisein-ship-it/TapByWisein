@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle, NavbarThemeToggle } from '@/components/ThemeToggle';
@@ -6,6 +6,7 @@ import { AppBackgroundGrid } from '@/components/AppBackgroundGrid';
 import { useAppStore } from '@/store/appStore';
 import { SignOutConfirmDialog } from '@/components/SignOutConfirmDialog';
 import { SearchDialog } from '@/components/SearchDialog';
+import { SidebarSearchButton } from '@/components/SidebarSearchButton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,23 +118,12 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
       <aside className="group hidden md:flex flex-col w-16 hover:w-60 transition-[width] duration-200 ease-out overflow-hidden border-r border-border px-2 py-4 fixed h-full z-40 bg-background">
         <div className="mb-1 px-1"><Logo collapsible /></div>
         <p className="text-xs text-muted-foreground mb-6 px-3 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Organizer</p>
-        {/* Same people & events search the attendee sidebar has */}
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          title="Search"
-          className="flex items-center gap-3 px-3 py-2 mb-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <Search className="w-5 h-5 flex-shrink-0" />
-          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Search</span>
-        </button>
-
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden" aria-label="Organizer">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const active = isActivePath(location.pathname, item.path);
             return (
+              <Fragment key={item.path}>
               <Link
-                key={item.path}
                 to={item.path}
                 title={item.label}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
@@ -145,6 +135,9 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">{item.label}</span>
               </Link>
+              {/* Same people & events search the attendee sidebar has, under Dashboard */}
+              {index === 0 && <SidebarSearchButton onClick={() => setSearchOpen(true)} />}
+              </Fragment>
             );
           })}
         </nav>
@@ -266,19 +259,11 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
             </div>
             
             <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => { setMoreOpen(false); setSearchOpen(true); }}
-                className="flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-colors border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <Search className="w-5 h-5" />
-                <span className="text-[11px] font-medium leading-tight">Search</span>
-              </button>
-              {navItems.map((item) => {
+              {navItems.map((item, index) => {
                 const active = isActivePath(location.pathname, item.path);
                 return (
+                  <Fragment key={item.path}>
                   <Link
-                    key={item.path}
                     to={item.path}
                     onClick={() => setMoreOpen(false)}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-colors ${
@@ -290,6 +275,18 @@ export const OrganizerLayout = ({ children }: { children: ReactNode }) => {
                     <item.icon className="w-5 h-5" />
                     <span className="text-[11px] font-medium leading-tight">{item.label}</span>
                   </Link>
+                  {/* Search right after Dashboard, as in the desktop sidebar */}
+                  {index === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setMoreOpen(false); setSearchOpen(true); }}
+                      className="flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-colors border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span className="text-[11px] font-medium leading-tight">Search</span>
+                    </button>
+                  )}
+                  </Fragment>
                 );
               })}
               <Link

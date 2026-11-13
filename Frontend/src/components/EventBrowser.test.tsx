@@ -12,9 +12,12 @@ const reg = (id: string, status: string, title: string, startOffsetDays: number)
   event: { id: `ev-${id}`, title, startDate: at(startOffsetDays), endDate: at(startOffsetDays), city: 'Hyderabad' },
 });
 
+// The event list each test shows; empty unless a test fills it.
+const mocks = vi.hoisted(() => ({ events: [] as unknown[] }));
+
 // Fake data: the strip should keep only upcoming, not-cancelled events, soonest first.
 vi.mock('@/hooks/useEvents', () => ({
-  useEvents: () => ({ data: { events: [] }, isLoading: false, isError: false, refetch: vi.fn() }),
+  useEvents: () => ({ data: { events: mocks.events }, isLoading: false, isError: false, refetch: vi.fn() }),
   useSavedEvents: () => ({ data: { events: [] } }),
   useMyRegistrations: () => ({
     data: {
@@ -40,7 +43,10 @@ const renderBrowser = () =>
   );
 
 describe('EventBrowser - Your events', () => {
-  beforeEach(() => useAppStore.setState({ isAuthenticated: true }));
+  beforeEach(() => {
+    mocks.events = [];
+    useAppStore.setState({ isAuthenticated: true });
+  });
 
   it('shows upcoming joined events, soonest first, without ended or cancelled ones', () => {
     renderBrowser();
@@ -57,5 +63,30 @@ describe('EventBrowser - Your events', () => {
     useAppStore.setState({ isAuthenticated: false });
     renderBrowser();
     expect(screen.queryByText('Your events')).toBeNull();
+  });
+});
+
+// Renders a real event card. The list used to be empty in every test, so a card
+// that crashed (an undefined component) still passed and broke /events live.
+describe('EventBrowser - event cards', () => {
+  beforeEach(() => useAppStore.setState({ isAuthenticated: false }));
+
+  it('shows an event card with its attendance count', () => {
+    mocks.events = [
+      {
+        id: 'ev-card',
+        title: 'Card Test Event',
+        startDate: at(10),
+        endDate: at(10),
+        city: 'Hyderabad',
+        category: 'Workshops',
+        capacity: 100,
+        registeredCount: 3,
+        organizer: { profile: { firstName: 'QA', lastName: 'Org' } },
+      },
+    ];
+    renderBrowser();
+    expect(screen.getByText('Card Test Event')).toBeTruthy();
+    expect(screen.getByText('3/100 attending')).toBeTruthy();
   });
 });

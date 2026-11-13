@@ -13,7 +13,6 @@ export function StoryAndProcessSection() {
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    let loop: NodeJS.Timeout;
     let isAutoPlaying = true;
     
     // Automatic timer-based flow
@@ -32,7 +31,7 @@ export function StoryAndProcessSection() {
     };
 
     runFlow();
-    loop = setInterval(() => runFlow(0), 14000);
+    const loop = setInterval(() => runFlow(0), 14000);
 
     // Scroll-based intersection observer
     const observer = new IntersectionObserver(
@@ -516,10 +515,17 @@ export function AnimatedFooterSection() {
       if (entries[0].isIntersecting) {
         setIsVisible(true);
       }
-    }, { threshold: 0.3 });
+    }, { threshold: 0.05 });
     
     if (footerRef.current) observer.observe(footerRef.current);
-    return () => observer.disconnect();
+
+    // Fallback so it is never permanently hidden if scrolled quickly
+    const fallbackTimer = setTimeout(() => setIsVisible(true), 2500);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return (

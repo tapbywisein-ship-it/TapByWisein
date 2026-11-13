@@ -366,6 +366,10 @@ const CreateEventPage = () => {
     })();
   }, [isEdit, editEvent]);
 
+  // Must run before the early returns below (Rules of Hooks): it used to be
+  // called further down, after them, so some renders skipped it.
+  const { resolvedTheme } = useTheme();
+
   // ─── Role guards ───────────────────────────────────────────────────────────
   // Kept below all hooks so hook order stays stable across renders (Rules of Hooks).
 
@@ -677,7 +681,6 @@ const CreateEventPage = () => {
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme !== 'light';
   const activeTheme = EVENT_THEMES[form.theme] ?? EVENT_THEMES.indigo;
 
@@ -1009,7 +1012,7 @@ const CreateEventPage = () => {
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder="Enter event name..."
-                  className={`w-full h-10 px-3 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
+                  className={`w-full h-10 px-3 rounded-lg text-base sm:text-sm font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary ${
                     isDark
                       ? 'bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 placeholder:font-normal'
                       : 'bg-neutral-50 border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal'
@@ -1071,7 +1074,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.startDate}
                       onChange={(e) => set('startDate', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1082,7 +1085,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.startTime}
                       onChange={(e) => set('startTime', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1097,7 +1100,7 @@ const CreateEventPage = () => {
                       type="date"
                       value={form.endDate}
                       onChange={(e) => set('endDate', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="w-full sm:w-32">
@@ -1108,7 +1111,7 @@ const CreateEventPage = () => {
                       type="time"
                       value={form.endTime}
                       onChange={(e) => set('endTime', e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                      className="w-full h-10 px-3 rounded-xl text-base sm:text-sm premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1276,7 +1279,7 @@ const CreateEventPage = () => {
                               onChange={(e) => set('city', e.target.value)}
                               placeholder="City"
                               disabled={!form.state}
-                              className="h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
+                              className="h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 text-foreground placeholder:text-muted-foreground"
                             />
                           )}
                         </div>
@@ -1289,7 +1292,7 @@ const CreateEventPage = () => {
                           value={form.address}
                           onChange={(e) => set('address', e.target.value)}
                           placeholder="Venue / local address *"
-                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                       <div>
@@ -1297,7 +1300,7 @@ const CreateEventPage = () => {
                           value={form.pincode}
                           onChange={(e) => set('pincode', e.target.value)}
                           placeholder="Pincode *"
-                          className="w-full h-10 px-3 text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                          className="w-full h-10 px-3 text-base sm:text-xs rounded-xl premium-glass-chip focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                     </div>
@@ -1330,7 +1333,7 @@ const CreateEventPage = () => {
                     onChange={(e) => set('description', e.target.value)}
                     placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
                     rows={4}
-                    className={`mt-3 w-full px-3 py-2.5 text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
+                    className={`mt-3 w-full px-3 py-2.5 text-base sm:text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
                       isDark
                         ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
                         : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'
@@ -1497,7 +1500,7 @@ const CreateEventPage = () => {
                         }
                       }}
                       placeholder="Unlimited"
-                      className="w-16 h-7 text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
+                      className="w-20 sm:w-16 h-7 text-base sm:text-xs font-medium text-center bg-transparent no-spinner focus:outline-none text-foreground placeholder:text-muted-foreground pl-1"
                     />
                     <div className="flex flex-col -space-y-0.5 border-l border-border/60 pl-1 pr-0.5">
                       <button

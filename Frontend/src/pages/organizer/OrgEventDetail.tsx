@@ -8,7 +8,7 @@ import { eventsService } from '@/services/events.service';
 import { motion } from 'framer-motion';
 import {
   Calendar, MapPin, Video, Users, CheckCircle2,
-  Clock, Tag, Globe, Send, Copy, AlertCircle, CopyPlus, Star, MessageSquareQuote,
+  Clock, Tag, Globe, Send, Copy, AlertCircle, CopyPlus, Star, MessageSquareQuote, Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -92,39 +92,60 @@ const OrgEventDetail = () => {
 
         {/* Cover Image */}
         {event.coverImage && (
-          <div className="w-full h-52 rounded-2xl overflow-hidden">
+          <div className="w-full h-52 rounded-2xl overflow-hidden shadow-lg">
             <img src={event.coverImage} alt={event.title} loading="lazy" className="w-full h-full object-cover" />
           </div>
         )}
 
-        {/* Status + Publish */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium border ${
-            event.status === 'PUBLISHED'  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' :
-            event.status === 'DRAFT'      ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' :
-            event.status === 'CANCELLED'  ? 'border-red-500/30 bg-red-500/10 text-red-400' :
-            'border-border text-muted-foreground'
-          }`}>{event.status}</span>
-          {event.category && (
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full border border-border text-muted-foreground">
-              {event.category}
-            </span>
-          )}
-          <div className="ml-auto flex items-center gap-2">
+        {/* Status + Highlighted Edit & Publish Buttons */}
+        <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-2xl border border-sky-500/20 bg-card/90 backdrop-blur-xl shadow-lg">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className={`text-xs px-3 py-1 rounded-full font-bold border ${
+              event.status === 'PUBLISHED'  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400' :
+              event.status === 'DRAFT'      ? 'border-amber-500/40 bg-amber-500/15 text-amber-400' :
+              event.status === 'CANCELLED'  ? 'border-red-500/40 bg-red-500/15 text-red-400' :
+              'border-border text-muted-foreground'
+            }`}>{event.status}</span>
+            {event.category && (
+              <span className="text-xs px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-400 font-semibold">
+                {event.category}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               size="sm"
               variant="outline"
               onClick={() => duplicate.mutate()}
               disabled={duplicate.isPending}
               title="Clone this event into a new draft — run it again"
+              className="rounded-xl font-semibold px-4 shadow-sm"
             >
-              <CopyPlus className="w-3.5 h-3.5 mr-1.5" />
+              <CopyPlus className="w-4 h-4 mr-1.5" />
               {duplicate.isPending ? 'Duplicating…' : 'Duplicate'}
             </Button>
+            {/* Only drafts can be edited: the edit page sends any other event back here. */}
             {event.status === 'DRAFT' && (
-              <Button size="sm" onClick={handlePublish} disabled={publishMutation.isPending}>
-                <Send className="w-3.5 h-3.5 mr-1.5" />
-                {publishMutation.isPending ? 'Publishing…' : 'Publish'}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/organizer/events/${id}/edit`)}
+                className="rounded-xl border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 shadow-sm"
+              >
+                <Pencil className="w-4 h-4 mr-1.5" />
+                Edit Event
+              </Button>
+            )}
+            {event.status === 'DRAFT' && (
+              <Button
+                size="sm"
+                onClick={handlePublish}
+                disabled={publishMutation.isPending}
+                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold px-5 shadow-md shadow-primary/25"
+              >
+                <Send className="w-4 h-4 mr-1.5" />
+                {publishMutation.isPending ? 'Publishing…' : 'Publish Event'}
               </Button>
             )}
           </div>

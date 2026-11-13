@@ -94,7 +94,12 @@ const AttendeeDirectoryPage = () => {
   const someSelected  = selected.size > 0;
 
   const toggleOne = (userId: string) =>
-    setSelected((prev) => { const s = new Set(prev); s.has(userId) ? s.delete(userId) : s.add(userId); return s; });
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
 
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(selectableIds));
@@ -191,7 +196,7 @@ const AttendeeDirectoryPage = () => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 pl-10 text-sm bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full px-3 py-2 pl-10 text-base sm:text-sm bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Search by name or company..."
             />
           </div>

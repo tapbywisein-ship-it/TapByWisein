@@ -18,10 +18,10 @@ export class FounderCardsService {
 
     if (existingCard) {
       if (existingCard.status === 'PENDING') {
-        throw new ConflictError('You already have a pending Founder Card application');
+        throw new ConflictError('You already have a pending Tap Card application');
       }
       if (existingCard.status === 'ACTIVE') {
-        throw new ConflictError('You already have an active Founder Card');
+        throw new ConflictError('You already have an active Tap Card');
       }
       if (existingCard.status === 'DEACTIVATED') {
         // Allow re-application for deactivated cards
@@ -84,8 +84,8 @@ export class FounderCardsService {
         .sendBulkNotification(
           adminIds,
           'SYSTEM',
-          'New Founder Card Application',
-          `${name} has applied for a Founder Card`,
+          'New Tap Card Application',
+          `${name} has applied for a Tap Card`,
           { cardId: card.id, userId }
         )
         .catch(() => {});
@@ -104,7 +104,7 @@ export class FounderCardsService {
   }
 
   /**
-   * Auto-issue an ACTIVE Founder Card the moment a user finishes onboarding.
+   * Auto-issue an ACTIVE Tap Card the moment a user finishes onboarding.
    * Idempotent: if the user already has a card we only backfill any missing
    * memberId/slug/qr (and heal a legacy PENDING/REJECTED card to ACTIVE),
    * never creating a duplicate. Returns the live card.
@@ -173,7 +173,7 @@ export class FounderCardsService {
 
   async getMyCard(userId: string) {
     const card = await prisma.founderCard.findUnique({ where: { userId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     const purchase = await prisma.cardPurchase.findFirst({
       where: { userId, status: 'PAID' },
       orderBy: { createdAt: 'desc' },
@@ -215,8 +215,8 @@ export class FounderCardsService {
       await notificationsService.createNotification(
         ownerId,
         'CARD_VIEWED',
-        'Someone viewed your Founder Card',
-        `${viewerName} viewed your Founder Card`,
+        'Someone viewed your Tap Card',
+        `${viewerName} viewed your Tap Card`,
         { viewerId }
       );
     } catch {
@@ -464,9 +464,9 @@ export class FounderCardsService {
 
   async generateQR(userId: string) {
     const card = await prisma.founderCard.findUnique({ where: { userId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'ACTIVE') {
-      throw new BadRequestError('Only active Founder Cards can generate QR codes');
+      throw new BadRequestError('Only active Tap Cards can generate QR codes');
     }
 
     const qrPayload = Buffer.from(
@@ -500,7 +500,7 @@ export class FounderCardsService {
       },
     });
 
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'PENDING') {
       throw new BadRequestError('Only pending cards can be approved');
     }
@@ -542,8 +542,8 @@ export class FounderCardsService {
       .createNotification(
         card.userId,
         'FOUNDER_CARD_APPROVED',
-        'Founder Card Approved!',
-        'Congratulations! Your Founder Card application has been approved.',
+        'Tap Card Approved!',
+        'Congratulations! Your Tap Card application has been approved.',
         { cardId }
       )
       .catch(() => {});
@@ -556,7 +556,7 @@ export class FounderCardsService {
 
       sendEmail(
         card.user.email,
-        'Your Founder Card is Approved! - TapByWisein',
+        'Your Tap Card is Approved! - TapByWisein',
         founderCardApprovedEmail(name)
       ).catch(() => {});
     }
@@ -570,7 +570,7 @@ export class FounderCardsService {
       include: { user: true },
     });
 
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'PENDING') {
       throw new BadRequestError('Only pending cards can be rejected');
     }
@@ -590,10 +590,10 @@ export class FounderCardsService {
       .createNotification(
         card.userId,
         'FOUNDER_CARD_REJECTED',
-        'Founder Card Application Update',
+        'Tap Card Application Update',
         reason
-          ? `Your Founder Card application was not approved: ${reason}`
-          : 'Your Founder Card application was not approved at this time.',
+          ? `Your Tap Card application was not approved: ${reason}`
+          : 'Your Tap Card application was not approved at this time.',
         { cardId }
       )
       .catch(() => {});
@@ -603,7 +603,7 @@ export class FounderCardsService {
 
   async deactivateCard(cardId: string, adminId: string) {
     const card = await prisma.founderCard.findUnique({ where: { id: cardId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'ACTIVE') {
       throw new BadRequestError('Only active cards can be deactivated');
     }
@@ -620,7 +620,7 @@ export class FounderCardsService {
 
   async reactivateCard(cardId: string, adminId: string) {
     const card = await prisma.founderCard.findUnique({ where: { id: cardId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'DEACTIVATED') {
       throw new BadRequestError('Only deactivated cards can be reactivated');
     }
@@ -703,7 +703,7 @@ export class FounderCardsService {
 
     if (!user) throw new NotFoundError('User');
     if (user.founderCard?.status !== 'ACTIVE') {
-      throw new BadRequestError('This QR code does not belong to an active Founder Card');
+      throw new BadRequestError('This QR code does not belong to an active Tap Card');
     }
 
     const { password: _pw, ...safeUser } = user;
@@ -730,13 +730,13 @@ export class FounderCardsService {
     });
 
     if (!card || !card.user || !card.user.isActive || card.user.deletedAt) {
-      throw new NotFoundError('Founder Card');
+      throw new NotFoundError('Tap Card');
     }
 
     if (viewerId && viewerId !== card.userId) {
       const blocksService = (await import('@modules/blocks/blocks.service')).default;
       if (await blocksService.isBlocked(viewerId, card.userId)) {
-        throw new NotFoundError('Founder Card');
+        throw new NotFoundError('Tap Card');
       }
     }
 
@@ -786,7 +786,7 @@ export class FounderCardsService {
     if (viewerId && viewerId !== user.id) {
       const blocksService = (await import('@modules/blocks/blocks.service')).default;
       if (await blocksService.isBlocked(viewerId, user.id)) {
-        throw new NotFoundError('Founder Card');
+        throw new NotFoundError('Tap Card');
       }
     }
 
@@ -1094,9 +1094,9 @@ export class FounderCardsService {
     if (!trimmed) throw new BadRequestError('NFC tag id is required');
 
     const card = await prisma.founderCard.findUnique({ where: { userId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
     if (card.status !== 'ACTIVE') {
-      throw new BadRequestError('Only active Founder Cards can be linked to an NFC tag');
+      throw new BadRequestError('Only active Tap Cards can be linked to an NFC tag');
     }
 
     const collision = await prisma.founderCard.findUnique({ where: { nfcTagId: trimmed } });
@@ -1115,7 +1115,7 @@ export class FounderCardsService {
     if (!trimmed) throw new BadRequestError('NFC tag id is required');
 
     const card = await prisma.founderCard.findUnique({ where: { id: cardId } });
-    if (!card) throw new NotFoundError('Founder Card');
+    if (!card) throw new NotFoundError('Tap Card');
 
     const collision = await prisma.founderCard.findUnique({ where: { nfcTagId: trimmed } });
     if (collision && collision.id !== card.id) {
@@ -1176,7 +1176,7 @@ export class FounderCardsService {
       include: { user: { include: { profile: true } } },
     });
     if (!card || !card.user || !card.user.isActive || card.user.deletedAt || !card.user.profile) {
-      throw new NotFoundError('Founder Card');
+      throw new NotFoundError('Tap Card');
     }
     const contactUnlocked = await this.canSeeContact(card.userId, viewerId);
     const p = card.user.profile;

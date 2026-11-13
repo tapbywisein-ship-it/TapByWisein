@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { Button } from '@/components/ui/button';
 import { useEvent } from '@/hooks/useEvents';
+import { useAppStore } from '@/store/appStore';
 import type { Event } from '@/services/events.service';
 
 interface EventContextValue {
@@ -59,6 +60,7 @@ export const OrganizerEventLayout = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading } = useEvent(id || '');
+  const user = useAppStore((s) => s.user);
 
   const handleShare = () => {
     if (!id) return;
@@ -68,6 +70,31 @@ export const OrganizerEventLayout = () => {
       .then(() => toast.success('Event link copied'))
       .catch(() => toast.error('Could not copy link'));
   };
+
+  // Another organizer's event: the backend refuses its guests, stats and
+  // actions, so say so instead of showing a management page full of errors.
+  const isOtherOrganizersEvent =
+    !!event && !!user && user.role !== 'admin' && event.organizerId !== user.id;
+  if (isOtherOrganizersEvent) {
+    return (
+      <OrganizerLayout>
+        <div className="max-w-md mx-auto text-center py-16 space-y-4">
+          <h1 className="text-xl font-semibold text-foreground">This isn't one of your events</h1>
+          <p className="text-sm text-muted-foreground">
+            Only the organizer who created “{event.title}” can manage it.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2.5">
+            <Button variant="outline" onClick={() => navigate(`/e/${event.id}`)} className="rounded-xl">
+              View event page
+            </Button>
+            <Button onClick={() => navigate('/organizer/events')} className="rounded-xl">
+              Your events
+            </Button>
+          </div>
+        </div>
+      </OrganizerLayout>
+    );
+  }
 
   return (
     <OrganizerLayout>
@@ -82,18 +109,18 @@ export const OrganizerEventLayout = () => {
             >
               <ArrowLeft className="w-4 h-4" /> All events
             </button>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="w-4 h-4" /> Share
+            <div className="flex items-center gap-2.5">
+              <Button variant="outline" size="sm" onClick={handleShare} className="rounded-xl font-semibold border-border">
+                <Share2 className="w-4 h-4 mr-1.5" /> Share
               </Button>
-              {/* Edit is only available while the event is still a DRAFT */}
+              {/* Only drafts can be edited: the edit page sends any other event back here. */}
               {event?.status === 'DRAFT' && (
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => navigate(`/organizer/events/${id}/edit`)}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
                 >
-                  <Pencil className="w-4 h-4" /> Edit
+                  <Pencil className="w-4 h-4 mr-1.5" /> Edit Event
                 </Button>
               )}
             </div>
@@ -113,7 +140,9 @@ export const OrganizerEventLayout = () => {
 
           {/* Tab strip */}
           <nav aria-label="Event tabs" className="border-b border-border">
-            <div className="flex gap-1 -mb-px overflow-x-auto">
+            {/* 9 tabs can't fit on a phone, so they scroll. The fade at the right
+                edge shows there are more; from md up they fit and it's off. */}
+            <div className="flex gap-1 -mb-px overflow-x-auto [mask-image:linear-gradient(to_right,black_85%,transparent)] md:[mask-image:none]">
               {TABS.map((tab) => (
                 <NavLink
                   key={tab.to || 'index'}

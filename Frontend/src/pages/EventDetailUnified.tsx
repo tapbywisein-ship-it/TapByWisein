@@ -25,11 +25,11 @@ import { ReportButton } from '@/components/ReportButton';
 import { EventFeedbackCard } from '@/components/EventFeedbackCard';
 import { AddToCalendar } from '@/components/AddToCalendar';
 import { requireVerifiedEmail } from '@/components/VerifyEmailBanner';
-import { eventsService } from '@/services/events.service';
+import { eventsService, type EventQuestion } from '@/services/events.service';
 import { useAppStore } from '@/store/appStore';
 import { ApiError } from '@/services/api';
 import {
-  useEvent, useRegisterForEvent, useCancelRegistration, useMyRegistrations, useEventAttendees,
+  useEvent, useRegisterForEvent, useCancelRegistration, useMyRegistrations, useEventAttendees, useEventQuestions,
 } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import { injectThemeVars } from '@/lib/eventThemes';
@@ -40,6 +40,8 @@ import { getRegistrationPricing } from '@/lib/ticketPricing';
 import { formatINR } from '@/lib/currency';
 import { paymentsService, loadRazorpayScript, openRazorpayCheckout } from '@/services/payments.service';
 import { useHomePath } from '@/lib/useHomePath';
+import { EventQuestionsForm } from '@/components/EventQuestionsForm';
+import { toAnswerList, unansweredRequired, type AnswerMap } from '@/lib/eventQuestions';
 
 /**
  * Unified event detail page rendered by both `/event/:id` (auth) and
@@ -71,6 +73,11 @@ const EventDetailUnified = () => {
   // links and guest RSVP never worked.
   const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
   const registerMutation = useRegisterForEvent();
+  // The host's custom questions, asked before Register: above the button when
+  // signed in, and in the guest RSVP form otherwise.
+  const { data: questions } = useEventQuestions(id ?? '', !!id);
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
   const cancelMutation = useCancelRegistration();
   const queryClient = useQueryClient();
   const { data: attendeesData } = useEventAttendees(id ?? '', !!id && isAuthenticated);
@@ -251,7 +258,7 @@ const EventDetailUnified = () => {
 
   const organizerName = event.organizer?.profile
     ? `${event.organizer.profile.firstName} ${event.organizer.profile.lastName}`.trim()
-    : event.organizer?.email ?? 'Organizer';
+    : event.organizer?.username ?? 'Organizer';
   const organizerCompany = event.organizer?.profile?.company;
   const organizerAvatar = event.organizer?.profile?.avatar;
 
@@ -279,7 +286,8 @@ const EventDetailUnified = () => {
       setGuestRsvpOpen(true);
       return;
     }
-    registerMutation.mutate({ eventId: event.id });
+    const answerList = toAnswerList(answers);
+    registerMutation.mutate({ eventId: event.id, answers: answerList.length > 0 ? answerList : undefined });
   };
 
   const applyCoupon = async () => {
@@ -796,18 +804,23 @@ const EventDetailUnified = () => {
               </Button>
             </div>
           ) : (
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={handleRegister}
-              disabled={registerMutation.isPending}
-            >
-              {registerMutation.isPending
-                ? 'Registering…'
-                : isFull
-                  ? 'Join waitlist'
-                  : 'Register'}
-            </Button>
+            <div className="space-y-3">
+              {/* The host's questions, same form as the quick-register popup.
+                  This page used to register without asking them. */}
+              <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} />
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleRegister}
+                disabled={registerMutation.isPending || missingRequired.length > 0}
+              >
+                {registerMutation.isPending
+                  ? 'Registering…'
+                  : isFull
+                    ? 'Join waitlist'
+                    : 'Register'}
+              </Button>
+            </div>
           )}
 
           <div className="mt-3 flex items-center gap-2">
@@ -819,19 +832,22 @@ const EventDetailUnified = () => {
             >
               <Share2 className="w-3.5 h-3.5" /> Share event
             </Button>
-            <AddToCalendar
-              event={{
-                title: event.title,
-                description: event.description ?? undefined,
-                start: event.startDate,
-                end: event.endDate,
-                location:
-                  event.locationType === 'VIRTUAL'
-                    ? event.meetingUrl ?? 'Online'
-                    : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
-                url: `${window.location.origin}/e/${event.id}`,
-              }}
-            />
+            {/* Nothing to add to a calendar once the event is over. */}
+            {!isPast && (
+              <AddToCalendar
+                event={{
+                  title: event.title,
+                  description: event.description ?? undefined,
+                  start: event.startDate,
+                  end: event.endDate,
+                  location:
+                    event.locationType === 'VIRTUAL'
+                      ? event.meetingUrl ?? 'Online'
+                      : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
+                  url: `${window.location.origin}/e/${event.id}`,
+                }}
+              />
+            )}
             {isAuthenticated && (
               <ReportButton
                 targetType="EVENT"
@@ -998,6 +1014,7 @@ const EventDetailUnified = () => {
         onOpenChange={setGuestRsvpOpen}
         eventId={event.id}
         eventTitle={event.title}
+        questions={questions}
       />
 
       {/* Post-payment confirmation — shown after Razorpay checkout succeeds. */}
@@ -1035,6 +1052,7 @@ interface GuestRsvpModalProps {
   onOpenChange: (open: boolean) => void;
   eventId: string;
   eventTitle: string;
+  questions: EventQuestion[] | undefined;
 }
 
 const GuestRsvpModal = ({
@@ -1042,6 +1060,7 @@ const GuestRsvpModal = ({
   onOpenChange,
   eventId,
   eventTitle,
+  questions,
 }: GuestRsvpModalProps) => {
   const navigate = useNavigate();
   const homePath = useHomePath();
@@ -1054,10 +1073,15 @@ const GuestRsvpModal = ({
   // True when the email is a claimed (password-protected) account — backend
   // declined to auto-sign-in and we should send them to /login instead.
   const [requiresSignIn, setRequiresSignIn] = useState(false);
+  // The host's questions, same form and rules as a signed-in registration.
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
+  const canSubmit = !!name.trim() && !!email && missingRequired.length === 0;
 
   const reset = () => {
     setName('');
     setEmail('');
+    setAnswers({});
     setDone(false);
     setDoneMessage('');
     setRequiresSignIn(false);
@@ -1065,16 +1089,18 @@ const GuestRsvpModal = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email) return;
+    if (!canSubmit) return;
     setLoading(true);
     try {
       // Backend silently finds-or-creates the user. If the email isn't
       // already a password-protected account, it also returns auth tokens
       // and we auto-sign-in (Luma flow). If it IS claimed, we just confirm
       // the RSVP and prompt the visitor to sign in normally.
+      const answerList = toAnswerList(answers);
       const res = await eventsService.rsvpAsGuest(eventId, {
         name: name.trim(),
         email,
+        answers: answerList.length > 0 ? answerList : undefined,
       });
       if (res.user && res.tokens) {
         login(res.user);
@@ -1140,11 +1166,13 @@ const GuestRsvpModal = ({
                 />
               </div>
 
+              <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} />
+
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !name.trim() || !email}
+                disabled={loading || !canSubmit}
               >
                 {loading ? 'Confirming…' : 'One-Click RSVP'}
               </Button>

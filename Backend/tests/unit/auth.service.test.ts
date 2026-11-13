@@ -1,291 +1,171 @@
-import { AuthService } from '../../src/modules/auth/auth.service';
-import { ConflictError, UnauthorizedError, ForbiddenError, BadRequestError } from '../../src/utils/errors';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { createHash } from 'crypto';
 
-// Mock prisma
-jest.mock('../../src/config/database', () => ({
-  default: {
-    user: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    profile: {
-      findUnique: jest.fn(),
-    },
+// The database is faked: these tests cover the current AuthService (getMe and
+// the invite-claim flow), without a real database or any secrets.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const prisma: any = {
+  user: { findUnique: jest.fn(), update: jest.fn() },
+  claimToken: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+  gamification: { create: jest.fn() },
+  $transaction: jest.fn(),
+};
+jest.mock('@config/database', () => ({ __esModule: true, default: prisma, prisma }));
+jest.mock('@utils/crypto', () => ({
+  __esModule: true,
+  generateToken: jest.fn(() => 'raw-claim-token'),
+  hashPassword: jest.fn(async (password: string) => `hashed(${password})`),
+}));
+
+import authService from '../../src/modules/auth/auth.service';
+
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+const DAY = 86_400_000;
+
+const dbUser = {
+  id: 'user-1',
+  email: 'ana@example.com',
+  password: 'stored-hash',
+  role: 'ATTENDEE',
+  tier: 'FREE',
+  isActive: true,
+  isEmailVerified: true,
+  username: 'ana',
+  profile: {
+    firstName: 'Ana',
+    lastName: 'Rao',
+    avatar: null,
+    company: 'Acme',
+    skills: ['React'],
+    interests: [],
+    lookingFor: [],
   },
-}));
+  founderCard: null,
+  gamification: { fkScore: 50, level: 1 },
+};
 
-jest.mock('../../src/config/redis', () => ({
-  default: {
-    get: jest.fn(),
-    set: jest.fn(),
-    setex: jest.fn(),
-    del: jest.fn(),
-    exists: jest.fn(),
-    keys: jest.fn().mockResolvedValue([]),
-  },
-  redis: {
-    get: jest.fn(),
-    set: jest.fn(),
-    setex: jest.fn(),
-    del: jest.fn(),
-    exists: jest.fn(),
-    keys: jest.fn().mockResolvedValue([]),
-  },
-}));
+const claimRow = (overrides: Record<string, unknown> = {}) => ({
+  id: 'claim-1',
+  userId: 'user-1',
+  usedAt: null,
+  expiresAt: new Date(Date.now() + DAY),
+  user: dbUser,
+  ...overrides,
+});
 
-jest.mock('../../src/utils/email', () => ({
-  sendEmail: jest.fn().mockResolvedValue(undefined),
-  verificationEmail: jest.fn().mockReturnValue('<p>Verify</p>'),
-  welcomeEmail: jest.fn().mockReturnValue('<p>Welcome</p>'),
-  passwordResetEmail: jest.fn().mockReturnValue('<p>Reset</p>'),
-}));
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
-jest.mock('../../src/utils/jwt', () => ({
-  signAccessToken: jest.fn().mockReturnValue('mock-access-token'),
-  signRefreshToken: jest.fn().mockReturnValue('mock-refresh-token'),
-  verifyRefreshToken: jest.fn(),
-  getTokenExpiry: jest.fn().mockReturnValue(new Date()),
-}));
+describe('getMe', () => {
+  it('returns the signed-in user without the password', async () => {
+    prisma.user.findUnique.mockResolvedValue(dbUser);
+    const me = await authService.getMe('user-1');
+    expect(me).toMatchObject({ id: 'user-1', email: 'ana@example.com', role: 'ATTENDEE' });
+    expect(me.profile).toMatchObject({ firstName: 'Ana', company: 'Acme', bio: null });
+    expect(me).not.toHaveProperty('password');
+  });
 
-jest.mock('../../src/utils/crypto', () => ({
-  hashPassword: jest.fn().mockResolvedValue('hashed-password'),
-  comparePassword: jest.fn(),
-  generateToken: jest.fn().mockReturnValue('mock-token-32chars'),
-}));
+  it('throws when the user does not exist', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    await expect(authService.getMe('missing')).rejects.toThrow('User');
+  });
+});
 
-const prisma = require('../../src/config/database').default;
-const redisModule = require('../../src/config/redis');
-const { comparePassword } = require('../../src/utils/crypto');
-const { verifyRefreshToken } = require('../../src/utils/jwt');
+describe('generateClaimToken', () => {
+  it('stores only a hash of the token, valid for 14 days, and returns a link with the token', async () => {
+    prisma.user.findUnique.mockResolvedValue(dbUser);
+    const before = Date.now();
 
-describe('AuthService', () => {
-  let authService: AuthService;
+    const link = await authService.generateClaimToken('user-1');
 
+    expect(link).toMatch(/\/claim\/raw-claim-token$/);
+    const saved = prisma.claimToken.create.mock.calls[0][0].data;
+    expect(saved.tokenHash).toBe(sha256('raw-claim-token'));
+    expect(JSON.stringify(saved)).not.toContain('raw-claim-token');
+    const days = (saved.expiresAt.getTime() - before) / DAY;
+    expect(days).toBeGreaterThan(13.99);
+    expect(days).toBeLessThan(14.01);
+  });
+
+  it('throws for an unknown user and stores nothing', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    await expect(authService.generateClaimToken('missing')).rejects.toThrow('User');
+    expect(prisma.claimToken.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('validateClaimToken', () => {
+  it('looks the token up by its hash and returns who it is for', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow());
+    const result = await authService.validateClaimToken('raw-claim-token');
+    expect(prisma.claimToken.findUnique.mock.calls[0][0].where).toEqual({
+      tokenHash: sha256('raw-claim-token'),
+    });
+    expect(result).toEqual({ email: 'ana@example.com', firstName: 'Ana', lastName: 'Rao' });
+  });
+
+  it('rejects an unknown token', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(null);
+    await expect(authService.validateClaimToken('nope')).rejects.toThrow('Claim token');
+  });
+
+  it('rejects a token that was already used', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow({ usedAt: new Date() }));
+    await expect(authService.validateClaimToken('raw-claim-token')).rejects.toThrow('already been claimed');
+  });
+
+  it('rejects an expired token', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow({ expiresAt: new Date(Date.now() - DAY) }));
+    await expect(authService.validateClaimToken('raw-claim-token')).rejects.toThrow('expired');
+  });
+});
+
+describe('claimAccount', () => {
   beforeEach(() => {
-    authService = new AuthService();
-    jest.clearAllMocks();
+    prisma.user.update.mockReturnValue({ ...dbUser, password: 'hashed(new-password)' });
+    prisma.claimToken.update.mockReturnValue({});
+    prisma.gamification.create.mockReturnValue({});
+    prisma.$transaction.mockImplementation(async (steps: any[]) => steps);
   });
 
-  describe('register', () => {
-    const registerDto = {
-      email: 'test@example.com',
-      password: 'Test@1234!',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'ATTENDEE' as const,
-    };
-
-    it('should successfully register a new user', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
-      prisma.user.create.mockResolvedValue({
-        id: 'user-id-1',
-        email: registerDto.email,
-        role: 'ATTENDEE',
-        tier: 'FREE',
-        isActive: true,
-        isEmailVerified: false,
-        profile: {
-          firstName: 'John',
-          lastName: 'Doe',
-          avatar: null,
-          company: null,
-        },
-      });
-      redisModule.redis.setex.mockResolvedValue('OK');
-      prisma.user.findUnique.mockResolvedValueOnce(null)
-        .mockResolvedValue({
-          id: 'user-id-1',
-          email: registerDto.email,
-          role: 'ATTENDEE',
-          tier: 'FREE',
-        });
-
-      const result = await authService.register(registerDto);
-
-      expect(result).toHaveProperty('user');
-      expect(result).toHaveProperty('tokens');
-      expect(result.user.email).toBe(registerDto.email);
-      expect(result.tokens.accessToken).toBe('mock-access-token');
-    });
-
-    it('should throw ConflictError if email already exists', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'existing-user',
-        email: registerDto.email,
-      });
-
-      await expect(authService.register(registerDto)).rejects.toThrow(ConflictError);
-    });
+  it('rejects a password under 8 characters and changes nothing', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow());
+    await expect(authService.claimAccount('raw-claim-token', 'short')).rejects.toThrow('at least 8');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  describe('login', () => {
-    const loginDto = {
-      email: 'test@example.com',
-      password: 'Test@1234!',
-    };
-
-    const mockUser = {
-      id: 'user-id-1',
-      email: loginDto.email,
-      password: 'hashed-password',
-      role: 'ATTENDEE',
-      tier: 'FREE',
-      isActive: true,
-      isEmailVerified: true,
-      deletedAt: null,
-      profile: {
-        firstName: 'John',
-        lastName: 'Doe',
-        avatar: null,
-        company: null,
-      },
-    };
-
-    it('should successfully login with valid credentials', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(true);
-      redisModule.redis.setex.mockResolvedValue('OK');
-      prisma.user.findUnique.mockResolvedValue(mockUser);
-
-      const result = await authService.login(loginDto);
-
-      expect(result).toHaveProperty('user');
-      expect(result).toHaveProperty('tokens');
-      expect(result.user.email).toBe(loginDto.email);
-    });
-
-    it('should throw UnauthorizedError for invalid email', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
-
-      await expect(authService.login(loginDto)).rejects.toThrow(UnauthorizedError);
-    });
-
-    it('should throw UnauthorizedError for wrong password', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(false);
-
-      await expect(authService.login(loginDto)).rejects.toThrow(UnauthorizedError);
-    });
-
-    it('should throw ForbiddenError for unverified email', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        ...mockUser,
-        isEmailVerified: false,
-      });
-      comparePassword.mockResolvedValue(true);
-
-      await expect(authService.login(loginDto)).rejects.toThrow(ForbiddenError);
-    });
-
-    it('should throw ForbiddenError for inactive user', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        ...mockUser,
-        isActive: false,
-      });
-      comparePassword.mockResolvedValue(true);
-
-      await expect(authService.login(loginDto)).rejects.toThrow(ForbiddenError);
-    });
+  it('rejects a used or expired token and changes nothing', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow({ usedAt: new Date() }));
+    await expect(authService.claimAccount('raw-claim-token', 'new-password')).rejects.toThrow('already');
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow({ expiresAt: new Date(Date.now() - DAY) }));
+    await expect(authService.claimAccount('raw-claim-token', 'new-password')).rejects.toThrow('expired');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  describe('refreshTokens', () => {
-    it('should successfully refresh tokens', async () => {
-      const mockDecodedToken = {
-        userId: 'user-id-1',
-        email: 'test@example.com',
-        role: 'ATTENDEE',
-        tier: 'FREE',
-      };
+  it('saves a hashed password and marks the token used, in one transaction', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow());
 
-      verifyRefreshToken.mockReturnValue(mockDecodedToken);
-      redisModule.redis.exists.mockResolvedValue(1);
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-id-1',
-        email: 'test@example.com',
-        role: 'ATTENDEE',
-        tier: 'FREE',
-        isActive: true,
-        deletedAt: null,
-      });
-      redisModule.redis.del.mockResolvedValue(1);
-      redisModule.redis.setex.mockResolvedValue('OK');
+    const result = await authService.claimAccount('raw-claim-token', 'new-password');
 
-      const result = await authService.refreshTokens('mock-refresh-token');
-
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
+    const userUpdate = prisma.user.update.mock.calls[0][0];
+    expect(userUpdate.where).toEqual({ id: 'user-1' });
+    expect(userUpdate.data.password).toBe('hashed(new-password)');
+    expect(prisma.claimToken.update.mock.calls[0][0]).toMatchObject({
+      where: { id: 'claim-1' },
+      data: { usedAt: expect.any(Date) },
     });
-
-    it('should throw UnauthorizedError for invalid refresh token', async () => {
-      verifyRefreshToken.mockImplementation(() => {
-        throw new UnauthorizedError('Invalid refresh token');
-      });
-
-      await expect(authService.refreshTokens('invalid-token')).rejects.toThrow(UnauthorizedError);
-    });
-
-    it('should throw UnauthorizedError if token not found in Redis', async () => {
-      verifyRefreshToken.mockReturnValue({
-        userId: 'user-id-1',
-        email: 'test@example.com',
-        role: 'ATTENDEE',
-        tier: 'FREE',
-      });
-      redisModule.redis.exists.mockResolvedValue(0); // Token not in Redis
-
-      await expect(authService.refreshTokens('expired-token')).rejects.toThrow(UnauthorizedError);
-    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    // The user already has an FK Score row, so none is created.
+    expect(prisma.gamification.create).not.toHaveBeenCalled();
+    expect(result.user).not.toHaveProperty('password');
   });
 
-  describe('changePassword', () => {
-    it('should successfully change password', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-id-1',
-        password: 'old-hashed-password',
-      });
-      comparePassword.mockResolvedValue(true);
-      prisma.user.update.mockResolvedValue({ id: 'user-id-1' });
-      redisModule.redis.keys.mockResolvedValue([]);
-
-      await expect(
-        authService.changePassword('user-id-1', 'OldPass@123!', 'NewPass@456!')
-      ).resolves.not.toThrow();
-    });
-
-    it('should throw UnauthorizedError for wrong current password', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-id-1',
-        password: 'hashed-password',
-      });
-      comparePassword.mockResolvedValue(false);
-
-      await expect(
-        authService.changePassword('user-id-1', 'WrongPass@123!', 'NewPass@456!')
-      ).rejects.toThrow(UnauthorizedError);
-    });
-  });
-
-  describe('verifyEmail', () => {
-    it('should successfully verify email', async () => {
-      redisModule.redis.get.mockResolvedValue('user-id-1');
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-id-1',
-        email: 'test@example.com',
-        isEmailVerified: false,
-        profile: { firstName: 'John', lastName: 'Doe' },
-      });
-      prisma.user.update.mockResolvedValue({ id: 'user-id-1', isEmailVerified: true });
-      redisModule.redis.del.mockResolvedValue(1);
-
-      await expect(authService.verifyEmail('valid-token')).resolves.not.toThrow();
-    });
-
-    it('should throw BadRequestError for invalid token', async () => {
-      redisModule.redis.get.mockResolvedValue(null);
-
-      await expect(authService.verifyEmail('invalid-token')).rejects.toThrow(BadRequestError);
+  it('creates the FK Score row when the user has none yet', async () => {
+    prisma.claimToken.findUnique.mockResolvedValue(claimRow({ user: { ...dbUser, gamification: null } }));
+    await authService.claimAccount('raw-claim-token', 'new-password');
+    expect(prisma.gamification.create).toHaveBeenCalledWith({
+      data: { userId: 'user-1', fkScore: 0, level: 1 },
     });
   });
 });

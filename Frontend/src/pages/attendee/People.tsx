@@ -6,8 +6,9 @@ import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { useConnectionSuggestions, useSendConnectionRequest } from '@/hooks/useConnections';
-import { Users, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 /** Full member directory — "See more" from Dashboard's People You May Know. */
 const PeopleDirectory = () => {
@@ -34,10 +35,12 @@ const PeopleDirectory = () => {
 
   return (
     <PortalLayout>
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-muted-foreground" />
-          <h1 className="text-xl font-semibold text-foreground">People on TapByWisein</h1>
+      <div className="max-w-5xl mx-auto space-y-6 pb-24 md:pb-8">
+        <div>
+          <h1 className="text-3xl font-semibold text-foreground">People</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Founders and attendees on TapByWisein you can connect with.
+          </p>
         </div>
 
         <div className="relative">
@@ -45,14 +48,14 @@ const PeopleDirectory = () => {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, company, role, or skill..."
+            placeholder="Search name, company, role, skill..."
             className="pl-9"
           />
         </div>
 
         <Surface>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-10">Loading people...</p>
+            <LoadingSkeleton layout="cards" count={8} />
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">No people found.</p>
           ) : (
@@ -64,7 +67,7 @@ const PeopleDirectory = () => {
                 return (
                   <div
                     key={s.id}
-                    className="flex flex-col items-center text-center p-4 rounded-xl bg-muted/30 border border-border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col items-center text-center p-3 sm:p-4 rounded-xl bg-muted/30 border border-border hover:bg-muted/50 transition-colors"
                   >
                     {/* Clicking the person opens their card, same as People You May Know on the Dashboard. */}
                     <Link to={`/card/${s.id}`} className="flex flex-col items-center w-full">
@@ -75,7 +78,7 @@ const PeopleDirectory = () => {
                           {name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate w-full">{name}</p>
+                      <p className="text-sm font-semibold text-foreground leading-tight mb-0.5 line-clamp-2 break-words w-full">{name}</p>
                       {(p?.position || p?.company) && (
                         <p className="text-[11px] text-muted-foreground truncate w-full mb-2">
                           {[p?.position, p?.company].filter(Boolean).join(' · ')}
@@ -92,7 +95,7 @@ const PeopleDirectory = () => {
                     <Button
                       size="sm"
                       variant={sent ? 'outline' : 'default'}
-                      className="w-full text-xs h-7 mt-auto"
+                      className="w-full text-xs h-8 mt-auto"
                       disabled={sent || sendRequest.isPending}
                       onClick={() => handleConnect(s.id)}
                     >

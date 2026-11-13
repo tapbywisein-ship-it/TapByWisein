@@ -219,7 +219,7 @@ const CommunitiesPage = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 placeholder="What is this community about?"
-                className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                className="w-full px-3 py-2 text-base sm:text-sm bg-background border border-input rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
               />
             </div>
             <Button className="w-full" onClick={submit} disabled={name.trim().length < 2 || createMutation.isPending}>

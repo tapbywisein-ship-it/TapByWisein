@@ -18,7 +18,23 @@ export const CookieConsent = () => {
     else if (choice === null) setVisible(true);
   }, []);
 
-  if (!visible) return null;
+  // Wait while a popup is open (like the first-visit onboarding): the page
+  // behind it can't be clicked, so the banner's buttons wouldn't work, and two
+  // things at once is too much on a first visit. A popup's content can render a
+  // moment after its container, so the whole tree is watched; this only runs
+  // while the banner is up (until the visitor chooses).
+  const [popupOpen, setPopupOpen] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    // Confirmations (AlertDialog) use role="alertdialog", other popups role="dialog".
+    const check = () => setPopupOpen(!!document.querySelector('[role="dialog"], [role="alertdialog"]'));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [visible]);
+
+  if (!visible || popupOpen) return null;
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-[60] p-3 md:p-4">
