@@ -112,6 +112,15 @@ const ACTION_LABELS: Record<string, { label: string; icon: React.ElementType; co
   FIRST_LOGIN:         { label: 'Joined TapByWisein', icon: Sparkles, color: 'text-primary' },
 };
 
+/* ─── static quick actions ─────────────────────────────────────────── */
+const ATTENDEE_ACTIONS = [
+  { icon: Scan, label: 'Scan QR', to: '/connect' },
+  { icon: QrCode, label: 'My QR', to: '/connect' },
+  { icon: CreditCard, label: 'My Card', to: '/apply-card' },
+  { icon: Users, label: 'Network', to: '/connections' },
+  { icon: Calendar, label: 'Events', to: '/events' },
+] as const;
+
 /* ─── main page ─────────────────────────────────────────────────────── */
 const AttendeeDashboard = () => {
   const user = useAppStore((s) => s.user);
@@ -172,9 +181,9 @@ const AttendeeDashboard = () => {
   }, [sendRequest]);
 
   const fade = (delay = 0) => ({
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: { duration: 0.2, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   });
 
   /* checklist items */
@@ -182,14 +191,6 @@ const AttendeeDashboard = () => {
   const checklistItems = profileSetupChecklist(profile);
   const completedSteps = checklistItems.filter((i) => i.done).length;
   const nextStep = checklistItems.find((i) => !i.done);
-
-  const actions = [
-    { icon: Scan, label: 'Scan QR', to: '/connect' },
-    { icon: QrCode, label: 'My QR', to: '/connect' },
-    { icon: CreditCard, label: 'My Card', to: '/apply-card' },
-    { icon: Users, label: 'Network', to: '/connections' },
-    { icon: Calendar, label: 'Events', to: '/events' },
-  ];
 
   return (
     <AppLayout>
@@ -223,7 +224,7 @@ const AttendeeDashboard = () => {
         </motion.div>
 
         {/* Stats row */}
-        <motion.div {...fade(0.06)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <motion.div {...fade(0)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {[
             { label: 'Registered', value: registrations ? myEvents.length : undefined, sub: 'Events', icon: Calendar },
             { label: 'FK Score', value: gamification ? score : undefined, sub: `Level ${level}`, icon: Trophy, gold: true },
@@ -233,7 +234,7 @@ const AttendeeDashboard = () => {
             <Surface key={label} padding="none" className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-center">
               <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground mx-auto mb-1.5 sm:mb-2" />
               <p className={`text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 tracking-tight ${gold ? 'text-primary' : 'text-foreground'}`}>
-                <Counter to={value} delay={150} />
+                <AnimatedCounter value={value} duration={600} />
               </p>
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{label}</p>
               <p className="text-[9px] sm:text-[11px] text-muted-foreground/60 mt-0.5">{sub}</p>
@@ -248,7 +249,7 @@ const AttendeeDashboard = () => {
           {/* Always shown: steps spin until the profile loads, then tick off.
               Kept at 4/4 when everything is done. */}
           {(
-            <motion.div {...fade(0.08)} className="lg:col-span-1">
+            <motion.div {...fade(0)} className="lg:col-span-1">
               <Surface className="h-full">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -284,7 +285,7 @@ const AttendeeDashboard = () => {
           )}
 
           {/* ── FK Score Ring + Recent Activity ── */}
-          <motion.div {...fade(0.1)} className="lg:col-span-1">
+          <motion.div {...fade(0)} className="lg:col-span-1">
             <Surface className="h-full">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-4 h-4 text-muted-foreground" />
@@ -304,7 +305,7 @@ const AttendeeDashboard = () => {
                       strokeWidth="3" strokeLinecap="round"
                       strokeDasharray="0 100.5"
                       animate={{ strokeDasharray: `${levelProgress(score).percent * 1.005} 100.5` }}
-                      transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -317,8 +318,8 @@ const AttendeeDashboard = () => {
                   <p className="text-xs text-muted-foreground">FK Score</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {[
-                      { label: `+${scoreRules.find(r => r.action === 'Attend an event (check-in)')?.points} Attend event`, done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
-                      { label: `+${scoreRules.find(r => r.action === 'Make a connection')?.points} Connect`, done: false },
+                      { label: `+${scoreRules.find(r => r.action === 'Attend an event (check-in)')?.points ?? 25} Attend event`, done: myEvents.some((r) => r.status === 'ATTENDED' || r.checkedIn) },
+                      { label: `+${scoreRules.find(r => r.action === 'Make a connection')?.points ?? 10} Connect`, done: false },
                     ].map((hint) => (
                       <span key={hint.label} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${hint.done ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-muted/40 border-border text-muted-foreground'}`}>
                         {hint.done ? '✓' : ''} {hint.label}
@@ -349,11 +350,11 @@ const AttendeeDashboard = () => {
           </motion.div>
 
           {/* ── Quick Actions ── */}
-          <motion.div {...fade(0.12)}>
+          <motion.div {...fade(0)} className="h-full">
             <Surface className="h-full">
               <span className="section-label block mb-4">Quick Actions</span>
               <div className="grid grid-cols-3 gap-2">
-                {actions.map((a) => (
+                {ATTENDEE_ACTIONS.map((a) => (
                   <Link
                     key={a.label}
                     to={a.to}
@@ -375,7 +376,7 @@ const AttendeeDashboard = () => {
           </motion.div>
 
           {/* ── Upcoming Events ── */}
-          <motion.div {...fade(0.14)} className="md:col-span-2 lg:col-span-2">
+          <motion.div {...fade(0)} className="md:col-span-2 lg:col-span-2">
             <Surface className="h-full">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -448,7 +449,7 @@ const AttendeeDashboard = () => {
 
           {/* ── Recent Connections ── */}
           {recentConnections.length > 0 && (
-            <motion.div {...fade(0.15)} className="md:col-span-2 lg:col-span-3">
+            <motion.div {...fade(0)} className="md:col-span-2 lg:col-span-3">
               <Surface>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -500,7 +501,7 @@ const AttendeeDashboard = () => {
 
           {/* ── People You May Know ── */}
           {suggestions && suggestions.length > 0 && (
-            <motion.div {...fade(0.16)} className="md:col-span-2 lg:col-span-3">
+            <motion.div {...fade(0)} className="md:col-span-2 lg:col-span-3">
               <Surface>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -560,7 +561,7 @@ const AttendeeDashboard = () => {
           )}
 
           {/* ── Discover ── */}
-          <motion.div {...fade(0.18)}>
+          <motion.div {...fade(0)}>
             <Surface hover className="h-full">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">

@@ -1,0 +1,488 @@
+:root {
+  /* Dynamic Card Data Variables */
+  --card-name: "Santhosh";
+  --card-role: "FOUNDER | WiseIN";
+  --card-tagline: "Build | Connect | Grow";
+  --card-url: "tapbywisein.com/santhosh";
+
+  /* Color Palette */
+  --navy: #0B1B3F;
+  --blue: #1E5BFF;
+  --blue-light: #4A85FF;
+  --cyan-glow: #38BDF8;
+  --silver-base: #D9DDE3;
+  --silver-light: #F8FAFC;
+  --silver-dark: #B8C0CC;
+  --dark-bg: #070D1B;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, #122144 0%, #080F21 55%, #030611 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--silver-light);
+  padding: 24px;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Ambient glow orbs in background */
+body::before,
+body::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+body::before {
+  width: 500px;
+  height: 500px;
+  background: rgba(30, 91, 255, 0.15);
+  top: 15%;
+  left: 20%;
+}
+body::after {
+  width: 400px;
+  height: 400px;
+  background: rgba(56, 189, 248, 0.12);
+  bottom: 10%;
+  right: 25%;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(30, 91, 255, 0.12);
+  border: 1px solid rgba(30, 91, 255, 0.35);
+  color: #93C5FD;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  backdrop-filter: blur(10px);
+}
+.header-badge span.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38BDF8;
+  box-shadow: 0 0 10px #38BDF8;
+}
+
+/* 3D Perspective Scene */
+.card-scene {
+  perspective: 1200px;
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── PHYSICAL NFC BUSINESS CARD ── */
+.nfc-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.586 / 1;
+  border-radius: 24px;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
+
+  /* Layered Brushed Aluminium Material */
+  background:
+    /* Layer 1: Brushed Metal Horizontal Grain Overlay */
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.15) 0px,
+      rgba(255, 255, 255, 0.15) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    /* Layer 2: Metallic Specular Glare across the diagonal */
+    linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0.1) 25%,
+      transparent 45%,
+      rgba(255, 255, 255, 0.6) 60%,
+      transparent 80%,
+      rgba(255, 255, 255, 0.4) 100%
+    ),
+    /* Layer 3: Silver-Titanium Base Gradient */
+    linear-gradient(
+      140deg,
+      #F8FAFC 0%,
+      #E2E8F0 18%,
+      #CBD5E1 38%,
+      #F1F5F9 55%,
+      #94A3B8 82%,
+      #CBD5E1 100%
+    );
+
+  /* Glowing Blue Edge + Multi-stage Depth Shadows */
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -1.5px 2px rgba(11, 27, 63, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.7),
+    0 0 35px -5px rgba(30, 91, 255, 0.55),
+    0 35px 70px -15px rgba(3, 8, 22, 0.75);
+
+  /* Default 3D Tilt */
+  transform-style: preserve-3d;
+  transform: rotateY(-6deg) rotateX(4deg);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.3s ease;
+}
+
+.nfc-card:hover {
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 1),
+    inset 0 -1.5px 2px rgba(11, 27, 63, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.85),
+    0 0 45px -2px rgba(30, 91, 255, 0.75),
+    0 40px 80px -15px rgba(2, 6, 18, 0.85);
+}
+
+/* Glass Reflection Highlight sweep on hover */
+.nfc-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 55%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.75s ease;
+  pointer-events: none;
+  z-index: 15;
+}
+.nfc-card:hover::before {
+  transform: translateX(100%);
+}
+
+/* ── 9. FLOWING BLUE WAVE / SWOOSH RIBBONS (BACKGROUND SVG) ── */
+.card-waves-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── 8. LARGE EMBOSSED "W" WATERMARK ── */
+.watermark-w {
+  position: absolute;
+  right: 6%;
+  top: 48%;
+  transform: translateY(-50%);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(140px, 26vw, 220px);
+  font-weight: 900;
+  line-height: 0.8;
+  color: rgba(255, 255, 255, 0.18);
+  user-select: none;
+  pointer-events: none;
+  z-index: 3;
+  letter-spacing: -0.05em;
+  text-shadow:
+    1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(11, 27, 63, 0.25);
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.35);
+}
+
+/* ── CARD FOREGROUND CONTENT ── */
+.card-content {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(18px, 4vw, 36px);
+}
+
+/* ── 1 & 2. TOP BAR: LOGO & NFC ICON ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.brand-logo {
+  font-size: clamp(18px, 3.2vw, 26px);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.brand-logo .navy {
+  color: var(--navy);
+}
+.brand-logo .blue {
+  color: var(--blue);
+}
+
+.nfc-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--blue);
+}
+.nfc-label {
+  font-size: clamp(11px, 1.8vw, 13px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--blue);
+}
+.nfc-waves-icon {
+  width: clamp(18px, 2.5vw, 22px);
+  height: clamp(18px, 2.5vw, 22px);
+  color: var(--blue);
+}
+
+/* ── 3, 4, 5. CENTER-LEFT: NAME, ROLE, TAGLINE ── */
+.card-body {
+  margin-top: auto;
+  margin-bottom: auto;
+  max-width: 62%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vw, 8px);
+}
+
+.person-name {
+  font-size: clamp(26px, 5.2vw, 42px);
+  font-weight: 900;
+  color: var(--navy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+.person-role {
+  font-size: clamp(11px, 1.8vw, 14px);
+  font-weight: 800;
+  color: #1E3A8A;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.role-divider {
+  width: 100%;
+  max-width: 240px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(30, 91, 255, 0.6) 0%, rgba(11, 27, 63, 0.25) 70%, transparent 100%);
+  margin: 3px 0 2px 0;
+}
+
+.person-tagline {
+  font-size: clamp(11px, 1.8vw, 13.5px);
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.02em;
+}
+.tagline-sep {
+  color: rgba(30, 91, 255, 0.5);
+  font-weight: 400;
+}
+
+/* ── 6. BOTTOM-LEFT: URL & 7. BOTTOM-RIGHT: QR PLATE ── */
+.bottom-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.card-url-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--navy);
+  font-size: clamp(12px, 2vw, 15px);
+  font-weight: 600;
+  text-decoration: none;
+  font-family: 'Inter', ui-monospace, monospace;
+  padding: 6px 12px 6px 0;
+  transition: color 0.2s ease;
+}
+.card-url-link:hover {
+  color: var(--blue);
+}
+.url-arrow-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(30, 91, 255, 0.4);
+  background: rgba(255, 255, 255, 0.7);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue);
+  box-shadow: 0 1px 3px rgba(11, 27, 63, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.card-url-link:hover .url-arrow-circle {
+  transform: translateX(3px);
+  background: #FFFFFF;
+  border-color: var(--blue);
+}
+
+/* ── 7. BOTTOM-RIGHT: EMBOSSED QR PLATE ── */
+.qr-embossed-plate {
+  position: absolute;
+  right: clamp(18px, 4vw, 36px);
+  bottom: clamp(18px, 4vw, 34px);
+  background: linear-gradient(145deg, #F8FAFC 0%, #E2E8F0 100%);
+  border-radius: 16px;
+  padding: clamp(8px, 1.4vw, 12px) clamp(10px, 1.6vw, 14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  /* Premium Embossed Inner Shadow + Outer Lift */
+  box-shadow:
+    inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.9),
+    inset -1.5px -1.5px 3px rgba(11, 27, 63, 0.18),
+    0 4px 12px -2px rgba(11, 27, 63, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.qr-code-box {
+  position: relative;
+  width: clamp(72px, 13vw, 94px);
+  height: clamp(72px, 13vw, 94px);
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.qr-svg {
+  width: 100%;
+  height: 100%;
+}
+.qr-center-badge {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: var(--navy);
+  color: #FFFFFF;
+  border-radius: 5px;
+  border: 2px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.qr-scan-label {
+  font-size: clamp(8px, 1.3vw, 9.5px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #1E3A8A;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── INTERACTIVE CONTROLS BAR (AT BOTTOM) ── */
+.controls-panel {
+  margin-top: 36px;
+  width: 100%;
+  max-width: 720px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 18px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.control-group label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94A3B8;
+}
+.control-group input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.control-group input:focus {
+  border-color: var(--blue);
+  background: rgba(30, 91, 255, 0.08);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  body {
+    padding: 16px;
+  }
+  .controls-panel {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .card-body {
+    max-width: 58%;
+  }
+}

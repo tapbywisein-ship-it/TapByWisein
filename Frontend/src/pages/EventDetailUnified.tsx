@@ -212,7 +212,7 @@ const EventDetailUnified = () => {
     paidTiers.length > 0
       ? paidTiers
       : singlePrice > 0
-        ? [{ id: 'default', name: 'General Admission', price: singlePrice, priceLabel: formatINR(singlePrice), seats: event.capacity }]
+        ? [{ id: 'default', name: 'General Admission', price: singlePrice, priceLabel: formatINR(singlePrice), seats: event.capacity, benefits: [] }]
         : [];
   const hasFreeTier = tiers.length > 0 ? tiers.some((t) => t.price <= 0) : singlePrice <= 0;
   const requiresPayment = !hasFreeTier && payableTiers.length > 0;
@@ -330,8 +330,9 @@ const EventDetailUnified = () => {
         key: order.keyId,
         amount: order.amount,
         currency: order.currency,
-        name: order.eventTitle,
-        description: `Ticket · ${order.ticketTierName}`,
+        name: 'TapByWiseIN',
+        description: `${order.eventTitle} · ${order.ticketTierName}`,
+        image: `${window.location.origin}/logo-mark.png`,
         order_id: order.orderId,
         prefill: { name: user?.name, email: user?.email },
         theme: { color: '#0f172a' },
@@ -613,9 +614,9 @@ const EventDetailUnified = () => {
                         <span className="font-semibold text-foreground">{t.priceLabel}</span>
                       )}
                     </span>
-                    {t.benefits.length > 0 && (
+                    {Boolean(t.benefits && t.benefits.length > 0) && (
                       <span className="mt-1.5 ml-5 flex flex-col gap-0.5">
-                        {t.benefits.map((b) => (
+                        {t.benefits?.map((b) => (
                           <span key={b} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                             {b}
@@ -970,9 +971,9 @@ const EventDetailUnified = () => {
                   </div>
                 );
               })}
-              {attendeesData!.attendees.length > 18 && (
+              {(attendeesData?.attendees?.length ?? 0) > 18 && (
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground border border-border">
-                  +{attendeesData!.attendees.length - 18}
+                  +{(attendeesData?.attendees?.length ?? 0) - 18}
                 </div>
               )}
             </div>
