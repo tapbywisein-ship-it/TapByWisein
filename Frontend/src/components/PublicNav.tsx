@@ -47,7 +47,7 @@ export function PublicNav({ loginFrom }: { loginFrom?: string }) {
       >
         Sign in
       </Link>
-      <Link 
+      {/* <Link 
         to="/login" 
         state={loginState} 
         className="nav-btn-premium group text-sm font-semibold text-white px-4 py-1.5 rounded-md shadow-sm transition-transform active:scale-[0.98] border border-[#1E3A8A] relative overflow-hidden"
@@ -58,7 +58,7 @@ export function PublicNav({ loginFrom }: { loginFrom?: string }) {
       >
         <span className="relative z-10">Get started</span>
         <div className="absolute inset-0 z-0 bg-[linear-gradient(60deg,transparent_40%,rgba(255,255,255,0.25)_50%,transparent_60%)] -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-out" />
-      </Link>
+      </Link> */}
     </>
   );
 

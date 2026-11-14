@@ -547,7 +547,7 @@ export function AnimatedFooterSection() {
           <Link to="/">TapByWisein</Link>
           <Link to="/discover">ByWisein</Link>
           <a href="https://www.wisein.in/">WiseIN</a>
-          <Link to="/login">Sign In</Link>
+          {/* <Link to="/login">Sign In</Link> */}
         </div>
         <div className="afs-legal">
           © {new Date().getFullYear()} TapByWiseIN. Part of the WiseIN ecosystem.

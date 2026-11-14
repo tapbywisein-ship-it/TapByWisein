@@ -23,12 +23,15 @@ export const WhatIsTapByWisein = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const [open, setOpen] = useState(false);
 
+  // Disabled: TapCard popup should not show on app open
+  /*
   useEffect(() => {
     if (isAuthenticated) return;
     if (localStorage.getItem(SEEN_KEY)) return;
     const t = setTimeout(() => setOpen(true), 900); // let the page paint first
     return () => clearTimeout(t);
   }, [isAuthenticated]);
+  */
 
   const dismiss = (o: boolean) => {
     if (!o) localStorage.setItem(SEEN_KEY, '1');
