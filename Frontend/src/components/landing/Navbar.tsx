@@ -33,9 +33,9 @@ export default function Navbar() {
         <div className="nav-brand">
           <Logo size="sm" clickable={false} />
         </div>
-        <a className="nav-signin" href={LINKS.signIn ?? "/login"} aria-disabled={LINKS.signIn ? undefined : true}>
+        {/* <a className="nav-signin" href={LINKS.signIn ?? "/login"} aria-disabled={LINKS.signIn ? undefined : true}>
           Sign in
-        </a>
+        </a> */}
       </div>
     </header>
   );
