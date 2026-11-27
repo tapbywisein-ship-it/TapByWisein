@@ -143,7 +143,8 @@ const Payouts = () => {
           </div>
         )}
 
-        {/* Route account status */}
+        {/* Route account status — commented out */}
+        {/*
         <Surface>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -192,6 +193,7 @@ const Payouts = () => {
             </div>
           )}
         </Surface>
+        */}
 
         {/* Earnings by event */}
         {summary && summary.events.length > 0 && (

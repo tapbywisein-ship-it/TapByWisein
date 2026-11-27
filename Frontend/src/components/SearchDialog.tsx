@@ -28,11 +28,20 @@ export const SearchDialog = ({ open, onClose }: { open: boolean; onClose: () => 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  // Focus input when drawer opens
+  // Focus input when drawer opens & bind Escape key
   useEffect(() => {
-    if (open) setTimeout(() => searchInputRef.current?.focus(), 50);
-    else { setSearchInput(''); setDebouncedQ(''); }
-  }, [open]);
+    if (open) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    } else {
+      setSearchInput('');
+      setDebouncedQ('');
+    }
+  }, [open, onClose]);
 
   const { data: searchResults, isLoading: searchLoading, isError: searchError, refetch: refetchSearch } = useQuery<SearchResult>({
     queryKey: ['search', debouncedQ],
@@ -53,37 +62,48 @@ export const SearchDialog = ({ open, onClose }: { open: boolean; onClose: () => 
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-start justify-center pt-20"
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-20 px-4"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-xl shadow-card w-full max-w-xl mx-4 overflow-hidden"
+        className="bg-card border border-border rounded-xl shadow-card w-full max-w-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
           <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           <input
             ref={searchInputRef}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search events and people…"
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base sm:text-sm"
+            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base sm:text-sm min-w-0"
             onKeyDown={(e) => e.key === 'Escape' && onClose()}
           />
           {searchInput && (
-            <button onClick={() => setSearchInput('')} className="text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput('');
+                searchInputRef.current?.focus();
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors flex-shrink-0"
+              title="Clear search"
+            >
+              Clear
             </button>
           )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 -mr-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+            title="Close search"
+            aria-label="Close search"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {debouncedQ.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-            Type at least 2 characters to search
-          </div>
-        )}
-
-        {debouncedQ.length === 1 && (
+        {debouncedQ.length < 2 && (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">
             Type at least 2 characters to search
           </div>
@@ -178,11 +198,6 @@ export const SearchDialog = ({ open, onClose }: { open: boolean; onClose: () => 
           </div>
         )}
 
-        {!debouncedQ && (
-          <div className="px-4 py-3 text-xs text-muted-foreground">
-            Type at least 2 characters to search · <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Esc</kbd> to close
-          </div>
-        )}
       </div>
     </div>
   );

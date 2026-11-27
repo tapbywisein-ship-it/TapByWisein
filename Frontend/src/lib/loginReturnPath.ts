@@ -11,15 +11,22 @@ export function getLoginReturnPathname(state: unknown): string | undefined {
   return pathname || undefined;
 }
 
-/** Allow only same-origin public event paths (open redirect hardening). */
+/** Allow only same-origin event paths (/e/:slug or /event/:id; open redirect hardening). */
 export function safePublicEventReturnPath(raw: string | undefined): string | undefined {
   if (!raw || typeof raw !== 'string') return undefined;
   const [pathname] = raw.split('?');
   if (!pathname.startsWith('/') || pathname.startsWith('//')) return undefined;
-  if (!pathname.startsWith('/e/')) return undefined;
-  const slug = pathname.slice(3).replace(/\/$/, '');
-  if (!slug || slug.includes('/')) return undefined;
-  return `/e/${slug}`;
+  if (pathname.startsWith('/e/')) {
+    const slug = pathname.slice(3).replace(/\/$/, '');
+    if (!slug || slug.includes('/')) return undefined;
+    return `/e/${slug}`;
+  }
+  if (pathname.startsWith('/event/')) {
+    const id = pathname.slice(7).replace(/\/$/, '');
+    if (!id || id.includes('/')) return undefined;
+    return `/event/${id}`;
+  }
+  return undefined;
 }
 
 /**

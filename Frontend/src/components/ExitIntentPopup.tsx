@@ -22,6 +22,8 @@ export const ExitIntentPopup = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const [open, setOpen] = useState(false);
 
+  // Disabled: TapCard popup should not show on app open
+  /*
   useEffect(() => {
     if (isAuthenticated || localStorage.getItem(SEEN_KEY)) return;
     const onLeave = (e: MouseEvent) => {
@@ -38,6 +40,7 @@ export const ExitIntentPopup = () => {
       document.removeEventListener('mouseleave', onLeave);
     };
   }, [isAuthenticated]);
+  */
 
   if (isAuthenticated) return null;
 

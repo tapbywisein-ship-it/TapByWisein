@@ -406,24 +406,25 @@ const EventDetailUnified = () => {
         )}
 
         {/* Cover */}
-        <div className="aspect-[16/9] rounded-card overflow-hidden border border-border bg-muted">
-          {event.coverImage ? (
+        {event.coverImage ? (
+          <div className="flex justify-center my-4">
             <img
               src={event.coverImage}
               alt={event.title}
-              className="w-full h-full object-contain"
+              className="max-h-[380px] sm:max-h-[420px] max-w-full w-auto h-auto object-contain block mx-auto"
+              style={{ maxHeight: '400px', maxWidth: '100%', width: 'auto', height: 'auto', display: 'block' }}
             />
-          ) : (
-            <div
-              className="w-full h-full"
-              style={{
-                background:
-                  'linear-gradient(135deg, var(--event-accent, hsl(var(--primary))) 0%, hsl(var(--primary)) 100%)',
-              }}
-              aria-hidden
-            />
-          )}
-        </div>
+          </div>
+        ) : (
+          <div
+            className="aspect-[16/9] w-full rounded-card overflow-hidden border border-border"
+            style={{
+              background:
+                'linear-gradient(135deg, var(--event-accent, hsl(var(--primary))) 0%, hsl(var(--primary)) 100%)',
+            }}
+            aria-hidden
+          />
+        )}
 
         {/* Host row */}
         <div className="flex items-center gap-3">
@@ -823,39 +824,43 @@ const EventDetailUnified = () => {
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={handleShare}
-            >
-              <Share2 className="w-3.5 h-3.5" /> Share event
-            </Button>
-            {/* Nothing to add to a calendar once the event is over. */}
-            {!isPast && (
-              <AddToCalendar
-                event={{
-                  title: event.title,
-                  description: event.description ?? undefined,
-                  start: event.startDate,
-                  end: event.endDate,
-                  location:
-                    event.locationType === 'VIRTUAL'
-                      ? event.meetingUrl ?? 'Online'
-                      : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
-                  url: `${window.location.origin}/e/${event.id}`,
-                }}
-              />
-            )}
-            {isAuthenticated && (
-              <ReportButton
-                targetType="EVENT"
-                targetId={event.id}
-                targetLabel={event.title}
-                triggerClass="h-9 w-9 border border-border"
-              />
-            )}
+          <div className="mt-3">
+            {/* Secondary actions: stack vertically on mobile, row on md+ */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full md:flex-1"
+                onClick={handleShare}
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share event
+              </Button>
+              {/* Nothing to add to a calendar once the event is over. */}
+              {!isPast && (
+                <AddToCalendar
+                  className="w-full md:flex-1"
+                  event={{
+                    title: event.title,
+                    description: event.description ?? undefined,
+                    start: event.startDate,
+                    end: event.endDate,
+                    location:
+                      event.locationType === 'VIRTUAL'
+                        ? event.meetingUrl ?? 'Online'
+                        : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
+                    url: `${window.location.origin}/e/${event.id}`,
+                  }}
+                />
+              )}
+              {isAuthenticated && (
+                <ReportButton
+                  targetType="EVENT"
+                  targetId={event.id}
+                  targetLabel={event.title}
+                  triggerClass="h-9 w-9 border border-border md:self-auto self-end"
+                />
+              )}
+            </div>
           </div>
         </Surface>
 

@@ -7,10 +7,11 @@ const HOME_BY_ROLE: Record<string, string> = {
   admin: '/admin/dashboard',
 };
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowDown } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { PublicNav } from '@/components/PublicNav';
 import { PublicFooter } from '@/components/PublicFooter';
-import { ExitIntentPopup } from '@/components/ExitIntentPopup';
+// Disabled: TapCard popup should not show on app open
+// import { ExitIntentPopup } from '@/components/ExitIntentPopup';
 import { Button } from '@/components/ui/button';
 import { EASE_PREMIUM } from '@/lib/motion';
 import { NfcTapHeroAnimation } from '@/components/NfcTapHeroAnimation';
@@ -180,7 +181,7 @@ const TapByWiseinProduct = () => {
                   to="/discover"
                   className="btn-glass group h-12 px-6 rounded-lg font-semibold text-sm text-[#343A40] transition-all active:scale-[0.98] flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
-                  Explore events <ArrowDown className="w-4 h-4 opacity-70 group-hover:translate-y-0.5 transition-transform" />
+                  Explore events <ArrowRight className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </motion.div>
@@ -205,7 +206,8 @@ const TapByWiseinProduct = () => {
         <PublicFooter />
       </div>
 
-      <ExitIntentPopup />
+      {/* // Disabled: TapCard popup should not show on app open */}
+      {/* <ExitIntentPopup /> */}
     </div>
   );
 };
