@@ -172,10 +172,13 @@ const MyTickets = () => {
                   </div>
 
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    {tab !== 'cancelled' && (
+                    {tab !== 'cancelled' && r.status !== 'PENDING_APPROVAL' && r.status !== 'WAITLISTED' && (
                       <Button size="sm" variant="outline" onClick={() => setQrFor(r)}>
                         <QrCode className="w-4 h-4 mr-1.5" /> Ticket
                       </Button>
+                    )}
+                    {r.status === 'PENDING_APPROVAL' && (
+                      <span className="text-xs text-muted-foreground italic">Awaiting approval</span>
                     )}
                     {tab === 'upcoming' && ev && (
                       <Button

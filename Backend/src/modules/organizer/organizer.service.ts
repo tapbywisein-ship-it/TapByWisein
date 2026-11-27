@@ -667,6 +667,12 @@ export class OrganizerService {
     if (registration.status === 'CANCELLED') {
       throw new BadRequestError('Cannot check in a cancelled registration');
     }
+    if (registration.status === 'PENDING_APPROVAL') {
+      throw new BadRequestError('Cannot check in a registration that is still pending organizer approval');
+    }
+    if (registration.status === 'WAITLISTED') {
+      throw new BadRequestError('Cannot check in a waitlisted attendee — they must be promoted to registered first');
+    }
     if (registration.checkedIn) {
       throw new BadRequestError('Attendee is already checked in');
     }
