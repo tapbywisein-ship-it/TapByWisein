@@ -11,9 +11,11 @@ import {
 } from '@/components/ui/dialog';
 import { CommunityFeed } from '@/components/CommunityFeed';
 import { AllCommunitiesSection } from '@/components/AllCommunitiesSection';
-import { useMyCommunities, useCreateCommunity } from '@/hooks/useCommunities';
+import { DeleteCommunityDialog } from '@/components/DeleteCommunityDialog';
+import { useMyCommunities, useCreateCommunity, useDeleteCommunity } from '@/hooks/useCommunities';
+import { useAppStore } from '@/store/appStore';
 import type { CommunitySummary } from '@/services/communities.service';
-import { Boxes, Plus, Users, Calendar, Search, ExternalLink, ArrowLeft, Globe } from 'lucide-react';
+import { Boxes, Plus, Users, Calendar, Search, ExternalLink, ArrowLeft, Globe, Trash2 } from 'lucide-react';
 
 const CommunityAvatar = ({ c, size = 'md' }: { c: CommunitySummary; size?: 'sm' | 'md' }) => {
   const dim = size === 'sm' ? 'h-9 w-9' : 'h-10 w-10';
@@ -27,8 +29,11 @@ const CommunityAvatar = ({ c, size = 'md' }: { c: CommunitySummary; size?: 'sm' 
 };
 
 const CommunitiesPage = () => {
+  const userId = useAppStore((s) => s.user?.id);
   const { data: communities, isLoading } = useMyCommunities();
   const createMutation = useCreateCommunity();
+  const deleteMutation = useDeleteCommunity();
+  const [deleteTarget, setDeleteTarget] = useState<CommunitySummary | null>(null);
 
   const [tab, setTab] = useState<'my' | 'explore'>('my');
 
@@ -179,6 +184,18 @@ const CommunitiesPage = () => {
                       >
                         View <ExternalLink className="w-3 h-3" />
                       </Link>
+                      {(!userId || active.organizerId === userId) && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDeleteTarget(active)}
+                          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                          aria-label={`Delete ${active.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                        </Button>
+                      )}
                     </div>
                     <div className="flex-1 flex flex-col min-h-0 p-3 md:p-4 overflow-hidden">
                       {/* Owner's own community → member + owner privileges. */}
@@ -228,6 +245,22 @@ const CommunitiesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DeleteCommunityDialog
+        communityName={deleteTarget?.name ?? null}
+        isDeleting={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await deleteMutation.mutateAsync(deleteTarget.id);
+            if (selectedId === deleteTarget.id) setSelectedId(null);
+            setDeleteTarget(null);
+          } catch {
+            // Error handled by mutation onError
+          }
+        }}
+      />
     </OrganizerLayout>
   );
 };

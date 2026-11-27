@@ -1,14 +1,24 @@
+import { useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
-import { useEventGuests, usePublishEvent } from '@/hooks/useOrganizer';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useEventGuests, usePublishEvent, useUpdateEvent } from '@/hooks/useOrganizer';
 import { useEventContext } from '@/components/OrganizerEventLayout';
 import { eventsService } from '@/services/events.service';
+import { apiUpload } from '@/services/api';
 import { motion } from 'framer-motion';
 import {
   Calendar, MapPin, Video, Users, CheckCircle2,
-  Clock, Tag, Globe, Send, Copy, AlertCircle, CopyPlus, Star, MessageSquareQuote, Pencil,
+  Clock, Tag, Globe, Send, Copy, AlertCircle, CopyPlus, Star, MessageSquareQuote, Pencil, Camera, Loader2, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,6 +29,10 @@ const OrgEventDetail = () => {
   const { event, isLoading: eventLoading } = useEventContext();
   const { data: guestsData, isLoading: guestsLoading, isError: guestsError } = useEventGuests(id!);
   const publishMutation = usePublishEvent();
+  const updateMutation = useUpdateEvent();
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [confirmRemoveCover, setConfirmRemoveCover] = useState(false);
 
   const duplicate = useMutation({
     mutationFn: () => eventsService.duplicateEvent(id!),
@@ -57,6 +71,37 @@ const OrgEventDetail = () => {
     await publishMutation.mutateAsync(id);
   };
 
+  const handleCoverFile = async (file: File) => {
+    if (!id) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    setCoverUploading(true);
+    try {
+      const res = await apiUpload<{ data: { url: string } }>('/media/upload', file);
+      await updateMutation.mutateAsync({ id, payload: { coverImage: res.data.url } });
+    } catch {
+      toast.error('Failed to update cover image');
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    if (!id) return;
+    setCoverUploading(true);
+    try {
+      await updateMutation.mutateAsync({ id, payload: { coverImage: '' } });
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
   if (eventLoading) {
     return (
       <>
@@ -91,11 +136,64 @@ const OrgEventDetail = () => {
       <div className="space-y-6 pb-10 max-w-4xl mx-auto">
 
         {/* Cover Image */}
-        {event.coverImage && (
-          <div className="w-full h-52 rounded-2xl overflow-hidden shadow-lg">
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleCoverFile(f);
+            e.target.value = '';
+          }}
+        />
+        {event.coverImage ? (
+          <div className="relative w-full h-52 rounded-2xl overflow-hidden shadow-lg group">
             <img src={event.coverImage} alt={event.title} loading="lazy" className="w-full h-full object-cover" />
+            {event.status !== 'CANCELLED' && (
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={coverUploading}
+                  onClick={() => coverInputRef.current?.click()}
+                  className="h-8 px-3 text-xs rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/15 backdrop-blur-sm"
+                >
+                  {coverUploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                  {coverUploading ? 'Updating…' : 'Edit Cover'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={coverUploading}
+                  onClick={() => setConfirmRemoveCover(true)}
+                  className="h-8 w-8 p-0 rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/15 backdrop-blur-sm"
+                  aria-label="Remove cover image"
+                  title="Remove cover"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        ) : event.status !== 'CANCELLED' ? (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-dashed border-border bg-muted/20">
+            <span className="text-xs text-muted-foreground">No cover image set</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={coverUploading}
+              onClick={() => coverInputRef.current?.click()}
+              className="h-8 px-3 text-xs rounded-xl"
+            >
+              {coverUploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+              {coverUploading ? 'Uploading…' : 'Add Cover'}
+            </Button>
+          </div>
+        ) : null}
 
         {/* Status + Highlighted Edit & Publish Buttons */}
         <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-2xl border border-sky-500/20 bg-card/90 backdrop-blur-xl shadow-lg">
@@ -370,6 +468,33 @@ const OrgEventDetail = () => {
         </Surface>
 
       </div>
+
+      <Dialog open={confirmRemoveCover} onOpenChange={(open) => { if (!open && !coverUploading) setConfirmRemoveCover(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove cover image?</DialogTitle>
+            <DialogDescription>
+              This will remove the cover image from your event page. You can upload a new cover image at any time.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setConfirmRemoveCover(false)} disabled={coverUploading}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={coverUploading}
+              onClick={async () => {
+                await handleRemoveCover();
+                setConfirmRemoveCover(false);
+              }}
+            >
+              {coverUploading ? 'Removing…' : 'Remove cover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

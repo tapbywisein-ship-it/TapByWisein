@@ -76,6 +76,18 @@ export function useCreateCommunity() {
   });
 }
 
+export function useDeleteCommunity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => communitiesService.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['communities'] });
+      toast.success('Community deleted');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
 export function useToggleCommunityMembership(slug: string) {
   const qc = useQueryClient();
   return useMutation({

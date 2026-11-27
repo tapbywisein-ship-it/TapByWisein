@@ -255,7 +255,7 @@ export class EventsService {
         ...(dto.ticketPrice !== undefined && {
           ticketPrice: new Prisma.Decimal(dto.ticketPrice),
         }),
-        ...(dto.coverImage !== undefined && { coverImage: dto.coverImage }),
+        ...(dto.coverImage !== undefined && { coverImage: dto.coverImage || null }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
         ...(dto.category !== undefined && { category: dto.category }),
         ...(dto.theme !== undefined && { theme: dto.theme }),

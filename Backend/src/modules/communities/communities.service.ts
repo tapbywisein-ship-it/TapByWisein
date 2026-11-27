@@ -110,6 +110,22 @@ class CommunitiesService {
     });
   }
 
+  async remove(id: string, organizerId: string) {
+    const community = await prisma.community.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, organizerId: true },
+    });
+    if (!community) throw new NotFoundError('Community');
+    if (community.organizerId !== organizerId) {
+      throw new ForbiddenError('Only the creator can delete this community.');
+    }
+
+    await prisma.community.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   /** Communities the organizer owns, with member + event counts. */
   async listMine(organizerId: string) {
     const rows = await prisma.community.findMany({

@@ -19,6 +19,13 @@ export class CommunitiesController {
     sendSuccess(res, community, 'Community updated');
   }
 
+  async remove(req: Request, res: Response): Promise<void> {
+    const organizerId = req.user!.userId;
+    const { id } = req.params as Record<string, string>;
+    await communitiesService.remove(id, organizerId);
+    sendSuccess(res, null, 'Community deleted');
+  }
+
   /** Public browse/discover list — attendees find communities to join. */
   async listPublic(req: Request, res: Response): Promise<void> {
     const viewerId = req.user?.userId;

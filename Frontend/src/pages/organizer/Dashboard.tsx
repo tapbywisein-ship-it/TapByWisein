@@ -38,10 +38,11 @@ const ORGANIZER_QUICK_ACTIONS = [
 const OrganizerDashboard = () => {
   const user = useAppStore((s) => s.user);
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'Organizer';
-  const { data: stats, isLoading, isError } = useOrgDashboard();
-  const { data: eventsData } = useMyOrgEvents(1, 5);
-  const { data: profileData } = useMyProfile();
+  const { data: stats, isLoading: statsLoading, isError } = useOrgDashboard();
+  const { data: eventsData, isLoading: eventsLoading } = useMyOrgEvents(1, 5);
+  const { data: profileData, isLoading: profileLoading } = useMyProfile();
 
+  const isLoading = statsLoading || eventsLoading || profileLoading;
   const events = eventsData?.events ?? stats?.recentEvents ?? [];
   const trend = stats?.registrationTrend ?? [];
   const profile = profileData?.profile;
@@ -52,7 +53,7 @@ const OrganizerDashboard = () => {
   const completedCount = checklistItems.filter((i) => i.done).length;
   const totalCount = checklistItems.length;
   const allDone = completedCount === totalCount;
-  const profileLoaded = !!profile;
+  const profileLoaded = !isLoading;
 
   const fade = (delay = 0) => ({
     initial: { opacity: 0, y: 8 },
@@ -164,25 +165,36 @@ const OrganizerDashboard = () => {
           )}
           {/* Quick Actions Card */}
           <div className="h-full">
-            <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
-              <div>
-                <span className="section-label block mb-1.5 sm:mb-3 font-semibold text-xs sm:text-sm text-foreground">Quick Actions</span>
-                <div className="space-y-1 sm:space-y-2">
-                  {ORGANIZER_QUICK_ACTIONS.map(({ label, to, icon: Icon, desc }) => (
-                    <Link key={to} to={to} className="flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-muted/60 transition-all border border-transparent hover:border-border/60 group">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors">{label}</p>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">{desc}</p>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-                    </Link>
+            {isLoading ? (
+              <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-3 bg-card h-full animate-pulse">
+                <div className="h-4 w-28 bg-muted/60 rounded mb-3" />
+                <div className="space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-11 bg-muted/40 rounded-xl" />
                   ))}
                 </div>
-              </div>
-            </Surface>
+              </Surface>
+            ) : (
+              <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
+                <div>
+                  <span className="section-label block mb-1.5 sm:mb-3 font-semibold text-xs sm:text-sm text-foreground">Quick Actions</span>
+                  <div className="space-y-1 sm:space-y-2">
+                    {ORGANIZER_QUICK_ACTIONS.map(({ label, to, icon: Icon, desc }) => (
+                      <Link key={to} to={to} className="flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-muted/60 transition-all border border-transparent hover:border-border/60 group">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
+                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors">{label}</p>
+                          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">{desc}</p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </Surface>
+            )}
           </div>
         </motion.div>
 
