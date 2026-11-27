@@ -713,65 +713,70 @@ const CreateEventPage = () => {
             {/* ── LEFT: Cover picker + Theme (sticky on wide screens, so it stays in view) */}
             <div className="space-y-4 lg:sticky lg:top-6">
 
-              {/* Cover image preview & picker — square container with rounded corners */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  if (file) void handleFileSelect(file);
-                }}
-                className={`group relative w-full aspect-square rounded-[14px] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
-                  isDark
-                    ? 'bg-[#2a2a2d]/80 border border-white/10 hover:border-white/20'
-                    : 'bg-white border border-neutral-200/80 hover:border-neutral-300 shadow-md'
-                }`}
-                style={(!imagePreview && !form.coverImage) ? { background: activeTheme.bannerGradient } : undefined}
-              >
-                {uploading ? (
-                  <div className="flex flex-col items-center gap-2.5">
-                    <div className="w-8 h-8 border-2 border-white/90 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs font-medium text-white/80">Uploading image...</p>
+              {/* Cover image preview & picker */}
+              {(!imagePreview && !form.coverImage) ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    if (file) void handleFileSelect(file);
+                  }}
+                  className={`group relative w-full aspect-square rounded-[14px] shadow-sm flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                    isDark
+                      ? 'bg-[#2a2a2d]/80 border border-white/10 hover:border-white/20'
+                      : 'bg-white border border-neutral-200/80 hover:border-neutral-300 shadow-md'
+                  }`}
+                  style={{ background: activeTheme.bannerGradient }}
+                >
+                  {uploading ? (
+                    <div className="flex flex-col items-center gap-2.5 py-12">
+                      <div className="w-8 h-8 border-2 border-white/90 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-xs font-medium text-white/80">Uploading image...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white mb-2 group-hover:scale-105 transition-transform">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm font-medium text-white drop-shadow-sm">Add Event Cover</p>
+                      <p className="text-[11px] text-white/80 mt-0.5">JPG, PNG, WEBP · up to 5MB</p>
+                      {/* Bottom-right corner trigger pill */}
+                      <div className="absolute bottom-3 right-3">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm text-[11px] font-medium text-white/90 border border-white/10">
+                          <Upload className="w-3 h-3" /> Upload
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group relative flex justify-center cursor-pointer my-2"
+                >
+                  <img
+                    src={imagePreview || form.coverImage}
+                    alt="Cover preview"
+                    className="max-h-[380px] sm:max-h-[420px] max-w-full w-auto h-auto object-contain block mx-auto"
+                    style={{ maxHeight: '400px', maxWidth: '100%', width: 'auto', height: 'auto', display: 'block' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); set('coverImage', ''); setImagePreview(''); }}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white/80 hover:text-white flex items-center justify-center transition-colors z-10 shadow-sm"
+                    title="Remove image"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="absolute bottom-2 right-2 z-10">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-xs font-medium text-white border border-white/10 transition-all shadow-sm">
+                      <Upload className="w-3.5 h-3.5" /> Change
+                    </span>
                   </div>
-                ) : (imagePreview || form.coverImage) ? (
-                  <>
-                    <img
-                      src={imagePreview || form.coverImage}
-                      alt="Cover preview"
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); set('coverImage', ''); setImagePreview(''); }}
-                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white/80 hover:text-white flex items-center justify-center transition-colors z-10"
-                      title="Remove image"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                    {/* Bottom-right change button overlay */}
-                    <div className="absolute bottom-3 right-3 z-10">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-xs font-medium text-white border border-white/10 transition-all shadow-sm">
-                        <Upload className="w-3.5 h-3.5" /> Change
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white mb-2 group-hover:scale-105 transition-transform">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <p className="text-sm font-medium text-white drop-shadow-sm">Add Event Cover</p>
-                    <p className="text-[11px] text-white/80 mt-0.5">JPG, PNG, WEBP · up to 5MB</p>
-                    {/* Bottom-right corner trigger pill */}
-                    <div className="absolute bottom-3 right-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm text-[11px] font-medium text-white/90 border border-white/10">
-                        <Upload className="w-3 h-3" /> Upload
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
+                </div>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
