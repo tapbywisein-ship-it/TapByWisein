@@ -49,9 +49,9 @@ const LoginPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const currentRole = useAppStore((s) => s.user?.role);
 
-  // Already signed in? Don't show the login form — go straight to the app.
+  // Already signed in? Don't show the login form — go straight to the app (or returnPath).
   if (isAuthenticated) {
-    return <Navigate to={ROLE_PATHS[(currentRole as UserRole) ?? 'attendee'] ?? '/dashboard'} replace />;
+    return <Navigate to={returnPath ?? ROLE_PATHS[(currentRole as UserRole) ?? 'attendee'] ?? '/dashboard'} replace />;
   }
 
   const goAfterAuth = (role: UserRole) => {
@@ -272,8 +272,12 @@ const LoginPage = () => {
 
           <p className="text-center text-xs sm:text-sm text-muted-foreground pt-1">
             New to TapByWisein?{' '}
-            {/* Forward the return path so signup doesn't lose "go back to /e/:id" */}
-            <Link to="/register" state={location.state} className="inline-block py-2 -my-2 text-primary font-semibold hover:underline">
+            {/* Forward the return path so signup doesn't lose "go back to /e/:id or /event/:id" */}
+            <Link
+              to="/register"
+              state={returnPath ? { ...(typeof location.state === 'object' && location.state ? location.state : {}), from: { pathname: returnPath } } : location.state}
+              className="inline-block py-2 -my-2 text-primary font-semibold hover:underline"
+            >
               Create an account
             </Link>
           </p>
