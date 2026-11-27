@@ -406,24 +406,25 @@ const EventDetailUnified = () => {
         )}
 
         {/* Cover */}
-        <div className="aspect-[16/9] rounded-card overflow-hidden border border-border bg-muted">
-          {event.coverImage ? (
+        {event.coverImage ? (
+          <div className="flex justify-center my-4">
             <img
               src={event.coverImage}
               alt={event.title}
-              className="w-full h-full object-contain"
+              className="max-h-[380px] sm:max-h-[420px] max-w-full w-auto h-auto object-contain block mx-auto"
+              style={{ maxHeight: '400px', maxWidth: '100%', width: 'auto', height: 'auto', display: 'block' }}
             />
-          ) : (
-            <div
-              className="w-full h-full"
-              style={{
-                background:
-                  'linear-gradient(135deg, var(--event-accent, hsl(var(--primary))) 0%, hsl(var(--primary)) 100%)',
-              }}
-              aria-hidden
-            />
-          )}
-        </div>
+          </div>
+        ) : (
+          <div
+            className="aspect-[16/9] w-full rounded-card overflow-hidden border border-border"
+            style={{
+              background:
+                'linear-gradient(135deg, var(--event-accent, hsl(var(--primary))) 0%, hsl(var(--primary)) 100%)',
+            }}
+            aria-hidden
+          />
+        )}
 
         {/* Host row */}
         <div className="flex items-center gap-3">

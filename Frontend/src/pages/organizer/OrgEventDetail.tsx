@@ -92,8 +92,14 @@ const OrgEventDetail = () => {
 
         {/* Cover Image */}
         {event.coverImage && (
-          <div className="w-full h-52 rounded-2xl overflow-hidden shadow-lg">
-            <img src={event.coverImage} alt={event.title} loading="lazy" className="w-full h-full object-cover" />
+          <div className="flex justify-center my-4">
+            <img
+              src={event.coverImage}
+              alt={event.title}
+              loading="lazy"
+              className="max-h-[380px] sm:max-h-[420px] max-w-full w-auto h-auto object-contain block mx-auto"
+              style={{ maxHeight: '400px', maxWidth: '100%', width: 'auto', height: 'auto', display: 'block' }}
+            />
           </div>
         )}
 

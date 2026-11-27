@@ -2,14 +2,23 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// In dev mode, proactively unregister any stale ServiceWorker left behind
-// by previous production/PWA builds so it cannot intercept fetch calls or serve stale HTML.
-if (import.meta.env.DEV && typeof window !== "undefined" && "serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const r of registrations) {
-      r.unregister();
-    }
-  });
+// In dev mode, proactively unregister any stale ServiceWorker and clear all CacheStorage
+// left behind by previous production/PWA builds so it cannot intercept fetch calls or serve stale HTML.
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const r of registrations) {
+        r.unregister();
+      }
+    });
+  }
+  if ("caches" in window) {
+    caches.keys().then((names) => {
+      for (const name of names) {
+        caches.delete(name);
+      }
+    });
+  }
 }
 
 // Load Microsoft Clarity asynchronously so adblockers or network blocks
