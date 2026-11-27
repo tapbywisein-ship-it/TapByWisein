@@ -114,10 +114,18 @@ export const EventBrowser = ({
     setSavedOnly(false);
   };
 
+  const eventReturnPath = (eventId: string) => `/event/${eventId}`;
+  const guestLoginPath = (eventId: string) =>
+    `/login?from=${encodeURIComponent(eventReturnPath(eventId))}`;
+
   const startRegister = (e: Event) => {
-    // Logged-out visitors use the guest RSVP form on the event page;
-    // paid events need the ticket picker there too.
-    if (!isAuthenticated || isPaidEvent(e)) {
+    if (!isAuthenticated) {
+      const returnTo = eventReturnPath(e.id);
+      navigate(guestLoginPath(e.id), { state: { from: { pathname: returnTo } } });
+      return;
+    }
+    // Paid events need the ticket picker on the event page.
+    if (isPaidEvent(e)) {
       navigate(`/e/${e.id}`);
       return;
     }
@@ -563,7 +571,11 @@ export const EventBrowser = ({
                     <div className="premium-glass-card rounded-[20px] flex flex-col h-full p-0 overflow-hidden">
 
                       {/* Image Area */}
-                      <Link to={`/e/${e.id}`} className="block relative aspect-[4/3] w-full rounded-t-[20px] overflow-hidden bg-[color:var(--eb-muted-bg)] border-b border-[color:var(--eb-line-soft)] shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20">
+                      <Link
+                        to={isAuthenticated ? `/e/${e.id}` : guestLoginPath(e.id)}
+                        state={isAuthenticated ? undefined : { from: { pathname: eventReturnPath(e.id) } }}
+                        className="block relative aspect-[4/3] w-full rounded-t-[20px] overflow-hidden bg-[color:var(--eb-muted-bg)] border-b border-[color:var(--eb-line-soft)] shadow-[0_2px_8px_rgba(0,0,0,0.03)] z-20"
+                      >
                         {e.coverImage ? (
                           <img src={e.coverImage} alt={e.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]" />
                         ) : (
@@ -593,7 +605,11 @@ export const EventBrowser = ({
                       <div className="p-5 flex flex-col flex-1 bg-transparent z-20">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="flex-1 min-w-0 text-[18px] font-[700] text-[color:var(--eb-ink-900)] leading-[1.3]">
-                            <Link to={`/e/${e.id}`} className="line-clamp-2 group-hover:text-[#2563EB] transition-colors">
+                            <Link
+                              to={isAuthenticated ? `/e/${e.id}` : guestLoginPath(e.id)}
+                              state={isAuthenticated ? undefined : { from: { pathname: eventReturnPath(e.id) } }}
+                              className="line-clamp-2 group-hover:text-[#2563EB] transition-colors"
+                            >
                               {e.title}
                             </Link>
                           </h3>

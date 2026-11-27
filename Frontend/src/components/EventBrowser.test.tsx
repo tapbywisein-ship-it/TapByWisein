@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
+import { safePublicEventReturnPath } from '@/lib/loginReturnPath';
 
 const day = 86_400_000;
 const at = (offsetDays: number) => new Date(Date.now() + offsetDays * day).toISOString();
@@ -31,7 +32,11 @@ vi.mock('@/hooks/useEvents', () => ({
   }),
 }));
 vi.mock('@/components/SaveEventButton', () => ({ SaveEventButton: () => null }));
-vi.mock('@/components/QuickRegisterModal', () => ({ QuickRegisterModal: () => null }));
+vi.mock('@/components/QuickRegisterModal', () => ({
+  QuickRegisterModal: ({ event }: { event: { id: string } }) => (
+    <div data-testid="quick-register-modal">{event.id}</div>
+  ),
+}));
 
 import { EventBrowser } from './EventBrowser';
 
@@ -88,5 +93,78 @@ describe('EventBrowser - event cards', () => {
     renderBrowser();
     expect(screen.getByText('Card Test Event')).toBeTruthy();
     expect(screen.getByText('3/100 attending')).toBeTruthy();
+  });
+
+  it('redirects guests to /login with return path on Register, title, and card image', () => {
+    mocks.events = [
+      {
+        id: 'ev-card',
+        title: 'Card Test Event',
+        startDate: at(10),
+        endDate: at(10),
+        city: 'Hyderabad',
+        category: 'Workshops',
+        capacity: 100,
+        registeredCount: 3,
+        organizer: { profile: { firstName: 'QA', lastName: 'Org' } },
+      },
+    ];
+
+    const LoginEcho = () => {
+      const loc = useLocation();
+      const fromState = (loc.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '';
+      return <div data-testid="login-echo">{`${loc.pathname}${loc.search}|${fromState}`}</div>;
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/events']}>
+        <Routes>
+          <Route path="/events" element={<EventBrowser />} />
+          <Route path="/login" element={<LoginEcho />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const links = screen.getAllByRole('link');
+    expect(links.length).toBe(2);
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('/login?from=%2Fevent%2Fev-card');
+    }
+
+    const registerBtn = screen.getByRole('button', { name: 'Register' });
+    fireEvent.click(registerBtn);
+
+    expect(screen.queryByTestId('quick-register-modal')).toBeNull();
+    expect(screen.getByTestId('login-echo').textContent).toBe('/login?from=%2Fevent%2Fev-card|/event/ev-card');
+  });
+
+  it('preserves /e/:slug and /event/:id in safePublicEventReturnPath and rejects unsafe paths', () => {
+    expect(safePublicEventReturnPath('/e/tech-conf')).toBe('/e/tech-conf');
+    expect(safePublicEventReturnPath('/event/ev-card')).toBe('/event/ev-card');
+    expect(safePublicEventReturnPath('//evil.com')).toBeUndefined();
+    expect(safePublicEventReturnPath('/event/ev-card/extra')).toBeUndefined();
+    expect(safePublicEventReturnPath('/dashboard')).toBeUndefined();
+  });
+
+  it('opens QuickRegisterModal and links to /e/:id when signed in', () => {
+    useAppStore.setState({ isAuthenticated: true });
+    mocks.events = [
+      {
+        id: 'ev-card',
+        title: 'Card Test Event',
+        startDate: at(10),
+        endDate: at(10),
+        city: 'Hyderabad',
+        category: 'Workshops',
+        capacity: 100,
+        registeredCount: 3,
+        organizer: { profile: { firstName: 'QA', lastName: 'Org' } },
+      },
+    ];
+
+    renderBrowser();
+    expect(screen.getByRole('link', { name: 'Card Test Event' }).getAttribute('href')).toBe('/e/ev-card');
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    expect(screen.getByTestId('quick-register-modal').textContent).toBe('ev-card');
   });
 });
