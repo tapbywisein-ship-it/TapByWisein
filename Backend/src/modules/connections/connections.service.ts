@@ -394,7 +394,7 @@ export class ConnectionsService {
         where: { publicSlug: input.slug },
         select: { userId: true },
       });
-      if (!card) throw new NotFoundError('Founder Card');
+      if (!card) throw new NotFoundError('Tap Card');
       return card.userId;
     }
 

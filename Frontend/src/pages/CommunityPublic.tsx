@@ -1,10 +1,11 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { PortalLayout } from '@/components/PortalLayout';
 import { useCommunity, useToggleCommunityMembership } from '@/hooks/useCommunities';
 import { CommunityFeed } from '@/components/CommunityFeed';
+import { LeaveCommunityDialog } from '@/components/LeaveCommunityDialog';
 import { useAppStore } from '@/store/appStore';
 import { useSeo } from '@/lib/useSeo';
 import { Boxes, Users, Calendar, MapPin, Check, Plus, Sparkles, AlertCircle } from 'lucide-react';
@@ -15,6 +16,8 @@ const CommunityPublicPage = () => {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { data, isLoading, isError } = useCommunity(slug!);
   const toggle = useToggleCommunityMembership(slug!);
+  // "Following" leaves on tap, so ask first. (Above the early returns: hooks rule.)
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   // Called before the early returns below so the hook order never changes.
   const community = data?.community;
@@ -79,7 +82,11 @@ const CommunityPublicPage = () => {
       navigate('/login', { state: { from: { pathname: `/community/${slug}` } } });
       return;
     }
-    toggle.mutate({ id: c.id, join: !isMember });
+    if (isMember) {
+      setConfirmLeave(true);
+      return;
+    }
+    toggle.mutate({ id: c.id, join: true });
   };
 
   return wrap(
@@ -165,6 +172,15 @@ const CommunityPublicPage = () => {
             </div>
           )}
         </div>
+
+      <LeaveCommunityDialog
+        communityName={confirmLeave ? c.name : null}
+        onCancel={() => setConfirmLeave(false)}
+        onConfirm={() => {
+          toggle.mutate({ id: c.id, join: false });
+          setConfirmLeave(false);
+        }}
+      />
     </>
   );
 };

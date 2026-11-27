@@ -108,7 +108,7 @@ export const strictLimiter = rateLimit({
 
 /**
  * Limiter for unauthenticated public writes (e.g. capturing a lead from a
- * public Founder Card). Kept moderate rather than strict because attendees at
+ * public Tap Card). Kept moderate rather than strict because attendees at
  * an event often share one venue NAT/IP — too tight a cap would block genuine
  * visitors — while still stopping bulk spam of a card owner's inbox.
  */

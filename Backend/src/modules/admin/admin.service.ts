@@ -229,7 +229,7 @@ export class AdminService {
       purchase.userId,
       'SYSTEM',
       'Your Tap Card has been dispatched!',
-      `Your NFC Founder Card is on its way via ${input.trackingProvider}. Tracking ID: ${input.trackingId}`
+      `Your NFC Tap Card is on its way via ${input.trackingProvider}. Tracking ID: ${input.trackingId}`
     );
 
     // Send dispatch email (best-effort — don't fail the API call if email fails)

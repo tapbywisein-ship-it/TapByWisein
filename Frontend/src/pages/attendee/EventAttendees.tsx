@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BadgeCheck, Sparkles, Users, AlertCircle, Handshake } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Sparkles, AlertCircle, Handshake } from 'lucide-react';
 import { IntroRequestDialog } from '@/components/IntroRequestDialog';
 import { PortalLayout } from '@/components/PortalLayout';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/RoleBadge';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import {
   useEventAttendees,
   useEventSuggestions,
@@ -171,10 +172,7 @@ const EventAttendeesPage = () => {
         </div>
 
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground">
-            <Users className="mr-2 inline h-6 w-6" />
-            Who's here
-          </h1>
+          <h1 className="text-3xl font-semibold text-foreground">Who's here</h1>
           <p className="text-sm text-muted-foreground">
             People going to {event?.title ?? 'this event'}. Tap a card to connect.
           </p>
@@ -206,9 +204,7 @@ const EventAttendeesPage = () => {
             </div>
           )}
           {isLoading && (
-            <Surface className="text-center">
-              <p className="text-sm text-muted-foreground">Loading attendees…</p>
-            </Surface>
+            <LoadingSkeleton count={6} />
           )}
           {attendeesData?.attendees.length === 0 && (
             <Surface className="text-center">

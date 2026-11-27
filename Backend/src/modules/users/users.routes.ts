@@ -94,7 +94,7 @@ router.put('/me/username', authenticate, usersController.claimUsername.bind(user
  * /users/me/complete-onboarding:
  *   post:
  *     tags: [Users]
- *     summary: Finish onboarding and auto-issue the Founder Card
+ *     summary: Finish onboarding and auto-issue the Tap Card
  */
 router.post(
   '/me/complete-onboarding',

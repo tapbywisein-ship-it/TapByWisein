@@ -90,7 +90,7 @@ export const welcomeEmail = (name: string): string =>
     <p>You've just joined a network of founders, innovators, and visionaries. We're thrilled to have you.</p>
     <ul>
       <li>Connect with other founders at events</li>
-      <li>Apply for your <strong>Founder Card</strong></li>
+      <li>Apply for your <strong>Tap Card</strong></li>
       <li>Track your <strong>FK Score</strong> and earn badges</li>
       <li>Discover and register for exclusive events</li>
     </ul>
@@ -149,14 +149,14 @@ export const connectionRequestEmail = (
 
 export const founderCardApprovedEmail = (name: string): string =>
   baseTemplate(`
-    <h2>Your Founder Card is Active!</h2>
-    <p>Congratulations ${escapeHtml(name)}! Your Founder Card application has been <strong>approved</strong>.</p>
+    <h2>Your Tap Card is Active!</h2>
+    <p>Congratulations ${escapeHtml(name)}! Your Tap Card application has been <strong>approved</strong>.</p>
     <ul>
-      <li>Your unique <strong>Founder Card QR code</strong> for networking</li>
+      <li>Your unique <strong>Tap Card QR code</strong> for networking</li>
       <li><strong>100 FK Score points</strong> added to your profile</li>
       <li>Exclusive founder-tier events and features</li>
     </ul>
-    <a href="${env.FRONTEND_URL}/connect" class="button">View Your Founder Card</a>
+    <a href="${env.FRONTEND_URL}/connect" class="button">View Your Tap Card</a>
   `);
 
 export const eventReminderEmail = (
@@ -275,7 +275,7 @@ export const cardDispatchedEmail = (
   baseTemplate(`
     <h2>Your Tap Card is on its way! ⚡</h2>
     <p>Hi ${escapeHtml(name)},</p>
-    <p>Great news — your TapByWisein NFC Founder Card has been dispatched and is heading your way.</p>
+    <p>Great news — your TapByWisein NFC Tap Card has been dispatched and is heading your way.</p>
     <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9f9f9;border-radius:8px;">
       <tr>
         <td style="padding:12px 16px;font-size:13px;color:#555;border-bottom:1px solid #eee;width:40%;">Courier</td>

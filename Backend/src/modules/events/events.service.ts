@@ -14,6 +14,7 @@ import ambassadorsService from '@modules/ambassadors/ambassadors.service';
 import notificationsService from '@modules/notifications/notifications.service';
 import { hasFreeOption, resolveTiers } from '@utils/ticketPricing';
 import { buildEventIcs } from '@utils/calendar';
+import { assertRegistrationOpen } from '@utils/registrationWindow';
 import paymentsService, { paymentsConfigured } from '@modules/payments/payments.service';
 
 // Safe public shape for an event's organizer. Never `include` the full User
@@ -469,24 +470,21 @@ export class EventsService {
    */
   private async validateRegistrationAnswers(
     eventId: string,
-    answers: Array<{ questionId: string; answer: string }> | undefined,
-    requireAnswers: boolean
+    answers: Array<{ questionId: string; answer: string }> | undefined
   ) {
     const given = (answers ?? []).filter((a) => a.answer.trim() !== '');
-    if (requireAnswers) {
-      const required = await prisma.eventQuestion.findMany({
-        where: { eventId, required: true },
-        select: { id: true, prompt: true },
-      });
-      const answeredIds = new Set(given.map((a) => a.questionId));
-      const missing = required.filter((q) => !answeredIds.has(q.id));
-      if (missing.length > 0) {
-        throw new BadRequestError(
-          `Please answer required question${missing.length === 1 ? '' : 's'}: ${missing
-            .map((m) => `"${m.prompt}"`)
-            .join(', ')}`
-        );
-      }
+    const required = await prisma.eventQuestion.findMany({
+      where: { eventId, required: true },
+      select: { id: true, prompt: true },
+    });
+    const answeredIds = new Set(given.map((a) => a.questionId));
+    const missing = required.filter((q) => !answeredIds.has(q.id));
+    if (missing.length > 0) {
+      throw new BadRequestError(
+        `Please answer required question${missing.length === 1 ? '' : 's'}: ${missing
+          .map((m) => `"${m.prompt}"`)
+          .join(', ')}`
+      );
     }
     if (given.length === 0) return [];
     const questions = await prisma.eventQuestion.findMany({
@@ -517,10 +515,7 @@ export class EventsService {
     eventId: string,
     userId: string,
     answers?: Array<{ questionId: string; answer: string }>,
-    referralCode?: string,
-    // Guest RSVP has no form for the host's questions yet, so it opts out to
-    // keep working (see guestRsvp). Every signed-in path must answer them.
-    { requireAnswers = true }: { requireAnswers?: boolean } = {}
+    referralCode?: string
   ) {
     const referredByAmbassadorId = await ambassadorsService.resolveReferralCode(referralCode);
 
@@ -539,6 +534,9 @@ export class EventsService {
 
     if (!event) throw new NotFoundError('Event');
 
+    // No sign-ups after the registration deadline or once the event has ended.
+    assertRegistrationOpen(event);
+
     // Paid events must go through the payment flow. When Razorpay is configured
     // and the event has no free tier, block the free-registration path so a
     // ticket is never issued without payment. If payments aren't configured we
@@ -554,7 +552,7 @@ export class EventsService {
     // Check required questions before creating anything. This used to run
     // after the registration was saved (so a failed check still registered
     // you) and only when some answers were sent (so sending none skipped it).
-    const validAnswers = await this.validateRegistrationAnswers(eventId, answers, requireAnswers);
+    const validAnswers = await this.validateRegistrationAnswers(eventId, answers);
 
     // Capacity guard. To prevent overselling under concurrent RSVPs we hold a
     // Postgres advisory lock for the event id while we check the count and
@@ -894,6 +892,12 @@ export class EventsService {
     });
     if (!event) throw new NotFoundError('Event');
 
+    // Both checked before the guest's account is created, so a closed event or a
+    // missing answer doesn't leave a new account behind. registerForEvent
+    // checks both again.
+    assertRegistrationOpen(event);
+    await this.validateRegistrationAnswers(eventId, dto.answers);
+
     // Find-or-create the user by email.
     let user = await prisma.user.findUnique({
       where: { email: dto.email },
@@ -941,11 +945,7 @@ export class EventsService {
         message: "You're already going to this event",
       };
     } else {
-      // The guest form doesn't show the host's questions yet, so don't require
-      // them here (unchanged behaviour); signed-in registrations do.
-      result = await this.registerForEvent(eventId, user.id, undefined, undefined, {
-        requireAnswers: false,
-      });
+      result = await this.registerForEvent(eventId, user.id, dto.answers);
     }
 
     // Security: if this email already has a password set, the account is

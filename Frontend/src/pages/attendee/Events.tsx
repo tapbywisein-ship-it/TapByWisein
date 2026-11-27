@@ -48,8 +48,7 @@ const EventsPage = () => {
         </Surface>
       )}
 
-      {/* ?category=tech still works for links that used to point at /discover. */}
-      <EventBrowser isPageTitle initialCategory={searchParams.get('category')} withUser={withUser} />
+      <EventBrowser isPageTitle withUser={withUser} />
     </div>
   );
 };

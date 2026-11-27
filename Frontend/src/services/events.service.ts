@@ -319,7 +319,11 @@ export const eventsService = {
    */
   async rsvpAsGuest(
     eventId: string,
-    payload: { email: string; name: string }
+    payload: {
+      email: string;
+      name: string;
+      answers?: Array<{ questionId: string; answer: string }>;
+    }
   ): Promise<{
     registration: EventRegistration;
     message: string;

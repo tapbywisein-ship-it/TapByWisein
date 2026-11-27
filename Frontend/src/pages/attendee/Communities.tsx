@@ -8,6 +8,7 @@ import { Surface } from '@/components/Surface';
 import { StatsBar } from '@/components/StatsBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LeaveCommunityDialog } from '@/components/LeaveCommunityDialog';
 import { useAppStore } from '@/store/appStore';
 import { usePublicCommunities, useJoinLeaveCommunity } from '@/hooks/useCommunities';
 import { useConnections } from '@/hooks/useConnections';
@@ -26,6 +27,8 @@ const CommunitiesPage = () => {
   const [category, setCategory] = useState('');
   const { data: communities, isLoading, isError, refetch } = usePublicCommunities(search);
   const joinLeave = useJoinLeaveCommunity();
+  // The community the user tapped "Joined" on; leaving waits for them to confirm.
+  const [leaveTarget, setLeaveTarget] = useState<PublicCommunity | null>(null);
 
   // Public browsing: logged-out visitors can browse, but joining requires an
   // account — send them to sign-in and return to this page afterward.
@@ -235,7 +238,7 @@ const CommunitiesPage = () => {
                           <Button
                             variant="outline" size="sm" className="flex-1"
                             disabled={pending}
-                            onClick={() => requireAuth(() => joinLeave.mutate({ id: c.id, join: false }))}
+                            onClick={() => requireAuth(() => setLeaveTarget(c))}
                           >
                             {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Joined'}
                           </Button>
@@ -348,6 +351,15 @@ const CommunitiesPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LeaveCommunityDialog
+        communityName={leaveTarget?.name ?? null}
+        onCancel={() => setLeaveTarget(null)}
+        onConfirm={() => {
+          if (leaveTarget) joinLeave.mutate({ id: leaveTarget.id, join: false });
+          setLeaveTarget(null);
+        }}
+      />
     </>
   );
 };

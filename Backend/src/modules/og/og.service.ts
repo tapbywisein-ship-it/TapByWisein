@@ -58,7 +58,7 @@ const cardSvg = (opts: {
       isFounder
         ? `<g transform="translate(380 480)">
              <rect x="0" y="0" rx="20" ry="20" width="280" height="80" fill="#FACC15"/>
-             <text x="140" y="50" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" font-size="22" fill="#0F172A">Founder Card · Active</text>
+             <text x="140" y="50" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" font-size="22" fill="#0F172A">Tap Card · Active</text>
            </g>`
         : ''
     }
@@ -116,7 +116,7 @@ export class OgService {
         },
       },
     });
-    if (!card || !card.user || !card.user.isActive) throw new NotFoundError('Founder Card');
+    if (!card || !card.user || !card.user.isActive) throw new NotFoundError('Tap Card');
 
     const p = card.user.profile;
     const name = p ? `${p.firstName} ${p.lastName}`.trim() : 'Founder';
@@ -172,7 +172,7 @@ export class OgService {
         },
       },
     });
-    if (!card || !card.user || !card.user.isActive) throw new NotFoundError('Founder Card');
+    if (!card || !card.user || !card.user.isActive) throw new NotFoundError('Tap Card');
     const p = card.user.profile;
     const name = p ? `${p.firstName} ${p.lastName}`.trim() : 'Founder';
     const subtitle = [p?.position, p?.company].filter(Boolean).join(' · ') || 'TapByWisein member';

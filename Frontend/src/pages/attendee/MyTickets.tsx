@@ -5,6 +5,7 @@ import { Calendar, CalendarPlus, MapPin, QrCode, Ticket as TicketIcon, FileText,
 import { PortalLayout } from '@/components/PortalLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import {
   Dialog,
   DialogContent,
@@ -82,7 +83,7 @@ const MyTickets = () => {
     <PortalLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">My Tickets</h1>
+          <h1 className="text-3xl font-semibold text-foreground">My Tickets</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Every event you've registered for, with your QR ticket ready anytime.
           </p>
@@ -101,27 +102,29 @@ const MyTickets = () => {
         )}
 
         {/* Tabs */}
-        {/* overflow-x-auto: on narrow phones the 4 tabs scroll inside this row
-            instead of making the whole page scroll sideways. */}
-        <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+        {/* On phones the 4 tabs share the width with smaller text and padding, so
+            all of them show (they needed ~390px of a 343px row and the last one
+            was cut off). overflow-x-auto stays as a fallback for very small
+            screens, so the page itself never scrolls sideways. */}
+        <div className="flex items-center gap-0.5 sm:gap-1 border-b border-border overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none shrink-0 whitespace-nowrap px-1.5 sm:px-4 py-2 text-[13px] sm:text-sm font-medium -mb-px border-b-2 transition-colors ${
                 tab === t.key
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {t.label}
-              <span className="ml-1.5 text-xs text-muted-foreground">{t.count}</span>
+              <span className="ml-1 sm:ml-1.5 text-[11px] sm:text-xs text-muted-foreground">{t.count}</span>
             </button>
           ))}
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground py-12 text-center">Loading your tickets…</p>
+          <LoadingSkeleton count={3} itemClassName="h-28" />
         ) : list.length === 0 ? (
           <div className="text-center py-16 space-y-3">
             <TicketIcon className="w-10 h-10 text-muted-foreground/40 mx-auto" />

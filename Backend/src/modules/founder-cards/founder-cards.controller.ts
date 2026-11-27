@@ -8,13 +8,13 @@ export class FounderCardsController {
     const userId = req.user!.userId;
     const dto = req.body as ApplyCardDto;
     const card = await founderCardsService.applyForCard(userId, dto);
-    sendCreated(res, card, 'Founder Card application submitted successfully');
+    sendCreated(res, card, 'Tap Card application submitted successfully');
   }
 
   async getMyCard(req: Request, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const card = await founderCardsService.getMyCard(userId);
-    sendSuccess(res, card, 'Founder Card retrieved');
+    sendSuccess(res, card, 'Tap Card retrieved');
   }
 
   async getCardAnalytics(req: Request, res: Response): Promise<void> {
@@ -75,7 +75,7 @@ export class FounderCardsController {
     const adminId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
     const card = await founderCardsService.approveCard(id, adminId);
-    sendSuccess(res, card, 'Founder Card approved');
+    sendSuccess(res, card, 'Tap Card approved');
   }
 
   async rejectCard(req: Request, res: Response): Promise<void> {
@@ -83,21 +83,21 @@ export class FounderCardsController {
     const { id } = req.params as Record<string, string>;
     const { reason } = req.body as { reason?: string };
     const card = await founderCardsService.rejectCard(id, adminId, reason);
-    sendSuccess(res, card, 'Founder Card application rejected');
+    sendSuccess(res, card, 'Tap Card application rejected');
   }
 
   async deactivateCard(req: Request, res: Response): Promise<void> {
     const adminId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
     const card = await founderCardsService.deactivateCard(id, adminId);
-    sendSuccess(res, card, 'Founder Card deactivated');
+    sendSuccess(res, card, 'Tap Card deactivated');
   }
 
   async reactivateCard(req: Request, res: Response): Promise<void> {
     const adminId = req.user!.userId;
     const { id } = req.params as Record<string, string>;
     const card = await founderCardsService.reactivateCard(id, adminId);
-    sendSuccess(res, card, 'Founder Card reactivated');
+    sendSuccess(res, card, 'Tap Card reactivated');
   }
 
   async listPendingCards(req: Request, res: Response): Promise<void> {
@@ -116,7 +116,7 @@ export class FounderCardsController {
       limit ? Number(limit) : undefined,
       status
     );
-    sendPaginated(res, result.cards, result.pagination, 'Founder cards retrieved');
+    sendPaginated(res, result.cards, result.pagination, 'Tap Cards retrieved');
   }
 
   async getCardByQR(req: Request, res: Response): Promise<void> {

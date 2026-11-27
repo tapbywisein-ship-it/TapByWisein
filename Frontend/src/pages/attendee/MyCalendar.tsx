@@ -306,8 +306,8 @@ const MyCalendarPage = () => {
         {/* ── Page Header ────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">My Calendars</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-3xl font-semibold text-foreground">My Calendars</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Track all your registered and hosted events across your personal and community calendars.
             </p>
           </div>

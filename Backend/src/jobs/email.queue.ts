@@ -190,7 +190,7 @@ async function processEmailJob(data: EmailJobData): Promise<void> {
       break;
     case 'founderCardApproved':
       html = founderCardApprovedEmail(data.name);
-      subject = 'Your Founder Card is Approved! - TapByWisein';
+      subject = 'Your Tap Card is Approved! - TapByWisein';
       break;
     case 'eventReminder':
       if (!data.eventTitle || !data.eventDate || !data.eventLocation || !data.eventUrl) {

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TapByWisein — Premium Horizontal NFC Business Card</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <div class="header-badge">
+      <span class="dot"></span>
+      <span>Physical NFC Metal Card · Front Side</span>
+    </div>
+
+    <!-- 3D Perspective Scene -->
+    <div class="card-scene" id="cardScene">
+      <div class="nfc-card" id="nfcCard" data-name="Santhosh" data-role="FOUNDER | WiseIN" data-url="tapbywisein.com/santhosh">
+
+        <!-- 9. FLOWING BLUE WAVE / SWOOSH RIBBONS (SVG Background) -->
+        <svg class="card-waves-svg" viewBox="0 0 720 454" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Primary Deep Sapphire Blue Ribbon Gradient -->
+            <linearGradient id="wavePrimary" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0B1B3F" stop-opacity="0.95" />
+              <stop offset="35%" stop-color="#1E3A8A" stop-opacity="0.9" />
+              <stop offset="70%" stop-color="#1E5BFF" stop-opacity="0.95" />
+              <stop offset="100%" stop-color="#0284C7" stop-opacity="0.9" />
+            </linearGradient>
+
+            <!-- Lighter Cyan-Silver Wave Gradient -->
+            <linearGradient id="waveSecondary" x1="0%" y1="80%" x2="100%" y2="20%">
+              <stop offset="0%" stop-color="#1E5BFF" stop-opacity="0.75" />
+              <stop offset="45%" stop-color="#38BDF8" stop-opacity="0.85" />
+              <stop offset="85%" stop-color="#93C5FD" stop-opacity="0.7" />
+              <stop offset="100%" stop-color="#E2E8F0" stop-opacity="0.9" />
+            </linearGradient>
+
+            <!-- Glossy Highlight Stroke Gradient -->
+            <linearGradient id="strokeGloss" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+              <stop offset="40%" stop-color="#93C5FD" stop-opacity="0.95" />
+              <stop offset="75%" stop-color="#FFFFFF" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.4" />
+            </linearGradient>
+
+            <!-- Subtle drop shadow on the swoosh -->
+            <filter id="waveShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="-4" dy="8" stdDeviation="10" flood-color="#050C1F" flood-opacity="0.35" />
+            </filter>
+          </defs>
+
+          <!-- Secondary Light Blue Soft Accent Wave (Sweeping from bottom up to right) -->
+          <path
+            d="M 320 454 C 420 420, 520 330, 570 210 C 610 110, 670 40, 720 0 L 720 454 Z"
+            fill="url(#waveSecondary)"
+            opacity="0.65"
+          />
+
+          <!-- Primary Vivid Sapphire Wave (Sweeping gracefully across bottom-center to top-right) -->
+          <path
+            d="M 380 454 C 470 440, 540 370, 590 260 C 630 160, 680 80, 720 20 L 720 454 Z"
+            fill="url(#wavePrimary)"
+            filter="url(#waveShadow)"
+          />
+
+          <!-- Glossy Edge Reflection Stroke -->
+          <path
+            d="M 380 454 C 470 440, 540 370, 590 260 C 630 160, 680 80, 720 20"
+            fill="none"
+            stroke="url(#strokeGloss)"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+
+          <!-- High-light Ribbon Streak -->
+          <path
+            d="M 440 454 C 520 410, 575 340, 615 250 C 650 170, 685 105, 720 60"
+            fill="none"
+            stroke="#FFFFFF"
+            stroke-width="1.5"
+            stroke-opacity="0.5"
+          />
+        </svg>
+
+        <!-- 8. LARGE EMBOSSED "W" WATERMARK -->
+        <div class="watermark-w" aria-hidden="true">W</div>
+
+        <!-- CARD FOREGROUND CONTENT -->
+        <div class="card-content">
+
+          <!-- 1 & 2. TOP BAR: LOGO & NFC -->
+          <div class="top-bar">
+            <!-- 1. Top-left: logo text "TapByWisein" (Tap & Wisein dark navy, By blue) -->
+            <div class="brand-logo">
+              <span class="navy">Tap</span><span class="blue">By</span><span class="navy">Wisein</span>
+            </div>
+
+            <!-- 2. Top-right: small "NFC" label in blue with blue contactless/wave icon -->
+            <div class="nfc-indicator">
+              <span class="nfc-label">NFC</span>
+              <svg class="nfc-waves-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+                <path d="M6 18c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                <path d="M3 18c0-5 4-9 9-9s9 4 9 9" />
+                <path d="M9 18c0-1.7 1.3-3 3-3s3 1.3 3 3" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 3, 4, 5. CENTER-LEFT: NAME, ROLE, TAGLINE -->
+          <div class="card-body">
+            <!-- 3. Name: large bold dark navy text -->
+            <h1 class="person-name" id="cardName">Santhosh</h1>
+
+            <!-- 4. Role in small caps with wide letter-spacing -->
+            <div class="person-role" id="cardRole">FOUNDER | WiseIN</div>
+
+            <!-- Thin horizontal divider line -->
+            <div class="role-divider"></div>
+
+            <!-- 5. Tagline in medium weight with thin vertical separators -->
+            <div class="person-tagline" id="cardTagline">
+              <span>Build</span>
+              <span class="tagline-sep">|</span>
+              <span>Connect</span>
+              <span class="tagline-sep">|</span>
+              <span>Grow</span>
+            </div>
+          </div>
+
+          <!-- 6 & 7. BOTTOM BAR: URL & EMBOSSED QR PLATE -->
+          <div class="bottom-bar">
+            <!-- 6. Bottom-left: URL with circle-arrow icon -->
+            <a href="#" class="card-url-link" id="cardUrlLink" onclick="return false;">
+              <span id="cardUrlText">tapbywisein.com/santhosh</span>
+              <span class="url-arrow-circle">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </span>
+            </a>
+          </div>
+
+        </div><!-- /.card-content -->
+
+        <!-- 7. BOTTOM-RIGHT: ROUNDED-SQUARE EMBOSSED PLATE WITH QR CODE -->
+        <div class="qr-embossed-plate">
+          <div class="qr-code-box">
+            <!-- Vector QR code placeholder with high-contrast modules -->
+            <svg class="qr-svg" viewBox="0 0 100 100" fill="currentColor">
+              <!-- Position Corner Top-Left -->
+              <rect x="5" y="5" width="26" height="26" rx="4" fill="#0B1B3F" />
+              <rect x="9" y="9" width="18" height="18" rx="2" fill="#FFFFFF" />
+              <rect x="13" y="13" width="10" height="10" rx="1.5" fill="#0B1B3F" />
+
+              <!-- Position Corner Top-Right -->
+              <rect x="69" y="5" width="26" height="26" rx="4" fill="#0B1B3F" />
+              <rect x="73" y="9" width="18" height="18" rx="2" fill="#FFFFFF" />
+              <rect x="77" y="13" width="10" height="10" rx="1.5" fill="#0B1B3F" />
+
+              <!-- Position Corner Bottom-Left -->
+              <rect x="5" y="69" width="26" height="26" rx="4" fill="#0B1B3F" />
+              <rect x="9" y="73" width="18" height="18" rx="2" fill="#FFFFFF" />
+              <rect x="13" y="77" width="10" height="10" rx="1.5" fill="#0B1B3F" />
+
+              <!-- Data Matrix Cells -->
+              <rect x="36" y="8" width="5" height="5" fill="#0B1B3F" />
+              <rect x="46" y="8" width="5" height="5" fill="#0B1B3F" />
+              <rect x="56" y="8" width="5" height="5" fill="#0B1B3F" />
+              <rect x="36" y="18" width="5" height="5" fill="#0B1B3F" />
+              <rect x="46" y="22" width="5" height="5" fill="#0B1B3F" />
+              <rect x="56" y="18" width="5" height="5" fill="#0B1B3F" />
+              <rect x="8" y="36" width="5" height="5" fill="#0B1B3F" />
+              <rect x="18" y="36" width="5" height="5" fill="#0B1B3F" />
+              <rect x="24" y="42" width="5" height="5" fill="#0B1B3F" />
+              <rect x="8" y="48" width="5" height="5" fill="#0B1B3F" />
+              <rect x="22" y="54" width="5" height="5" fill="#0B1B3F" />
+              <rect x="36" y="68" width="5" height="5" fill="#0B1B3F" />
+              <rect x="46" y="74" width="5" height="5" fill="#0B1B3F" />
+              <rect x="56" y="68" width="5" height="5" fill="#0B1B3F" />
+              <rect x="42" y="84" width="5" height="5" fill="#0B1B3F" />
+              <rect x="52" y="88" width="5" height="5" fill="#0B1B3F" />
+              <rect x="70" y="36" width="5" height="5" fill="#0B1B3F" />
+              <rect x="86" y="42" width="5" height="5" fill="#0B1B3F" />
+              <rect x="74" y="48" width="5" height="5" fill="#0B1B3F" />
+              <rect x="86" y="56" width="5" height="5" fill="#0B1B3F" />
+              <rect x="70" y="72" width="5" height="5" fill="#0B1B3F" />
+              <rect x="82" y="78" width="5" height="5" fill="#0B1B3F" />
+              <rect x="74" y="86" width="5" height="5" fill="#0B1B3F" />
+            </svg>
+
+            <!-- Small "W" Logo in QR Center -->
+            <div class="qr-center-badge">W</div>
+          </div>
+          <!-- Label below QR -->
+          <span class="qr-scan-label">SCAN TO CONNECT</span>
+        </div>
+
+      </div><!-- /.nfc-card -->
+    </div><!-- /.card-scene -->
+
+    <!-- LIVE CUSTOMIZATION CONTROLS -->
+    <div class="controls-panel">
+      <div class="control-group">
+        <label for="inputName">Cardholder Name</label>
+        <input type="text" id="inputName" value="Santhosh" />
+      </div>
+      <div class="control-group">
+        <label for="inputRole">Role / Designation</label>
+        <input type="text" id="inputRole" value="FOUNDER | WiseIN" />
+      </div>
+      <div class="control-group">
+        <label for="inputTagline">Professional Tagline</label>
+        <input type="text" id="inputTagline" value="Build | Connect | Grow" />
+      </div>
+      <div class="control-group">
+        <label for="inputUrl">Profile URL</label>
+        <input type="text" id="inputUrl" value="tapbywisein.com/santhosh" />
+      </div>
+    </div>
+  </div><!-- /.page-wrapper -->
+
+  <!-- INTERACTIVE 3D TILT & LIVE DATA SCRIPT -->
+  <script>
+    const card = document.getElementById('nfcCard');
+    const scene = document.getElementById('cardScene');
+
+    // ── 3D Dynamic Tilt following Mouse ──
+    const defaultRotateX = 4;
+    const defaultRotateY = -6;
+
+    scene.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const cardX = e.clientX - rect.left;
+      const cardY = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      // Max tilt angle ~12 degrees
+      const rotateX = ((cardY - centerY) / centerY) * -12;
+      const rotateY = ((cardX - centerX) / centerX) * 14;
+
+      card.style.transform = `rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`;
+    });
+
+    scene.addEventListener('mouseleave', () => {
+      // Smoothly return to default tilt
+      card.style.transform = `rotateX(${defaultRotateX}deg) rotateY(${defaultRotateY}deg) scale3d(1, 1, 1)`;
+    });
+
+    // ── Live Data Binding (Inputs <-> Card & CSS Variables) ──
+    const inputName = document.getElementById('inputName');
+    const inputRole = document.getElementById('inputRole');
+    const inputTagline = document.getElementById('inputTagline');
+    const inputUrl = document.getElementById('inputUrl');
+
+    const cardName = document.getElementById('cardName');
+    const cardRole = document.getElementById('cardRole');
+    const cardTagline = document.getElementById('cardTagline');
+    const cardUrlText = document.getElementById('cardUrlText');
+
+    function updateCardData() {
+      const name = inputName.value.trim() || 'Your Name';
+      const role = inputRole.value.trim() || 'Designation';
+      const tagline = inputTagline.value.trim() || 'Build | Connect | Grow';
+      const url = inputUrl.value.trim() || 'tapbywisein.com';
+
+      // Update Card DOM
+      cardName.textContent = name;
+      cardRole.textContent = role;
+      cardUrlText.textContent = url;
+
+      // Render tagline parts separated by '|'
+      const parts = tagline.split('|').map(s => s.trim()).filter(Boolean);
+      cardTagline.innerHTML = parts.map((part, i) => `
+        <span>${part}</span>${i < parts.length - 1 ? '<span class="tagline-sep">|</span>' : ''}
+      `).join('');
+
+      // Update data attributes & CSS root variables
+      card.dataset.name = name;
+      card.dataset.role = role;
+      card.dataset.url = url;
+
+      document.documentElement.style.setProperty('--card-name', `"${name}"`);
+      document.documentElement.style.setProperty('--card-role', `"${role}"`);
+      document.documentElement.style.setProperty('--card-tagline', `"${tagline}"`);
+      document.documentElement.style.setProperty('--card-url', `"${url}"`);
+    }
+
+    inputName.addEventListener('input', updateCardData);
+    inputRole.addEventListener('input', updateCardData);
+    inputTagline.addEventListener('input', updateCardData);
+    inputUrl.addEventListener('input', updateCardData);
+
+    updateCardData();
+  </script>
+</body>
+</html>

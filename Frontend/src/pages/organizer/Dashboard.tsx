@@ -27,6 +27,13 @@ import { profileSetupChecklist } from '@/lib/profileCompletion';
 import { useAppStore } from '@/store/appStore';
 import { formatAmount as formatINR } from '@/lib/currency';
 
+const ORGANIZER_QUICK_ACTIONS = [
+  { label: 'Create new event',   to: '/organizer/events/create', icon: Plus,        desc: 'Publish a new meetup or conference' },
+  { label: 'View attendees',      to: '/organizer/attendees',     icon: Users,       desc: 'Manage registrations & check-ins' },
+  { label: 'Manage leads',        to: '/organizer/leads',         icon: BarChart3,   desc: 'Review networking connections' },
+  { label: 'Payouts & earnings',  to: '/organizer/payouts',       icon: IndianRupee, desc: 'Track ticket sales & payments' },
+] as const;
+
 /* ── dashboard ───────────────────────────────────────────────────────── */
 const OrganizerDashboard = () => {
   const user = useAppStore((s) => s.user);
@@ -48,9 +55,9 @@ const OrganizerDashboard = () => {
   const profileLoaded = !!profile;
 
   const fade = (delay = 0) => ({
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.3, delay },
+    transition: { duration: 0.2, delay },
   });
 
   return (
@@ -102,53 +109,66 @@ const OrganizerDashboard = () => {
         </motion.div>
 
         {/* Top Row: Profile Setup & Quick Actions */}
-        <div className={`grid grid-cols-1 ${profileLoaded && !allDone ? 'md:grid-cols-2' : 'max-w-md'} gap-2.5 sm:gap-4`}>
-          {/* Profile Setup Card */}
-          {profileLoaded && !allDone && (
-            <motion.div {...fade(0.02)} className="h-full">
-              <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Profile Setup</span>
+        <motion.div {...fade(0)} className={`grid grid-cols-1 ${!profileLoaded || !allDone ? 'md:grid-cols-2' : 'max-w-md'} gap-2.5 sm:gap-4`}>
+          {/* Profile Setup Card - stable layout during loading to prevent Quick Actions jump */}
+          {!allDone && (
+            <div className="h-full">
+              {!profileLoaded ? (
+                <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-3 bg-card h-full animate-pulse flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="h-4 w-24 bg-muted/60 rounded" />
+                      <div className="h-4 w-20 bg-muted/60 rounded-full" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                      {completedCount}/{totalCount} Completed
-                    </span>
+                    <div className="h-px bg-border/60 mb-3" />
+                    <div className="space-y-2 py-1">
+                      <div className="h-5 bg-muted/40 rounded w-3/4" />
+                      <div className="h-5 bg-muted/40 rounded w-2/3" />
+                      <div className="h-5 bg-muted/40 rounded w-4/5" />
+                    </div>
                   </div>
-                  <div className="h-px bg-border/60 mb-2 sm:mb-3" />
-                  {/* Scrollable list of pending items */}
-                  <div className="max-h-36 sm:max-h-40 overflow-y-auto pr-1 space-y-1.5 sm:space-y-2.5">
-                    {checklistItems.filter(i => !i.done).map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-2 text-xs py-0.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Circle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground/40 flex-shrink-0" />
-                          <span className="truncate text-xs sm:text-sm text-foreground font-medium">{item.label}</span>
-                        </div>
-                        <Link to={item.to} className="text-[11px] sm:text-xs font-semibold text-primary hover:underline flex-shrink-0">{item.action}</Link>
+                  <div className="h-9 bg-muted/60 rounded-full mt-3" />
+                </Surface>
+              ) : (
+                <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Profile Setup</span>
                       </div>
-                    ))}
+                      <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        {completedCount}/{totalCount} Completed
+                      </span>
+                    </div>
+                    <div className="h-px bg-border/60 mb-2 sm:mb-3" />
+                    {/* Scrollable list of pending items */}
+                    <div className="max-h-36 sm:max-h-40 overflow-y-auto pr-1 space-y-1.5 sm:space-y-2.5">
+                      {checklistItems.filter(i => !i.done).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2 text-xs py-0.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Circle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                            <span className="truncate text-xs sm:text-sm text-foreground font-medium">{item.label}</span>
+                          </div>
+                          <Link to={item.to} className="text-[11px] sm:text-xs font-semibold text-primary hover:underline flex-shrink-0">{item.action}</Link>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-8 sm:h-10 text-xs sm:text-sm shadow-sm mt-1.5 sm:mt-3">
-                  <Link to="/profile" className="flex items-center justify-center gap-1.5">Complete profile <ArrowRight className="w-3.5 h-3.5" /></Link>
-                </Button>
-              </Surface>
-            </motion.div>
+                  <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-8 sm:h-10 text-xs sm:text-sm shadow-sm mt-1.5 sm:mt-3">
+                    <Link to="/profile" className="flex items-center justify-center gap-1.5">Complete profile <ArrowRight className="w-3.5 h-3.5" /></Link>
+                  </Button>
+                </Surface>
+              )}
+            </div>
           )}
           {/* Quick Actions Card */}
-          <motion.div {...fade(0.04)} className="h-full">
+          <div className="h-full">
             <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-4 bg-card h-full flex flex-col justify-between">
               <div>
                 <span className="section-label block mb-1.5 sm:mb-3 font-semibold text-xs sm:text-sm text-foreground">Quick Actions</span>
                 <div className="space-y-1 sm:space-y-2">
-                  {([
-                    { label: 'Create new event',   to: '/organizer/events/create', icon: Plus,        desc: 'Publish a new meetup or conference' },
-                    { label: 'View attendees',      to: '/organizer/attendees',     icon: Users,       desc: 'Manage registrations & check-ins' },
-                    { label: 'Manage leads',        to: '/organizer/leads',         icon: BarChart3,   desc: 'Review networking connections' },
-                    { label: 'Payouts & earnings',  to: '/organizer/payouts',       icon: IndianRupee, desc: 'Track ticket sales & payments' },
-                  ] as const).map(({ label, to, icon: Icon, desc }) => (
+                  {ORGANIZER_QUICK_ACTIONS.map(({ label, to, icon: Icon, desc }) => (
                     <Link key={to} to={to} className="flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-muted/60 transition-all border border-transparent hover:border-border/60 group">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
                         <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -163,13 +183,13 @@ const OrganizerDashboard = () => {
                 </div>
               </div>
             </Surface>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* Second Row: Registration Analytics Graph */}
-        <motion.div {...fade(0.06)} className="h-full">
-          <Surface className="p-3.5 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl bg-card">
-            <div className="flex items-center justify-between mb-3.5 sm:mb-6 flex-wrap gap-2">
+        <motion.div {...fade(0)} className="h-full">
+          <Surface className="p-6 border border-border shadow-sm rounded-2xl bg-card">
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -198,7 +218,7 @@ const OrganizerDashboard = () => {
         </motion.div>
 
         {/* Recent Events */}
-        <motion.div {...fade(0.08)}>
+        <motion.div {...fade(0)}>
           <Surface className="p-3 sm:p-5 border border-border shadow-sm rounded-xl sm:rounded-2xl bg-card">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Events</h2>

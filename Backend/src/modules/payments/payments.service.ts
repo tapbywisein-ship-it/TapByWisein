@@ -13,6 +13,7 @@ import { findTier } from '@utils/ticketPricing';
 import { sendEmail, refundConfirmationEmail } from '@utils/email';
 import razorpayRouteService from './razorpay-route.service';
 import ambassadorsService from '@modules/ambassadors/ambassadors.service';
+import { assertRegistrationOpen } from '@utils/registrationWindow';
 
 const RAZORPAY_API = 'https://api.razorpay.com/v1';
 const DEFAULT_FEE_PERCENT = 5;
@@ -67,6 +68,9 @@ export class PaymentsService {
       where: { id: eventId, deletedAt: null, status: 'PUBLISHED' },
     });
     if (!event) throw new NotFoundError('Event');
+
+    // Check before creating an order, so nobody pays for a closed event.
+    assertRegistrationOpen(event);
 
     const tier = findTier(event, ticketTierId);
     if (!tier) throw new BadRequestError('Invalid ticket tier');

@@ -100,7 +100,7 @@ export const gamificationService = {
         'Register for an event': 'EVENT_REGISTERED',
         'Attend an event (check-in)': 'EVENT_ATTENDED',
         'Make a connection': 'CONNECTION_MADE',
-        'Activate your Founder Card': 'FOUNDER_CARD_ACTIVE',
+        'Activate your Tap Card': 'FOUNDER_CARD_ACTIVE',
         'Scan a QR code': 'QR_SCAN',
         'Earn a badge': 'BADGE_EARNED',
         'First login': 'FIRST_LOGIN',

@@ -38,7 +38,9 @@ import { apiDownload } from '@/services/api';
 import { founderCardService, type PublicCard } from '@/services/founderCard.service';
 import { useJsonLd } from '@/lib/useJsonLd';
 import { useSeo } from '@/lib/useSeo';
-import { WhatIsTapByWisein } from '@/components/WhatIsTapByWisein';
+// Disabled: TapCard popup should not show on app open
+// import { WhatIsTapByWisein } from '@/components/WhatIsTapByWisein';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { connectionsService } from '@/services/connections.service';
 import { useStartConversation } from '@/hooks/useMessages';
 
@@ -243,11 +245,10 @@ const FounderCardPublic = ({ mode }: FounderCardPublicProps) => {
 
   const body = (
     <div className="space-y-6">
-      <WhatIsTapByWisein />
+      {/* // Disabled: TapCard popup should not show on app open */}
+      {/* <WhatIsTapByWisein /> */}
       {isLoading && (
-        <Surface padding="lg" className="text-center">
-          <p className="text-sm text-muted-foreground">Loading card…</p>
-        </Surface>
+        <LoadingSkeleton count={3} itemClassName="h-32" />
       )}
 
       {isError && (

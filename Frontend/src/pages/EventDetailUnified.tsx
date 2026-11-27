@@ -25,7 +25,7 @@ import { ReportButton } from '@/components/ReportButton';
 import { EventFeedbackCard } from '@/components/EventFeedbackCard';
 import { AddToCalendar } from '@/components/AddToCalendar';
 import { requireVerifiedEmail } from '@/components/VerifyEmailBanner';
-import { eventsService } from '@/services/events.service';
+import { eventsService, type EventQuestion } from '@/services/events.service';
 import { useAppStore } from '@/store/appStore';
 import { ApiError } from '@/services/api';
 import {
@@ -73,9 +73,9 @@ const EventDetailUnified = () => {
   // links and guest RSVP never worked.
   const { data: myRegsData } = useMyRegistrations(1, 20, isAuthenticated);
   const registerMutation = useRegisterForEvent();
-  // The host's custom questions, asked before a signed-in Register. Guests use
-  // the RSVP form, which doesn't ask them yet.
-  const { data: questions } = useEventQuestions(id ?? '', !!id && isAuthenticated);
+  // The host's custom questions, asked before Register: above the button when
+  // signed in, and in the guest RSVP form otherwise.
+  const { data: questions } = useEventQuestions(id ?? '', !!id);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const missingRequired = unansweredRequired(questions, answers);
   const cancelMutation = useCancelRegistration();
@@ -219,7 +219,7 @@ const EventDetailUnified = () => {
     paidTiers.length > 0
       ? paidTiers
       : singlePrice > 0
-        ? [{ id: 'default', name: 'General Admission', price: singlePrice, priceLabel: formatINR(singlePrice), seats: event.capacity }]
+        ? [{ id: 'default', name: 'General Admission', price: singlePrice, priceLabel: formatINR(singlePrice), seats: event.capacity, benefits: [] }]
         : [];
   const hasFreeTier = tiers.length > 0 ? tiers.some((t) => t.price <= 0) : singlePrice <= 0;
   const requiresPayment = !hasFreeTier && payableTiers.length > 0;
@@ -338,8 +338,9 @@ const EventDetailUnified = () => {
         key: order.keyId,
         amount: order.amount,
         currency: order.currency,
-        name: order.eventTitle,
-        description: `Ticket · ${order.ticketTierName}`,
+        name: 'TapByWiseIN',
+        description: `${order.eventTitle} · ${order.ticketTierName}`,
+        image: `${window.location.origin}/logo-mark.png`,
         order_id: order.orderId,
         prefill: { name: user?.name, email: user?.email },
         theme: { color: '#0f172a' },
@@ -622,9 +623,9 @@ const EventDetailUnified = () => {
                         <span className="font-semibold text-foreground">{t.priceLabel}</span>
                       )}
                     </span>
-                    {t.benefits.length > 0 && (
+                    {Boolean(t.benefits && t.benefits.length > 0) && (
                       <span className="mt-1.5 ml-5 flex flex-col gap-0.5">
-                        {t.benefits.map((b) => (
+                        {t.benefits?.map((b) => (
                           <span key={b} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                             {b}
@@ -823,39 +824,43 @@ const EventDetailUnified = () => {
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={handleShare}
-            >
-              <Share2 className="w-3.5 h-3.5" /> Share event
-            </Button>
-            {/* Nothing to add to a calendar once the event is over. */}
-            {!isPast && (
-              <AddToCalendar
-                event={{
-                  title: event.title,
-                  description: event.description ?? undefined,
-                  start: event.startDate,
-                  end: event.endDate,
-                  location:
-                    event.locationType === 'VIRTUAL'
-                      ? event.meetingUrl ?? 'Online'
-                      : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
-                  url: `${window.location.origin}/e/${event.id}`,
-                }}
-              />
-            )}
-            {isAuthenticated && (
-              <ReportButton
-                targetType="EVENT"
-                targetId={event.id}
-                targetLabel={event.title}
-                triggerClass="h-9 w-9 border border-border"
-              />
-            )}
+          <div className="mt-3">
+            {/* Secondary actions: stack vertically on mobile, row on md+ */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full md:flex-1"
+                onClick={handleShare}
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share event
+              </Button>
+              {/* Nothing to add to a calendar once the event is over. */}
+              {!isPast && (
+                <AddToCalendar
+                  className="w-full md:flex-1"
+                  event={{
+                    title: event.title,
+                    description: event.description ?? undefined,
+                    start: event.startDate,
+                    end: event.endDate,
+                    location:
+                      event.locationType === 'VIRTUAL'
+                        ? event.meetingUrl ?? 'Online'
+                        : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
+                    url: `${window.location.origin}/e/${event.id}`,
+                  }}
+                />
+              )}
+              {isAuthenticated && (
+                <ReportButton
+                  targetType="EVENT"
+                  targetId={event.id}
+                  targetLabel={event.title}
+                  triggerClass="h-9 w-9 border border-border md:self-auto self-end"
+                />
+              )}
+            </div>
           </div>
         </Surface>
 
@@ -987,9 +992,9 @@ const EventDetailUnified = () => {
                   </div>
                 );
               })}
-              {attendeesData!.attendees.length > 18 && (
+              {(attendeesData?.attendees?.length ?? 0) > 18 && (
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground border border-border">
-                  +{attendeesData!.attendees.length - 18}
+                  +{(attendeesData?.attendees?.length ?? 0) - 18}
                 </div>
               )}
             </div>
@@ -1014,6 +1019,7 @@ const EventDetailUnified = () => {
         onOpenChange={setGuestRsvpOpen}
         eventId={event.id}
         eventTitle={event.title}
+        questions={questions}
       />
 
       {/* Post-payment confirmation — shown after Razorpay checkout succeeds. */}
@@ -1051,6 +1057,7 @@ interface GuestRsvpModalProps {
   onOpenChange: (open: boolean) => void;
   eventId: string;
   eventTitle: string;
+  questions: EventQuestion[] | undefined;
 }
 
 const GuestRsvpModal = ({
@@ -1058,6 +1065,7 @@ const GuestRsvpModal = ({
   onOpenChange,
   eventId,
   eventTitle,
+  questions,
 }: GuestRsvpModalProps) => {
   const navigate = useNavigate();
   const homePath = useHomePath();
@@ -1070,10 +1078,15 @@ const GuestRsvpModal = ({
   // True when the email is a claimed (password-protected) account — backend
   // declined to auto-sign-in and we should send them to /login instead.
   const [requiresSignIn, setRequiresSignIn] = useState(false);
+  // The host's questions, same form and rules as a signed-in registration.
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const missingRequired = unansweredRequired(questions, answers);
+  const canSubmit = !!name.trim() && !!email && missingRequired.length === 0;
 
   const reset = () => {
     setName('');
     setEmail('');
+    setAnswers({});
     setDone(false);
     setDoneMessage('');
     setRequiresSignIn(false);
@@ -1081,16 +1094,18 @@ const GuestRsvpModal = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email) return;
+    if (!canSubmit) return;
     setLoading(true);
     try {
       // Backend silently finds-or-creates the user. If the email isn't
       // already a password-protected account, it also returns auth tokens
       // and we auto-sign-in (Luma flow). If it IS claimed, we just confirm
       // the RSVP and prompt the visitor to sign in normally.
+      const answerList = toAnswerList(answers);
       const res = await eventsService.rsvpAsGuest(eventId, {
         name: name.trim(),
         email,
+        answers: answerList.length > 0 ? answerList : undefined,
       });
       if (res.user && res.tokens) {
         login(res.user);
@@ -1156,11 +1171,13 @@ const GuestRsvpModal = ({
                 />
               </div>
 
+              <EventQuestionsForm questions={questions} answers={answers} onChange={setAnswers} />
+
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !name.trim() || !email}
+                disabled={loading || !canSubmit}
               >
                 {loading ? 'Confirming…' : 'One-Click RSVP'}
               </Button>

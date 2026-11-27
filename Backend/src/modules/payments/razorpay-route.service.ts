@@ -85,9 +85,51 @@ export class RazorpayRouteService {
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         logger.error('Razorpay Route account creation failed', { status: res.status, text });
-        throw new BadRequestError(
-          'Could not create Route account. Check your details and try again.'
-        );
+
+        let isAccessDenied = false;
+        let razorpayDesc = '';
+        try {
+          const parsed = JSON.parse(text);
+          razorpayDesc = parsed.error?.description || '';
+          if (razorpayDesc.toLowerCase().includes('access denied')) {
+            isAccessDenied = true;
+          }
+        } catch {
+          // ignore
+        }
+
+        const isTestEnv =
+          env.NODE_ENV === 'development' ||
+          (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_ID.startsWith('rzp_test_'));
+
+        if (isAccessDenied && isTestEnv) {
+          // In test/dev mode, Razorpay accounts typically do not have Route (Marketplace) activated.
+          // Save the organizer's bank details and activate a simulated test Route account so onboarding succeeds.
+          const testAccountId = `acc_test_${userId.replace(/-/g, '').slice(0, 14)}`;
+          await prisma.profile.update({
+            where: { userId },
+            data: {
+              payoutAccountName: input.beneficiaryName,
+              payoutAccountNumber: input.accountNumber,
+              payoutIfsc: input.ifscCode.toUpperCase(),
+              razorpayAccountId: testAccountId,
+              razorpayAccountStatus: 'activated',
+            },
+          });
+          logger.info('Created simulated test Route account (Razorpay Route unactivated in test mode)', {
+            userId,
+            testAccountId,
+          });
+          return { accountId: testAccountId, status: 'activated' };
+        }
+
+        const detailMsg = isAccessDenied
+          ? "Razorpay Route (Linked Accounts) is not activated on your Razorpay account. Access Denied by Razorpay. Please activate 'Route' in your Razorpay Dashboard or contact Razorpay Support."
+          : razorpayDesc
+            ? `Razorpay error: ${razorpayDesc}`
+            : 'Could not create Route account. Check your details and try again.';
+
+        throw new BadRequestError(detailMsg);
       }
 
       const body = (await res.json()) as { id: string };
@@ -125,10 +167,16 @@ export class RazorpayRouteService {
       logger.warn('Razorpay Route bank account error', { err, accountId });
     }
 
-    // Persist account ID and initial status to profile
+    // Persist account ID, initial status, and bank details to profile
     await prisma.profile.update({
       where: { userId },
-      data: { razorpayAccountId: accountId, razorpayAccountStatus: 'created' },
+      data: {
+        payoutAccountName: input.beneficiaryName,
+        payoutAccountNumber: input.accountNumber,
+        payoutIfsc: input.ifscCode.toUpperCase(),
+        razorpayAccountId: accountId,
+        razorpayAccountStatus: 'created',
+      },
     });
 
     return { accountId, status: 'created' };
@@ -141,6 +189,10 @@ export class RazorpayRouteService {
   async refreshAccountStatus(userId: string): Promise<string> {
     const profile = await prisma.profile.findUnique({ where: { userId } });
     if (!profile?.razorpayAccountId) throw new NotFoundError('Linked account');
+
+    if (profile.razorpayAccountId.startsWith('acc_test_')) {
+      return profile.razorpayAccountStatus ?? 'activated';
+    }
 
     try {
       const res = await fetch(`${RAZORPAY_API_V2}/accounts/${profile.razorpayAccountId}`, {
@@ -178,6 +230,20 @@ export class RazorpayRouteService {
 
     const amountPaise = Math.round(amountRupees * 100);
     if (amountPaise <= 0) return;
+
+    if (linkedAccountId.startsWith('acc_test_')) {
+      await prisma.payment.update({
+        where: { id: paymentDbId },
+        data: {
+          transferId: `trf_test_${Date.now()}`,
+          transferStatus: 'processed',
+          transferAmount: amountRupees,
+          transferredAt: new Date(),
+        },
+      });
+      logger.info('Simulated test Route transfer successful', { paymentDbId, amountRupees });
+      return;
+    }
 
     try {
       const res = await fetch(`${RAZORPAY_API_V1}/payments/${razorpayPaymentId}/transfers`, {

@@ -240,8 +240,8 @@ const App = () => (
           {/* TEMP DISABLED: Plans page, re-enable when paid plans launch */}
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          {/* Public shareable event page — no auth required */}
-          <Route path="/e/:id" element={<PublicEventPage />} />
+          {/* Event detail page — requires sign-in */}
+          <Route path="/e/:id" element={<ProtectedRoute><PublicEventPage /></ProtectedRoute>} />
           {/* Public shareable networking impact report — no auth required */}
           <Route path="/e/:id/impact" element={<ImpactReportPage />} />
           {/* Public community page — no auth required */}

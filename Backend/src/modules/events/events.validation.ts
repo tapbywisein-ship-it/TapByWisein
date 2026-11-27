@@ -125,6 +125,11 @@ export const searchEventsSchema = z.object({
 export const rsvpGuestSchema = z.object({
   email: z.string().email('Invalid email address').toLowerCase().trim(),
   name: z.string().min(1, 'Name is required').max(100).trim(),
+  // Answers to the host's registration questions, as signed-in users send them.
+  answers: z
+    .array(z.object({ questionId: z.string().min(1), answer: z.string().max(2000) }))
+    .max(50)
+    .optional(),
 });
 
 export type CreateEventDto = z.infer<typeof createEventSchema>;

@@ -132,6 +132,7 @@ interface RazorpayOptions {
   currency: string;
   name: string;
   description?: string;
+  image?: string;
   order_id: string;
   prefill?: { name?: string; email?: string };
   theme?: { color?: string };
