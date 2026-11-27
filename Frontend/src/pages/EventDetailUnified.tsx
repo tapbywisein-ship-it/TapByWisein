@@ -823,39 +823,43 @@ const EventDetailUnified = () => {
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={handleShare}
-            >
-              <Share2 className="w-3.5 h-3.5" /> Share event
-            </Button>
-            {/* Nothing to add to a calendar once the event is over. */}
-            {!isPast && (
-              <AddToCalendar
-                event={{
-                  title: event.title,
-                  description: event.description ?? undefined,
-                  start: event.startDate,
-                  end: event.endDate,
-                  location:
-                    event.locationType === 'VIRTUAL'
-                      ? event.meetingUrl ?? 'Online'
-                      : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
-                  url: `${window.location.origin}/e/${event.id}`,
-                }}
-              />
-            )}
-            {isAuthenticated && (
-              <ReportButton
-                targetType="EVENT"
-                targetId={event.id}
-                targetLabel={event.title}
-                triggerClass="h-9 w-9 border border-border"
-              />
-            )}
+          <div className="mt-3">
+            {/* Secondary actions: stack vertically on mobile, row on md+ */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full md:flex-1"
+                onClick={handleShare}
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share event
+              </Button>
+              {/* Nothing to add to a calendar once the event is over. */}
+              {!isPast && (
+                <AddToCalendar
+                  className="w-full md:flex-1"
+                  event={{
+                    title: event.title,
+                    description: event.description ?? undefined,
+                    start: event.startDate,
+                    end: event.endDate,
+                    location:
+                      event.locationType === 'VIRTUAL'
+                        ? event.meetingUrl ?? 'Online'
+                        : [event.address, event.city, event.country].filter(Boolean).join(', ') || undefined,
+                    url: `${window.location.origin}/e/${event.id}`,
+                  }}
+                />
+              )}
+              {isAuthenticated && (
+                <ReportButton
+                  targetType="EVENT"
+                  targetId={event.id}
+                  targetLabel={event.title}
+                  triggerClass="h-9 w-9 border border-border md:self-auto self-end"
+                />
+              )}
+            </div>
           </div>
         </Surface>
 
