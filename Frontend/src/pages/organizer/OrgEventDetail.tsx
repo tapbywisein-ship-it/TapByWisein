@@ -136,15 +136,47 @@ const OrgEventDetail = () => {
       <div className="space-y-6 pb-10 max-w-4xl mx-auto">
 
         {/* Cover Image */}
-        {event.coverImage && (
-          <div className="flex justify-center my-4">
-            <img
-              src={event.coverImage}
-              alt={event.title}
-              loading="lazy"
-              className="max-h-[380px] sm:max-h-[420px] max-w-full w-auto h-auto object-contain block mx-auto"
-              style={{ maxHeight: '400px', maxWidth: '100%', width: 'auto', height: 'auto', display: 'block' }}
-            />
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleCoverFile(f);
+            e.target.value = '';
+          }}
+        />
+        {event.coverImage ? (
+          <div className="relative w-full h-52 rounded-2xl overflow-hidden shadow-lg group">
+            <img src={event.coverImage} alt={event.title} loading="lazy" className="w-full h-full object-cover" />
+            {event.status !== 'CANCELLED' && (
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={coverUploading}
+                  onClick={() => coverInputRef.current?.click()}
+                  className="h-8 px-3 text-xs rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/15 backdrop-blur-sm"
+                >
+                  {coverUploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                  {coverUploading ? 'Updating…' : 'Edit Cover'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={coverUploading}
+                  onClick={() => setConfirmRemoveCover(true)}
+                  className="h-8 w-8 p-0 rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/15 backdrop-blur-sm"
+                  aria-label="Remove cover image"
+                  title="Remove cover"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
           </div>
         ) : event.status !== 'CANCELLED' ? (
           <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-dashed border-border bg-muted/20">
