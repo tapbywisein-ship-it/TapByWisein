@@ -3,21 +3,25 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Surface } from '@/components/Surface';
 import { Button } from '@/components/ui/button';
 import { PortalLayout } from '@/components/PortalLayout';
-import { useCommunity, useToggleCommunityMembership } from '@/hooks/useCommunities';
+import { useCommunity, useToggleCommunityMembership, useDeleteCommunity } from '@/hooks/useCommunities';
 import { CommunityFeed } from '@/components/CommunityFeed';
 import { LeaveCommunityDialog } from '@/components/LeaveCommunityDialog';
+import { DeleteCommunityDialog } from '@/components/DeleteCommunityDialog';
 import { useAppStore } from '@/store/appStore';
 import { useSeo } from '@/lib/useSeo';
-import { Boxes, Users, Calendar, MapPin, Check, Plus, Sparkles, AlertCircle } from 'lucide-react';
+import { Boxes, Users, Calendar, MapPin, Check, Plus, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
 
 const CommunityPublicPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const userId = useAppStore((s) => s.user?.id);
   const { data, isLoading, isError } = useCommunity(slug!);
   const toggle = useToggleCommunityMembership(slug!);
+  const deleteMutation = useDeleteCommunity();
   // "Following" leaves on tap, so ask first. (Above the early returns: hooks rule.)
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Called before the early returns below so the hook order never changes.
   const community = data?.community;
@@ -108,9 +112,23 @@ const CommunityPublicPage = () => {
               {c.category && <p className="text-xs text-muted-foreground mt-0.5">{c.category}</p>}
               {orgName && <p className="text-sm text-muted-foreground mt-1">by {orgName}</p>}
             </div>
-            <Button size="sm" variant={isMember ? 'outline' : 'default'} onClick={onFollow} disabled={toggle.isPending} className="shrink-0 max-sm:w-full">
-              {isMember ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Following</> : <><Plus className="w-3.5 h-3.5 mr-1.5" /> Follow</>}
-            </Button>
+            <div className="flex items-center gap-2 shrink-0 max-sm:w-full">
+              <Button size="sm" variant={isMember ? 'outline' : 'default'} onClick={onFollow} disabled={toggle.isPending} className="max-sm:flex-1">
+                {isMember ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Following</> : <><Plus className="w-3.5 h-3.5 mr-1.5" /> Follow</>}
+              </Button>
+              {(isOwner || (userId && c.organizerId === userId)) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={deleteMutation.isPending}
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                  aria-label="Delete community"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                </Button>
+              )}
+            </div>
           </div>
           {c.description && <p className="text-sm text-foreground leading-relaxed">{c.description}</p>}
           <div className="flex gap-5 text-sm text-muted-foreground pt-1">
@@ -179,6 +197,21 @@ const CommunityPublicPage = () => {
         onConfirm={() => {
           toggle.mutate({ id: c.id, join: false });
           setConfirmLeave(false);
+        }}
+      />
+
+      <DeleteCommunityDialog
+        communityName={confirmDelete ? c.name : null}
+        isDeleting={deleteMutation.isPending}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={async () => {
+          try {
+            await deleteMutation.mutateAsync(c.id);
+            setConfirmDelete(false);
+            navigate('/communities');
+          } catch {
+            // Error handled by mutation onError
+          }
         }}
       />
     </>

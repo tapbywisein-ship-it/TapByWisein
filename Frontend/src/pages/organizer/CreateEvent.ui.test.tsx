@@ -174,5 +174,49 @@ describe('CreateEvent - Event Type UI', () => {
     expect(screen.getByDisplayValue('60')).toBeInTheDocument();
     expect(screen.getByText(/Fully allocated/i)).toBeInTheDocument();
   });
-});
 
+  it('renders the About textarea with auto-resizing styles and no scrollbar', () => {
+    renderPage();
+
+    const textarea = screen.getByPlaceholderText(/Tell attendees what to expect/i) as HTMLTextAreaElement;
+    expect(textarea).toBeInTheDocument();
+    expect(textarea.className).toContain('overflow-hidden');
+    expect(textarea.className).toContain('min-h-[96px]');
+    expect(textarea.className).toContain('resize-none');
+  });
+
+  it('updates form description and handles typing into the About textarea', () => {
+    renderPage();
+
+    const textarea = screen.getByPlaceholderText(/Tell attendees what to expect/i) as HTMLTextAreaElement;
+    const testText = 'Join us for an exciting deep-dive into fullstack development and open source networking.';
+
+    fireEvent.change(textarea, { target: { value: testText } });
+    expect(textarea.value).toBe(testText);
+
+    // Also verify deleting text
+    fireEvent.change(textarea, { target: { value: '' } });
+    expect(textarea.value).toBe('');
+  });
+
+  it('dynamically expands and shrinks About textarea height based on scrollHeight', () => {
+    renderPage();
+
+    const textarea = screen.getByPlaceholderText(/Tell attendees what to expect/i) as HTMLTextAreaElement;
+    let mockScrollHeight = 96;
+    Object.defineProperty(textarea, 'scrollHeight', {
+      configurable: true,
+      get: () => mockScrollHeight,
+    });
+
+    // Grow when content increases
+    mockScrollHeight = 240;
+    fireEvent.change(textarea, { target: { value: 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5' } });
+    expect(textarea.style.height).toBe('242px');
+
+    // Shrink back to minimum height when content is deleted
+    mockScrollHeight = 40;
+    fireEvent.change(textarea, { target: { value: '' } });
+    expect(textarea.style.height).toBe('96px');
+  });
+});

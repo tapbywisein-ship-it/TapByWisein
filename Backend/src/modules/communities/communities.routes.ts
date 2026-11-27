@@ -14,6 +14,7 @@ router.post('/', authenticate, communitiesController.create.bind(communitiesCont
 router.get('/mine', authenticate, communitiesController.listMine.bind(communitiesController));
 router.get('/following', authenticate, communitiesController.listFollowing.bind(communitiesController));
 router.patch('/:id', authenticate, communitiesController.update.bind(communitiesController));
+router.delete('/:id', authenticate, communitiesController.remove.bind(communitiesController));
 router.post('/:id/join', authenticate, communitiesController.join.bind(communitiesController));
 router.delete('/:id/join', authenticate, communitiesController.leave.bind(communitiesController));
 router.post('/:id/invite', authenticate, communitiesController.invite.bind(communitiesController));

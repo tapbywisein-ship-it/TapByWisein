@@ -104,6 +104,11 @@ export const communitiesService = {
       body: JSON.stringify(payload),
     });
   },
+  async remove(id: string) {
+    return apiFetch<{ data: null }>(`/communities/${id}`, {
+      method: 'DELETE',
+    });
+  },
   /** Browse public communities (attendees). Optional search + category filter. */
   async listPublic(params?: { q?: string; category?: string }) {
     const qs = new URLSearchParams();

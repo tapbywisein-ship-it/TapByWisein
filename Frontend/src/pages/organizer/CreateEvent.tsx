@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { OrganizerLayout } from '@/components/OrganizerLayout';
 import { PortalLayout } from '@/components/PortalLayout';
 import { SignInModal } from '@/components/SignInModal';
@@ -249,6 +249,33 @@ const CreateEventPage = () => {
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // ── About Textarea Auto-Resizing ───────────────────────────────────────────
+  const descTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustDescHeight = useCallback(() => {
+    const textarea = descTextareaRef.current;
+    if (!textarea) return;
+    const currentScroll = typeof window !== 'undefined' ? window.scrollY : 0;
+    textarea.style.height = 'auto';
+    const nextHeight = Math.max(textarea.scrollHeight + 2, 96);
+    textarea.style.height = `${nextHeight}px`;
+    if (typeof window !== 'undefined' && window.scrollY !== currentScroll) {
+      window.scrollTo(window.scrollX, currentScroll);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!descExpanded) return;
+    adjustDescHeight();
+  }, [form.description, descExpanded, adjustDescHeight]);
+
+  useEffect(() => {
+    if (!descExpanded) return;
+    const handleResize = () => adjustDescHeight();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [descExpanded, adjustDescHeight]);
 
   // ── Payout gate ─────────────────────────────────────────────────────────────
   // Warn organizers who are selling paid tickets but have no verified payout
@@ -1009,7 +1036,7 @@ const CreateEventPage = () => {
                 className="p-4 rounded-[14px] premium-glass-card"
               >
                 <label htmlFor="event-title" className={`block text-xs font-medium mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                  Event Name <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                  Event Name <span className="ml-1 text-red-500">*</span>
                 </label>
                 {/* Same boxed input style as the other fields (e.g. Category), bolder since it's the title. */}
                 <input
@@ -1073,7 +1100,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                      Start Date <span className="ml-1 text-red-500">*</span>
                     </span>
                     <input
                       type="date"
@@ -1084,7 +1111,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      Start Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                      Start Time <span className="ml-1 text-red-500">*</span>
                     </span>
                     <input
                       type="time"
@@ -1099,7 +1126,7 @@ const CreateEventPage = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="flex-1">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Date <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                      End Date <span className="ml-1 text-red-500">*</span>
                     </span>
                     <input
                       type="date"
@@ -1110,7 +1137,7 @@ const CreateEventPage = () => {
                   </div>
                   <div className="w-full sm:w-32">
                     <span className={`text-[11px] block mb-1 font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                      End Time <span className={`ml-1 text-[10px] font-normal ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>mandatory</span>
+                      End Time <span className="ml-1 text-red-500">*</span>
                     </span>
                     <input
                       type="time"
@@ -1161,6 +1188,7 @@ const CreateEventPage = () => {
                   <MapPin className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
                   <span className={form.address ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
                     {form.address ? form.address : 'Add Event Location - In Person'}
+                    <span className="ml-1 text-red-500">*</span>
                   </span>
                   <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{locationExpanded ? '▲' : '▼'}</span>
                 </button>
@@ -1329,16 +1357,26 @@ const CreateEventPage = () => {
                 >
                   <span className={form.description ? (isDark ? 'text-white' : 'text-neutral-900 font-medium') : (isDark ? 'text-neutral-400' : 'text-neutral-500')}>
                     {form.description ? form.description.slice(0, 60) + (form.description.length > 60 ? '…' : '') : 'Add Description'}
+                    <span className="ml-1 text-red-500">*</span>
                   </span>
                   <span className={`ml-auto text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{descExpanded ? '▲' : '▼'}</span>
                 </button>
                 {descExpanded && (
                   <textarea
+                    ref={descTextareaRef}
                     value={form.description}
-                    onChange={(e) => set('description', e.target.value)}
+                    onChange={(e) => {
+                      set('description', e.target.value);
+                      adjustDescHeight();
+                    }}
+                    onInput={adjustDescHeight}
                     placeholder="Tell attendees what to expect (schedule, prerequisites, networking)..."
-                    rows={4}
-                    className={`mt-3 w-full px-3 py-2.5 text-base sm:text-xs rounded-lg focus:outline-none focus:border-primary/50 resize-none ${
+                    style={{
+                      minHeight: '96px',
+                      overflow: 'hidden',
+                      resize: 'none',
+                    }}
+                    className={`mt-3 w-full px-3 py-2.5 text-base sm:text-xs font-normal leading-relaxed rounded-lg focus:outline-none focus:border-primary/50 resize-none min-h-[96px] overflow-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:!w-0 [&::-webkit-scrollbar]:!h-0 ${
                       isDark
                         ? 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-200 placeholder:text-neutral-500'
                         : 'bg-white dark:bg-zinc-900/90 border border-neutral-200 dark:border-white/15 text-neutral-900 placeholder:text-neutral-400'

@@ -148,9 +148,11 @@ export function useUpdateEvent() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<CreateEventPayload> }) =>
       organizerService.updateEvent(id, payload),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: orgKeys.events() });
       qc.invalidateQueries({ queryKey: orgKeys.dashboard() });
+      qc.invalidateQueries({ queryKey: ['events'] });
+      qc.invalidateQueries({ queryKey: ['event', id] });
       toast.success('Event updated!');
     },
     onError: (err: Error) => toast.error(err.message),
